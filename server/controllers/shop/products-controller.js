@@ -79,4 +79,28 @@ const getProductDetails = async (req, res) => {
   }
 };
 
-module.exports = { getFilteredProducts, getProductDetails };
+const updateAsFeatured = async (req, res) => {
+  //this controller is not getting hit fix it 
+  if (!req.body || !req.params.id) {
+    return res.status(400).json({ success: false, message: "Invalid request" });
+  }
+  const { featured, featuredDescription } = req.body;
+  const productId = req.params.id;
+  console.log("controller hit")
+
+  try {
+    const updated = await Product.findByIdAndUpdate(
+      productId,
+      {
+        featured,
+        featuredDescription,
+      },
+      { new: true }
+    );
+    res.status(200).json({ success: true, data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+module.exports = { getFilteredProducts,updateAsFeatured, getProductDetails };

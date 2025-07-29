@@ -2,42 +2,50 @@ const Feature = require("../../models/Feature");
 
 const addFeatureImage = async (req, res) => {
   try {
-    const { image } = req.body;
+    const { image, title, description, productId } = req.body;
 
-    console.log(image, "image");
+    if (!image || !title || !description || !productId) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields (image, title, description, productLink) are required.",
+      });
+    }
 
-    const featureImages = new Feature({
+    const featureItem = new Feature({
       image,
+      title,
+      description,
+      productId,
     });
 
-    await featureImages.save();
+    await featureItem.save();
 
     res.status(201).json({
       success: true,
-      data: featureImages,
+      data: featureItem,
     });
   } catch (e) {
-    console.log(e);
+    console.error("Error in addFeatureImage:", e);
     res.status(500).json({
       success: false,
-      message: "Some error occured!",
+      message: "Server error occurred.",
     });
   }
 };
 
 const getFeatureImages = async (req, res) => {
   try {
-    const images = await Feature.find({});
+    const features = await Feature.find().populate("productId");
 
     res.status(200).json({
       success: true,
-      data: images,
+      data: features,
     });
   } catch (e) {
-    console.log(e);
+    console.error("Error in getFeatureImages:", e);
     res.status(500).json({
       success: false,
-      message: "Some error occured!",
+      message: "Server error occurred while fetching Images.",
     });
   }
 };

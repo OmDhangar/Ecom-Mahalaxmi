@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
   Smartphone,
   ShirtIcon,
   BabyIcon,
@@ -26,6 +24,14 @@ import { useToast } from "@/components/ui/use-toast";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getFeatureImages } from "@/store/common-slice";
 
+// Imported custom components
+import SocialUpdates from "@/components/ui/SocialUpdates";
+import CustomerTestimonials from "@/components/ui/CustomerTestimonials";
+import OfferCarousel from "@/components/ui/OfferCarousel";
+
+// i18n
+import { useTranslation } from "react-i18next";
+
 const categoriesWithIcon = [
   { id: "Electronics", label: "Electronics", icon: Smartphone },
   { id: "Fashion", label: "Fashion", icon: ShirtIcon },
@@ -42,10 +48,10 @@ const brandsWithIcon = [
 ];
 
 function ShoppingHome() {
+  const { t } = useTranslation();
+
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { productList, productDetails } = useSelector(
-    (state) => state.shopProducts
-  );
+  const { productDetails } = useSelector((state) => state.shopProducts);
   const { featureImageList } = useSelector((state) => state.commonFeature);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
@@ -80,7 +86,7 @@ function ShoppingHome() {
       if (data?.payload?.success) {
         dispatch(fetchCartItems(user?.id));
         toast({
-          title: "Product is added to cart",
+          title: t("cart.productAdded"),
         });
       }
     });
@@ -99,10 +105,12 @@ function ShoppingHome() {
   }, [featureImageList]);
 
   useEffect(() => {
-    dispatch(fetchAllFilteredProducts({
-      filterParams: {},
-      sortParams: "price-lowtohigh",
-    }));
+    dispatch(
+      fetchAllFilteredProducts({
+        filterParams: {},
+        sortParams: "price-lowtohigh",
+      })
+    );
   }, [dispatch]);
 
   useEffect(() => {
@@ -132,62 +140,74 @@ function ShoppingHome() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="relative w-full h-[600px] overflow-hidden">
-        {featureImageList?.length > 0 &&
-          featureImageList.map((slide, index) => (
-            <img
-              src={slide?.image}
-              key={index}
-              className={`$ {
-                index === currentSlide ? "opacity-100" : "opacity-0"
-              } absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000`}
-            />
-          ))}
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() =>
-            setCurrentSlide(
-              (prevSlide) =>
-                (prevSlide - 1 + featureImageList.length) %
-                featureImageList.length
-            )
-          }
-          className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/80"
-        >
-          <ChevronLeftIcon className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() =>
-            setCurrentSlide(
-              (prevSlide) => (prevSlide + 1) % featureImageList.length
-            )
-          }
-          className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/80"
-        >
-          <ChevronRightIcon className="w-4 h-4" />
-        </Button>
+      {/* OFFER CAROUSEL */}
+      <OfferCarousel />
+
+      {/* HERO SECTION */}
+      <div className="bg-gray-50 py-10 px-6 md:px-16 flex flex-col md:flex-row items-center justify-between">
+        {/* Left Content */}
+        <div className="text-center md:text-left max-w-xl">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            {t("home.hero.title")}
+          </h1>
+          <p className="text-lg text-blue-500 font-medium mb-2">
+            {t("home.hero.subtitle")}
+          </p>
+          <p className="text-gray-500 mb-6">
+            {t("home.hero.description")}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+            <Button className="bg-gradient-to-r from-blue-500 to-teal-400 text-white font-semibold px-6 py-3">
+              {t("home.hero.shopDeals")}
+            </Button>
+            <Button variant="outline" className="px-6 py-3">
+              {t("home.hero.followInstagram")}
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Image */}
+        <div className="mt-8 md:mt-0 flex justify-center">
+          <img
+            src="/assets/mobile-hero.png"
+            alt="Latest Mobiles"
+            className="w-full max-w-sm rounded-xl shadow-md"
+          />
+        </div>
       </div>
 
+      {/* CATEGORY SECTION */}
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-8">
-            Shop by category
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">
+            {t("home.categories.title")}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
             {categoriesWithIcon.map((categoryItem) => (
               <Card
                 key={categoryItem.id}
                 onClick={() =>
                   handleNavigateToListingPage(categoryItem, "category")
                 }
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="w-[90%] sm:w-[45%] lg:w-72 cursor-pointer rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-b from-blue-100 to-cyan-100 text-center"
               >
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <categoryItem.icon className="w-12 h-12 mb-4 text-primary" />
-                  <span className="font-bold">{categoryItem.label}</span>
+                <CardContent className="flex flex-col items-center p-6 sm:p-8">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-4">
+                    <categoryItem.icon className="w-10 h-10 sm:w-14 sm:h-14 text-blue-500" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold mb-1">
+                    {categoryItem.label}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-3">
+                    {t("home.categories.latestModels")}
+                  </p>
+                  <span className="px-4 py-1 rounded-full bg-white text-blue-600 font-semibold text-xs sm:text-sm shadow">
+                    500+ Products
+                  </span>
+                  <p className="mt-2 text-sm font-medium text-gray-700">
+                    {t("home.categories.exploreCategory")}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -195,16 +215,17 @@ function ShoppingHome() {
         </div>
       </section>
 
+      {/* BRAND SECTION */}
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-8">Shop by Brand</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">
+            {t("home.brands.title")}
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {brandsWithIcon.map((brandItem) => (
               <Card
                 key={brandItem.id}
-                onClick={() =>
-                  handleNavigateToListingPage(brandItem, "brand")
-                }
+                onClick={() => handleNavigateToListingPage(brandItem, "brand")}
                 className="cursor-pointer hover:shadow-lg transition-shadow"
               >
                 <CardContent className="flex flex-col items-center justify-center p-6">
@@ -217,10 +238,11 @@ function ShoppingHome() {
         </div>
       </section>
 
+      {/* FEATURED PRODUCTS */}
       <section className="py-12">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-8">
-            Featured Products
+            {t("home.featuredProducts.title")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {featuredProducts.length > 0 &&
@@ -235,6 +257,12 @@ function ShoppingHome() {
           </div>
         </div>
       </section>
+
+      {/* SOCIAL MEDIA UPDATES */}
+      <SocialUpdates />
+
+      {/* TESTIMONIALS */}
+      <CustomerTestimonials />
 
       <ProductDetailsDialog
         open={openDetailsDialog}

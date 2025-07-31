@@ -3,6 +3,13 @@ import {
   Smartphone,
   ShirtIcon,
   BabyIcon,
+  Smartphone,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloudLightning,
+  Heater,
+  Images,
+
   Shirt,
   WashingMachine,
   ShoppingBasket,

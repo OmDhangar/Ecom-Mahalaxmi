@@ -226,7 +226,7 @@ const getOrderDetails = async (req, res) => {
 
 module.exports = {
   createOrder,
-  verifyPayment, // Changed from capturePayment to verifyPayment
+  verifyPayment, 
   getAllOrdersByUser,
   getOrderDetails,
 };

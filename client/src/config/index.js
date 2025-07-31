@@ -58,25 +58,16 @@ export const addProductFormElements = [
     name: "category",
     componentType: "select",
     options: [
-      { id: "men", label: "Men" },
-      { id: "women", label: "Women" },
-      { id: "kids", label: "Kids" },
-      { id: "accessories", label: "Accessories" },
-      { id: "footwear", label: "Footwear" },
+      { id: "electronics", label: "Electronics" },
+      { id: "fashion", label: "Fashion" },
+      { id: "toys", label: "Toys" },
     ],
   },
   {
     label: "Brand",
     name: "brand",
     componentType: "select",
-    options: [
-      { id: "nike", label: "Nike" },
-      { id: "adidas", label: "Adidas" },
-      { id: "puma", label: "Puma" },
-      { id: "levi", label: "Levi's" },
-      { id: "zara", label: "Zara" },
-      { id: "h&m", label: "H&M" },
-    ],
+    options: [],
   },
   {
     label: "Price",
@@ -102,82 +93,75 @@ export const addProductFormElements = [
 ];
 
 export const shoppingViewHeaderMenuItems = [
-  {
-    id: "home",
-    label: "Home",
-    path: "/shop/home",
-  },
-  {
-    id: "products",
-    label: "Products",
-    path: "/shop/listing",
-  },
-  {
-    id: "men",
-    label: "Men",
-    path: "/shop/listing",
-  },
-  {
-    id: "women",
-    label: "Women",
-    path: "/shop/listing",
-  },
-  {
-    id: "kids",
-    label: "Kids",
-    path: "/shop/listing",
-  },
-  {
-    id: "footwear",
-    label: "Footwear",
-    path: "/shop/listing",
-  },
-  {
-    id: "accessories",
-    label: "Accessories",
-    path: "/shop/listing",
-  },
-  {
-    id: "search",
-    label: "Search",
-    path: "/shop/search",
-  },
+  { id: "home", label: "Home", path: "/shop/home" },
+  { id: "products", label: "Products", path: "/shop/listing" },
+  { id: "electronics", label: "Electronics", path: "/shop/listing?category=electronics" },
+  { id: "fashion", label: "Fashion", path: "/shop/listing?category=fashion" },
+  { id: "toys", label: "Toys", path: "/shop/listing?category=toys" },
+  { id: "search", label: "Search", path: "/shop/search" },
 ];
 
 export const categoryOptionsMap = {
-  men: "Men",
-  women: "Women",
-  kids: "Kids",
-  accessories: "Accessories",
-  footwear: "Footwear",
+  electronics: "Electronics",
+  fashion: "Fashion",
+  toys: "Toys",
 };
 
 export const brandOptionsMap = {
+  // Fashion
   nike: "Nike",
   adidas: "Adidas",
   puma: "Puma",
-  levi: "Levi",
+  levi: "Levi's",
   zara: "Zara",
   "h&m": "H&M",
+  // Electronics
+  samsung: "Samsung",
+  sony: "Sony",
+  apple: "Apple",
+  lg: "LG",
+  panasonic: "Panasonic",
+  // Toys
+  lego: "LEGO",
+  nerf: "NERF",
+  hasbro: "Hasbro",
+  barbie: "Barbie",
+  hotwheels: "Hot Wheels",
 };
 
 export const filterOptions = {
   category: [
-    { id: "men", label: "Men" },
-    { id: "women", label: "Women" },
-    { id: "kids", label: "Kids" },
-    { id: "accessories", label: "Accessories" },
-    { id: "footwear", label: "Footwear" },
+    { id: "electronics", label: "Electronics" },
+    { id: "fashion", label: "Fashion" },
+    { id: "toys", label: "Toys" },
   ],
-  brand: [
-    { id: "nike", label: "Nike" },
-    { id: "adidas", label: "Adidas" },
-    { id: "puma", label: "Puma" },
-    { id: "levi", label: "Levi's" },
-    { id: "zara", label: "Zara" },
-    { id: "h&m", label: "H&M" },
-  ],
+  brand: {
+    fashion: [
+      { id: "nike", label: "Nike" },
+      { id: "adidas", label: "Adidas" },
+      { id: "puma", label: "Puma" },
+      { id: "levi", label: "Levi's" },
+      { id: "zara", label: "Zara" },
+      { id: "h&m", label: "H&M" },
+    ],
+    electronics: [
+      { id: "samsung", label: "Samsung" },
+      { id: "sony", label: "Sony" },
+      { id: "apple", label: "Apple" },
+      { id: "lg", label: "LG" },
+      { id: "panasonic", label: "Panasonic" },
+    ],
+    toys: [
+      { id: "lego", label: "LEGO" },
+      { id: "nerf", label: "NERF" },
+      { id: "hasbro", label: "Hasbro" },
+      { id: "barbie", label: "Barbie" },
+      { id: "hotwheels", label: "Hot Wheels" },
+    ],
+  },
 };
+
+
 
 export const sortOptions = [
   { id: "price-lowtohigh", label: "Price: Low to High" },

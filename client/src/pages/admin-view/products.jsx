@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/use-toast";
-import { addProductFormElements } from "@/config";
+import { addProductFormElements as baseFormElements ,filterOptions } from "@/config";
 import {
   addNewProduct,
   deleteProduct,
@@ -81,6 +81,32 @@ function AdminProducts() {
         });
   }
 
+const getDynamicFormControls = () => {
+  return baseFormElements.map((field) => {
+    if (field.name === "category") {
+      return {
+        ...field,
+        options: filterOptions.category,
+      };
+    }
+
+    if (field.name === "brand") {
+      const selectedCategory = formData.category;
+      const brandOptions = selectedCategory && filterOptions.brand[selectedCategory]
+        ? filterOptions.brand[selectedCategory]
+        : [];
+
+      return {
+        ...field,
+        options: brandOptions,
+      };
+    }
+
+    return field;
+  });
+};
+
+
   function handleDelete(getCurrentProductId) {
     dispatch(deleteProduct(getCurrentProductId)).then((data) => {
       if (data?.payload?.success) {
@@ -151,7 +177,7 @@ function AdminProducts() {
               formData={formData}
               setFormData={setFormData}
               buttonText={currentEditedId !== null ? "Edit" : "Add"}
-              formControls={addProductFormElements}
+              formControls={getDynamicFormControls()}
               isBtnDisabled={!isFormValid()}
             />
           </div>

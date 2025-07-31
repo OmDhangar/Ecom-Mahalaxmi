@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  Smartphone,
   ShirtIcon,
   BabyIcon,
   Smartphone,
@@ -14,8 +13,6 @@ import {
   WashingMachine,
   ShoppingBasket,
   Airplay,
-  Images,
-  Heater,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -23,6 +20,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchAllFilteredProducts,
   fetchProductDetails,
+  fetchFeaturedProducts,
 } from "@/store/shop/products-slice";
 import ShoppingProductTile from "@/components/shopping-view/product-tile";
 import { useNavigate } from "react-router-dom";
@@ -60,7 +58,6 @@ function ShoppingHome() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { productDetails } = useSelector((state) => state.shopProducts);
   const { featureImageList } = useSelector((state) => state.commonFeature);
-  const [featuredProducts, setFeaturedProducts] = useState([]);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const { user } = useSelector((state) => state.auth);
 
@@ -119,31 +116,40 @@ function ShoppingHome() {
       })
     );
   }, [dispatch]);
+  useEffect(() => {
+    console.log("dispaching")
+    dispatch(fetchFeaturedProducts());
+    console.log("dispached")
+  }, [dispatch]);
+
+  const { featuredList, isLoading } = useSelector((state) => state.shopProducts);
+  console.log(featuredList)
+
 
   useEffect(() => {
     dispatch(getFeatureImages());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (featureImageList.length) {
-      const fetchFeaturedProducts = async () => {
-        const productIds = featureImageList.map((item) => item.productId);
-        const uniqueIds = [...new Set(productIds.filter(Boolean))];
+  // useEffect(() => {
+  //   if (featureImageList.length) {
+  //     const fetchFeaturedProducts = async () => {
+  //       const productIds = featureImageList.map((item) => item.productId);
+  //       const uniqueIds = [...new Set(productIds.filter(Boolean))];
 
-        const products = await Promise.all(
-          uniqueIds.map((id) => dispatch(fetchProductDetails(id)))
-        );
+  //       const products = await Promise.all(
+  //         uniqueIds.map((id) => dispatch(fetchProductDetails(id)))
+  //       );
 
-        const validProducts = products
-          .map((res) => res?.payload?.data)
-          .filter(Boolean);
+  //       const validProducts = products
+  //         .map((res) => res?.payload?.data)
+  //         .filter(Boolean);
 
-        setFeaturedProducts(validProducts);
-      };
+  //       setFeaturedProducts(validProducts);
+  //     };
 
-      fetchFeaturedProducts();
-    }
-  }, [featureImageList, dispatch]);
+  //     fetchFeaturedProducts();
+  //   }
+  // }, [featureImageList, dispatch]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -252,8 +258,8 @@ function ShoppingHome() {
             {t("home.featuredProducts.title")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredProducts.length > 0 &&
-              featuredProducts.map((productItem) => (
+            {featuredList.length > 0 &&
+              featuredList.map((productItem) => (
                 <ShoppingProductTile
                   key={productItem._id}
                   handleGetProductDetails={handleGetProductDetails}

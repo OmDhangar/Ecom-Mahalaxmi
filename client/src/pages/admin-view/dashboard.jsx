@@ -11,8 +11,12 @@ const Dashboard = () => {
   const { isLoading, productList, error } = useSelector((state) => state.shopProducts);
 
   useEffect(() => {
-    dispatch(fetchAllFilteredProducts({ category: selectedCategory }));
+    dispatch(fetchAllFilteredProducts({
+      filterParams: selectedCategory ? { category: selectedCategory } : {},
+      sortParams: "price-lowtohigh",
+    }));
   }, [dispatch, selectedCategory]);
+
 
   const handleCategoryChange = (e) => {
     setSelectedCategory(e.target.value);

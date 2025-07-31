@@ -5,27 +5,56 @@ const initialState = {
   isLoading: false,
   productList: [],
   productDetails: null,
+  featuredList:[],
 };
 
 export const fetchAllFilteredProducts = createAsyncThunk(
   "/products/fetchAllProducts",
-  async ({ filterParams, sortParams }) => {
-    console.log(fetchAllFilteredProducts, "fetchAllFilteredProducts");
+  async ({ filterParams = {}, sortParams } = {}) => {
+    const query = new URLSearchParams();
+    console.log("Filter Params:", filterParams);
 
-    const query = new URLSearchParams({
-      ...filterParams,
-      sortBy: sortParams,
-    });
+    // Safe check for category
+    if (filterParams.category) {
+      const categoryValue = Array.isArray(filterParams.category)
+        ? filterParams.category.join(",")
+        : filterParams.category;
+      query.append("category", categoryValue);
+    }
 
-    const result = await axios.get(
-      `http://localhost:5000/api/shop/products/get?${query}`
-    );
+    // Safe check for brand
+    if (filterParams.brand && filterParams.brand.length > 0) {
+      query.append("brand", filterParams.brand.join(","));
+    }
 
-    console.log(result.data.data);
+    // Safe check for sorting
+    if (sortParams) {
+      query.append("sortBy", sortParams);
+    }
 
+    // Build the URL with optional query
+    const queryString = query.toString();
+    const url = `http://localhost:5000/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
+    console.log("Final URL:", url);
+
+    const result = await axios.get(url);
     return result?.data.data;
   }
 );
+
+export const fetchFeaturedProducts = createAsyncThunk(
+  "products/fetchFeaturedProducts",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/shop/products/featured");
+      console.log(res);
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch featured products");
+    }
+  }
+);
+
 
 export const markAsFeatured = createAsyncThunk("products/markAsFeatured", async ( {id, featured, featuredDescription} ) => {
   console.log();
@@ -79,10 +108,22 @@ const shoppingProductSlice = createSlice({
       .addCase(fetchProductDetails.rejected, (state, action) => {
         state.isLoading = false;
         state.productDetails = null;
-      });
+      })
+      .addCase(fetchFeaturedProducts.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchFeaturedProducts.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.featuredList = action.payload;
+      })
+      .addCase(fetchFeaturedProducts.rejected, (state) => {
+        state.isLoading = false;
+        state.featuredList = [];
+      })
+      
   },
 });
 
-export const { setProductDetails } = shoppingProductSlice.actions;
+export const { setProductDetails  } = shoppingProductSlice.actions;
 
 export default shoppingProductSlice.reducer;

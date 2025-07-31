@@ -32,8 +32,6 @@ function AdminOrdersView() {
     dispatch(getAllOrdersForAdmin());
   }, [dispatch]);
 
-  console.log(orderDetails, "orderList");
-
   useEffect(() => {
     if (orderDetails !== null) setOpenDetailsDialog(true);
   }, [orderDetails]);
@@ -49,8 +47,9 @@ function AdminOrdersView() {
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Order Date</TableHead>
-              <TableHead>Order Status</TableHead>
-              <TableHead>Order Price</TableHead>
+              <TableHead>Shipment Status</TableHead>
+              <TableHead>Payment Status</TableHead>
+              <TableHead>Total</TableHead>
               <TableHead>
                 <span className="sr-only">Details</span>
               </TableHead>
@@ -59,23 +58,40 @@ function AdminOrdersView() {
           <TableBody>
             {orderList && orderList.length > 0
               ? orderList.map((orderItem) => (
-                  <TableRow>
-                    <TableCell>{orderItem?._id}</TableCell>
-                    <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                  <TableRow key={orderItem._id}>
+                    <TableCell>{orderItem._id}</TableCell>
+                    <TableCell>{orderItem.orderDate?.split("T")[0]}</TableCell>
                     <TableCell>
                       <Badge
-                        className={`py-1 px-3 ${
-                          orderItem?.orderStatus === "confirmed"
-                            ? "bg-green-500"
-                            : orderItem?.orderStatus === "rejected"
-                            ? "bg-red-600"
-                            : "bg-black"
+                        className={`py-1 px-3 capitalize ${
+                          orderItem.orderStatus === "confirmed"
+                            ? "bg-green-600"
+                            : orderItem.orderStatus === "pending"
+                            ? "bg-yellow-500"
+                            : orderItem.orderStatus === "shipped"
+                            ? "bg-blue-500"
+                            : orderItem.orderStatus === "delivered"
+                            ? "bg-purple-600"
+                            : "bg-gray-500"
                         }`}
                       >
-                        {orderItem?.orderStatus}
+                        {orderItem.orderStatus || "N/A"}
                       </Badge>
                     </TableCell>
-                    <TableCell>${orderItem?.totalAmount}</TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`py-1 px-3 capitalize ${
+                          orderItem.paymentStatus === "paid"
+                            ? "bg-green-500"
+                            : orderItem.paymentStatus === "failed"
+                            ? "bg-red-600"
+                            : "bg-gray-600"
+                        }`}
+                      >
+                        {orderItem.paymentStatus || "N/A"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>₹{orderItem.totalAmount}</TableCell>
                     <TableCell>
                       <Dialog
                         open={openDetailsDialog}
@@ -86,7 +102,7 @@ function AdminOrdersView() {
                       >
                         <Button
                           onClick={() =>
-                            handleFetchOrderDetails(orderItem?._id)
+                            handleFetchOrderDetails(orderItem._id)
                           }
                         >
                           View Details

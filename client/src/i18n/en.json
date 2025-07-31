@@ -1,0 +1,120 @@
+{
+  "home": {
+    "hero": {
+      "title": "Shree Mahalaxmi Mobile",
+      "subtitle": "Latest Mobiles Curated Just for You ✨",
+      "description": "Trusted by 50K+ followers for authentic deals & fastest delivery",
+      "shopDeals": "Shop Latest Deals",
+      "followInstagram": "Follow on Instagram"
+    },
+    "categories": {
+      "title": "Shop by Category",
+      "latestModels": "Latest Models",
+      "exploreCategory": "Explore Category →"
+    },
+    "brands": {
+      "title": "Shop by Brand"
+    },
+    "featuredProducts": {
+      "title": "Featured Products"
+    },
+    "cart": {
+      "productAdded": "Product is added to cart"
+    },
+    "carousel": {
+      "slides": [
+        {
+          "title": "Exclusive Mobile Deals",
+          "subtitle": "Grab the latest smartphones with up to 40% off.",
+          "cta": "Shop Mobiles"
+        },
+        {
+          "title": "Trendy Fashion Collection",
+          "subtitle": "New arrivals in fashion with unbeatable prices.",
+          "cta": "Shop Fashion"
+        },
+        {
+          "title": "Toys for Every Child",
+          "subtitle": "Educational and fun toys starting at just ₹199.",
+          "cta": "Shop Toys"
+        },
+        {
+          "title": "Farming Essentials",
+          "subtitle": "Get farming tools and seeds at wholesale prices.",
+          "cta": "Shop Farming"
+        }
+      ]
+    }
+  },
+  "footer": {
+    "company": {
+      "name": "Shree Mahalaxmi Mobile",
+      "description": "Your trusted partner for authentic mobile phones and electronics. We bring you the latest technology at unbeatable prices with genuine warranty and excellent service."
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "about": "About Us",
+      "privacy": "Privacy Policy",
+      "return": "Return Policy",
+      "terms": "Terms & Conditions",
+      "contact": "Contact Us"
+    },
+    "contact": {
+      "title": "Contact Info",
+      "address": "Shop No. 123, Electronics Market\nMumbai, Maharashtra 400001",
+      "phone": "+91 98765 43210",
+      "email": "info@shreemahalaxmi.com",
+      "hours": "Mon-Sun: 10 AM - 9 PM"
+    },
+    "bottom": {
+      "text": "© 2025 Shree Mahalaxmi Mobile. All rights reserved. | Built with ❤️ from Lakhdatar Web Solutions",
+      "securePayments": "Secure Payments",
+      "genuineProducts": "Genuine Products",
+      "fastDelivery": "Fast Delivery"
+    }
+  },
+  "socialConnect": {
+    "heading": "Connect with Us on Social Media",
+    "instagram": {
+      "title": "Instagram",
+      "description": "Follow us for daily mobile tips, unboxings & exclusive deals.",
+      "button": "Follow on Instagram"
+    },
+    "youtube": {
+      "title": "YouTube",
+      "description": "Subscribe for mobile reviews, comparisons & latest tech updates.",
+      "button": "Subscribe on YouTube"
+    }
+  },
+  "testimonials": {
+    "heading": "What Our Family Says",
+    "subheading": "Real feedback from our valued customers who trust us for their mobile needs",
+    "trusted": "Trusted by 50,000+ Customers",
+    "items": [
+      {
+        "name": "Rahul Sharma",
+        "product": "iPhone 15 Pro",
+        "avatar": "/assets/avatar1.png",
+        "feedback": "Amazing service! Got my iPhone at the best price with genuine warranty. Highly recommended!"
+      },
+      {
+        "name": "Priya Patel",
+        "product": "Samsung Galaxy S24",
+        "avatar": "/assets/avatar2.png",
+        "feedback": "Transparent pricing and excellent customer service. The team helped me choose the perfect phone."
+      },
+      {
+        "name": "Arjun Kumar",
+        "product": "OnePlus 12",
+        "avatar": "/assets/avatar3.png",
+        "feedback": "Fast delivery and authentic product. The phone came exactly as described. Very satisfied!"
+      },
+      {
+        "name": "Sneha Gupta",
+        "product": "Accessories Bundle",
+        "avatar": "/assets/avatar4.png",
+        "feedback": "Great quality accessories at reasonable prices. The wireless earbuds are fantastic!"
+      }
+    ]
+  }
+}

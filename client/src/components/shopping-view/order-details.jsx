@@ -1,8 +1,10 @@
 import { useSelector } from "react-redux";
 import { Badge } from "../ui/badge";
-import { DialogContent } from "../ui/dialog";
+import { DialogContent, DialogTitle } from "../ui/dialog";
 import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
 
 function ShoppingOrderDetailsView({ orderDetails }) {
   const { user } = useSelector((state) => state.auth);
@@ -12,6 +14,9 @@ function ShoppingOrderDetailsView({ orderDetails }) {
       <div className="grid gap-6">
         <div className="grid gap-2">
           <div className="flex mt-6 items-center justify-between">
+             <VisuallyHidden>
+              <DialogTitle>Order Details</DialogTitle>
+            </VisuallyHidden>
             <p className="font-medium">Order ID</p>
             <Label>{orderDetails?._id}</Label>
           </div>
@@ -54,8 +59,11 @@ function ShoppingOrderDetailsView({ orderDetails }) {
             <div className="font-medium">Order Details</div>
             <ul className="grid gap-3">
               {orderDetails?.cartItems && orderDetails?.cartItems.length > 0
-                ? orderDetails?.cartItems.map((item) => (
-                    <li className="flex items-center justify-between">
+                ? orderDetails.cartItems.map((item, index) => (
+                    <li
+                      key={item._id || item.title || index}
+                      className="flex items-center justify-between"
+                    >
                       <span>Title: {item.title}</span>
                       <span>Quantity: {item.quantity}</span>
                       <span>Price: ${item.price}</span>
@@ -63,6 +71,7 @@ function ShoppingOrderDetailsView({ orderDetails }) {
                   ))
                 : null}
             </ul>
+
           </div>
         </div>
         <div className="grid gap-4">

@@ -21,11 +21,21 @@ export const fetchAllFilteredProducts = createAsyncThunk(
       `http://localhost:5000/api/shop/products/get?${query}`
     );
 
-    console.log(result);
+    console.log(result.data.data);
 
-    return result?.data;
+    return result?.data.data;
   }
 );
+
+export const markAsFeatured = createAsyncThunk("products/markAsFeatured", async ( {id, featured, featuredDescription} ) => {
+  console.log();
+  const response = await axios.post(`http://localhost:5000/api/shop/products/${id}/feature`, { 
+    featured,
+    featuredDescription,
+   });
+   console.log(response);
+  return response.data;
+});
 
 export const fetchProductDetails = createAsyncThunk(
   "/products/fetchProductDetails",
@@ -34,7 +44,7 @@ export const fetchProductDetails = createAsyncThunk(
       `http://localhost:5000/api/shop/products/get/${id}`
     );
 
-    return result?.data;
+    return result?.data.data;
   }
 );
 
@@ -53,7 +63,7 @@ const shoppingProductSlice = createSlice({
       })
       .addCase(fetchAllFilteredProducts.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.productList = action.payload.data;
+        state.productList = action.payload;
       })
       .addCase(fetchAllFilteredProducts.rejected, (state, action) => {
         state.isLoading = false;

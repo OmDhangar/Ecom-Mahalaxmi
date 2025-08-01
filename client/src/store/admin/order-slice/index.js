@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { data } from "autoprefixer";
 import axios from "axios";
 
 const initialState = {
@@ -8,14 +9,14 @@ const initialState = {
 
 export const getAllOrdersForAdmin = createAsyncThunk(
   "/order/getAllOrdersForAdmin",
-  async () => {
+  async ({ fromDate , toDate }) => {
     const response = await axios.get(
-      `http://localhost:5000/api/admin/orders/get`
+      `http://localhost:5000/api/admin/orders/get?fromDate=${fromDate}&toDate=${toDate}`
     );
 
     return response.data;
   }
-);
+); 
 
 export const getOrderDetailsForAdmin = createAsyncThunk(
   "/order/getOrderDetailsForAdmin",

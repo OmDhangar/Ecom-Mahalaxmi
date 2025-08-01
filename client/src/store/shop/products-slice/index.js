@@ -103,7 +103,7 @@ const shoppingProductSlice = createSlice({
       })
       .addCase(fetchProductDetails.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.productDetails = action.payload.data;
+        state.productDetails = action.payload;
       })
       .addCase(fetchProductDetails.rejected, (state, action) => {
         state.isLoading = false;

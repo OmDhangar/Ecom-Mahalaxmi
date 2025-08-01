@@ -2,15 +2,24 @@ const Order = require("../../models/Order");
 
 const getAllOrdersOfAllUsers = async (req, res) => {
   try {
-    const orders = await Order.find({});
+    const { fromDate, toDate } = req.query;
+    let query = {};
 
-    if (!orders.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No orders found!",
-      });
+    if (fromDate && toDate) {
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999); 
+      query.orderDate = { $gte: from, $lte: to };
     }
 
+    const orders = await Order.find(query);
+
+    if(!orders.length){
+      return res.status(404).json({
+        success:false,
+        message: "No orders found",
+      });
+    }
     res.status(200).json({
       success: true,
       data: orders,

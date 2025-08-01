@@ -18,9 +18,19 @@ import {
   resetOrderDetails,
 } from "@/store/admin/order-slice";
 import { Badge } from "../ui/badge";
+import axios from "axios";
 
 function AdminOrdersView() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  const [fromDate, setFromDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+  const [toDate, setToDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+
   const { orderList, orderDetails } = useSelector((state) => state.adminOrder);
   const dispatch = useDispatch();
 
@@ -28,9 +38,10 @@ function AdminOrdersView() {
     dispatch(getOrderDetailsForAdmin(getId));
   }
 
+
   useEffect(() => {
-    dispatch(getAllOrdersForAdmin());
-  }, [dispatch]);
+    dispatch(getAllOrdersForAdmin({fromDate,toDate}));
+  }, [dispatch,fromDate, toDate]);
 
   useEffect(() => {
     if (orderDetails !== null) setOpenDetailsDialog(true);
@@ -40,6 +51,35 @@ function AdminOrdersView() {
     <Card>
       <CardHeader>
         <CardTitle>All Orders</CardTitle>
+          <div className="mt-4 flex flex-wrap gap-4 items-center">
+            <label className="text-sm text-gray-700">
+              From:
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="ml-2 px-3 py-2 border rounded-md bg-white text-black"
+              />
+            </label>
+
+            <label className="text-sm text-gray-700">
+              To:
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="ml-2 px-3 py-2 border rounded-md bg-white text-black"
+              />
+            </label>
+
+            <Button
+              onClick={() => dispatch(getAllOrdersForAdmin({ fromDate, toDate }))}
+              className="ml-4"
+            >
+              Filter Range
+            </Button>
+          </div>
+
       </CardHeader>
       <CardContent>
         <Table>

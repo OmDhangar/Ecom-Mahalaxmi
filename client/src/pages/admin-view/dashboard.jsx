@@ -108,7 +108,7 @@ const Dashboard = () => {
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {productList?.map((product) => {
+        {Array.isArray(productList) && productList?.map((product) => {
           const localState = featuredDetails[product._id] || {};
           const isEditing = localState.editing || false;
           const isFeatured = product.featured || localState.featured;
@@ -145,16 +145,20 @@ const Dashboard = () => {
                 ) : (
                   // 🆕 New or Editing
                   <>
-                    <label className="flex items-center space-x-2 mt-2">
-                      <input
-                        type="checkbox"
-                        checked={localState.featured || false}
-                        onChange={() => toggleFeatured(product._id)}
-                      />
-                      <span>Mark as Featured</span>
-                    </label>
+                    {/* Only show checkbox if not already featured */}
+                    {!product.featured && (
+                      <label className="flex items-center space-x-2 mt-2">
+                        <input
+                          type="checkbox"
+                          checked={localState.featured || false}
+                          onChange={() => toggleFeatured(product._id)}
+                        />
+                        <span>Mark as Featured</span>
+                      </label>
+                    )}
 
-                    {localState.featured && (
+                    {/* Show textarea if checkbox is checked OR already featured */}
+                    {(localState.featured || product.featured) && (
                       <div className="mt-2">
                         <textarea
                           placeholder="Why is it featured?"

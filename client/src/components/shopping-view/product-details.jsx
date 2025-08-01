@@ -1,7 +1,7 @@
 import { StarIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent } from "../ui/dialog";
+import { Dialog, DialogContent,DialogTitle,DialogDescription } from "../ui/dialog";
 import { Separator } from "../ui/separator";
 import { Input } from "../ui/input";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,7 +27,10 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     console.log(getRating, "getRating");
 
     setRating(getRating);
+
   }
+
+  console.log("product details",productDetails)
 
   function handleAddToCart(getCurrentProductId, getTotalStock) {
     let getCartItems = cartItems.items || [];
@@ -96,7 +99,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     if (productDetails !== null) dispatch(getReviews(productDetails?._id));
   }, [productDetails]);
 
-  console.log(reviews, "reviews");
+  console.log(productDetails, "reviews");
 
   const averageReview =
     reviews && reviews.length > 0
@@ -107,6 +110,12 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="grid grid-cols-2 gap-8 sm:p-12 max-w-[90vw] sm:max-w-[80vw] lg:max-w-[70vw]">
+         <DialogTitle className="sr-only">
+            {productDetails?.title || "Product Details"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Detailed view and reviews for {productDetails?.title}
+          </DialogDescription>
         <div className="relative overflow-hidden rounded-lg">
           <img
             src={productDetails?.image}
@@ -129,11 +138,11 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 productDetails?.salePrice > 0 ? "line-through" : ""
               }`}
             >
-              ${productDetails?.price}
+              ₹{productDetails?.price}
             </p>
             {productDetails?.salePrice > 0 ? (
               <p className="text-2xl font-bold text-muted-foreground">
-                ${productDetails?.salePrice}
+                ₹{productDetails?.salePrice}
               </p>
             ) : null}
           </div>

@@ -150,7 +150,7 @@ function ShoppingHeader() {
         {/* Logo */}
         <Link to="/shop/home" className="flex items-center gap-2">
           <HousePlug className="h-6 w-6" />
-          <span className="font-bold">Ecommerce</span>
+          <span className="font-bold">Shri MahaLaxmi Mobile</span>
         </Link>
 
         {/* Mobile: Language Switcher + Hamburger */}

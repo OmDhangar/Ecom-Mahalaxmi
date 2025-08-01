@@ -11,17 +11,17 @@ const slideAssets = [
     bg: "from-blue-500 to-indigo-500"
   },
   {
-    image: "/assets/hero-fashion.jpg",
+    image: "/src/OfferCarousel_Image/hero-fashion.jpeg",
     link: "/shop/listing?category=fashion",
     bg: "from-pink-500 to-rose-500"
   },
   {
-    image: "/assets/hero-toys.jpg",
+    image: "/src/OfferCarousel_Image/hero-toys.jpeg",
     link: "/shop/listing?category=toys",
     bg: "from-yellow-400 to-orange-400"
   },
   {
-    image: "/assets/hero-farming.jpg",
+    image: "/src/OfferCarousel_Image/hero-farming.jpeg",
     link: "/shop/listing?category=farming",
     bg: "from-green-500 to-emerald-500"
   }

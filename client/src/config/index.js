@@ -61,6 +61,7 @@ export const addProductFormElements = [
       { id: "electronics", label: "Electronics" },
       { id: "fashion", label: "Fashion" },
       { id: "toys", label: "Toys" },
+      { id: "farming", label: "Farming" },
     ],
   },
   {
@@ -98,6 +99,7 @@ export const shoppingViewHeaderMenuItems = [
   { id: "electronics", label: "Electronics", path: "/shop/listing?category=electronics" },
   { id: "fashion", label: "Fashion", path: "/shop/listing?category=fashion" },
   { id: "toys", label: "Toys", path: "/shop/listing?category=toys" },
+  { id: "farming", label: "Farming", path: "/shop/listing?category=farming" },
   { id: "search", label: "Search", path: "/shop/search" },
 ];
 
@@ -105,6 +107,7 @@ export const categoryOptionsMap = {
   electronics: "Electronics",
   fashion: "Fashion",
   toys: "Toys",
+  farming :"Farming"
 };
 
 export const brandOptionsMap = {
@@ -127,6 +130,11 @@ export const brandOptionsMap = {
   hasbro: "Hasbro",
   barbie: "Barbie",
   hotwheels: "Hot Wheels",
+  //Farming
+   kraftseeds: "KraftSeeds",          
+  crompton: "Crompton",              
+  kisankraft: "KisanKraft",          
+  mahindraagri: "Mahindra Agri",
 };
 
 export const filterOptions = {
@@ -134,6 +142,7 @@ export const filterOptions = {
     { id: "electronics", label: "Electronics" },
     { id: "fashion", label: "Fashion" },
     { id: "toys", label: "Toys" },
+    { id: "farming", label: "Farming" },
   ],
   brand: {
     fashion: [
@@ -157,6 +166,12 @@ export const filterOptions = {
       { id: "hasbro", label: "Hasbro" },
       { id: "barbie", label: "Barbie" },
       { id: "hotwheels", label: "Hot Wheels" },
+    ],
+     farming: [
+      { id: "kraftseeds", label: "KraftSeeds" },     // ✅ Added
+      { id: "crompton", label: "Crompton" },         // ✅ Added
+      { id: "kisankraft", label: "KisanKraft" },     // ✅ Added
+      { id: "mahindraagri", label: "Mahindra Agri" } // ✅ Added
     ],
   },
 };

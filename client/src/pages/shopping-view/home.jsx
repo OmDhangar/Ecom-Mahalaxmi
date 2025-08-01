@@ -8,7 +8,7 @@ import {
   CloudLightning,
   Heater,
   Images,
-
+  Crop,
   Shirt,
   WashingMachine,
   ShoppingBasket,
@@ -38,9 +38,10 @@ import OfferCarousel from "@/components/ui/OfferCarousel";
 import { useTranslation } from "react-i18next";
 
 const categoriesWithIcon = [
-  { id: "Electronics", label: "Electronics", icon: Smartphone },
-  { id: "Fashion", label: "Fashion", icon: ShirtIcon },
-  { id: "Toys", label: "Toys", icon: BabyIcon },
+  { id: "electronics", label: "Electronics", icon: Smartphone },
+  { id: "fashion", label: "Fashion", icon: ShirtIcon },
+  { id: "toys", label: "Toys", icon: BabyIcon },
+  {id:"farming",label:"Farming", icon:Crop}
 ];
 
 const brandsWithIcon = [
@@ -99,6 +100,7 @@ function ShoppingHome() {
   useEffect(() => {
     if (productDetails !== null) setOpenDetailsDialog(true);
   }, [productDetails]);
+  
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -117,13 +119,11 @@ function ShoppingHome() {
     );
   }, [dispatch]);
   useEffect(() => {
-    console.log("dispaching")
     dispatch(fetchFeaturedProducts());
-    console.log("dispached")
+
   }, [dispatch]);
 
   const { featuredList, isLoading } = useSelector((state) => state.shopProducts);
-  console.log(featuredList)
 
 
   useEffect(() => {
@@ -182,9 +182,9 @@ function ShoppingHome() {
         {/* Right Image */}
         <div className="mt-8 md:mt-0 flex justify-center">
           <img
-            src="/assets/mobile-hero.png"
+            src="/src/OfferCarousel_Image/Iphone.png"
             alt="Latest Mobiles"
-            className="w-full max-w-sm rounded-xl shadow-md"
+            className="w-1/2 max-w-sm rounded-xl shadow-md"
           />
         </div>
       </div>
@@ -228,28 +228,7 @@ function ShoppingHome() {
         </div>
       </section>
 
-      {/* BRAND SECTION */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-8">
-            {t("home.brands.title")}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {brandsWithIcon.map((brandItem) => (
-              <Card
-                key={brandItem.id}
-                onClick={() => handleNavigateToListingPage(brandItem, "brand")}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-              >
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <brandItem.icon className="w-12 h-12 mb-4 text-primary" />
-                  <span className="font-bold">{brandItem.label}</span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* FEATURED PRODUCTS */}
       <section className="py-12">
@@ -260,6 +239,7 @@ function ShoppingHome() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {featuredList.length > 0 &&
               featuredList.map((productItem) => (
+                console.log("productItem",productItem),
                 <ShoppingProductTile
                   key={productItem._id}
                   handleGetProductDetails={handleGetProductDetails}

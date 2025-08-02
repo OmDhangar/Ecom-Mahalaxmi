@@ -79,7 +79,7 @@ const createShiprocketOrder = async (orderData, products) => {
       pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
       channel_id: "", // Leave empty for manual orders
       comment: orderData.addressInfo.notes || "Order placed via website",
-      billing_customer_name: orderData.addressInfo.name || "❌❌❌❌❌ FIX it early Om Dhangar",
+      billing_customer_name: orderData.addressInfo.name ,
       billing_last_name: "",
       billing_address: orderData.addressInfo.address,
       billing_address_2: "",

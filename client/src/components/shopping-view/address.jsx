@@ -81,7 +81,7 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
   function handleEditAddress(getCurrentAddress) {
     setCurrentEditedId(getCurrentAddress?._id);
     setFormData({
-      name: getCurrentAddress?.name || user?.name,
+      name: getCurrentAddress?.name || "",
       email: getCurrentAddress?.email || "",
       phone: getCurrentAddress?.phone || "",
       address: getCurrentAddress?.address || "",

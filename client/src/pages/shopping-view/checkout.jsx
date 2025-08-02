@@ -198,6 +198,7 @@ function ShoppingCheckout() {
     dispatch(createNewOrder(orderData)).then((data) => {
       console.log("orderDetails:", data);
       if (data?.payload?.success) {
+        console.log("ordered:",data.payload.success);
         if (paymentMethod === 'cod') {
           // For COD, order is created successfully
           toast({

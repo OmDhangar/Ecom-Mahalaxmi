@@ -29,7 +29,12 @@ const initialFormData = {
   salePrice: "",
   totalStock: "",
   averageReview: 0,
+  weight: "",      // 🚀 Required for Shiprocket
+  length: "",
+  breadth: "",
+  height: "",
 };
+
 
 function AdminProducts() {
   const [openCreateProductsDialog, setOpenCreateProductsDialog] =
@@ -51,7 +56,10 @@ function AdminProducts() {
       ? dispatch(
           editProduct({
             id: currentEditedId,
-            formData,
+            formData:{
+              ...formData,
+              ...(uploadedImageUrl && {image:uploadedImageUrl} ),
+            }
           })
         ).then((data) => {
           console.log(data, "edit");
@@ -67,6 +75,10 @@ function AdminProducts() {
           addNewProduct({
             ...formData,
             image: uploadedImageUrl,
+            weight: Number(formData.weight),
+            length: Number(formData.length),
+            breadth: Number(formData.breadth),
+            height: Number(formData.height),
           })
         ).then((data) => {
           if (data?.payload?.success) {

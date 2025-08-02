@@ -91,6 +91,35 @@ export const addProductFormElements = [
     type: "number",
     placeholder: "Enter total stock",
   },
+  {
+    name: "weight",
+    label: "Weight (kg)",
+    type: "number",
+    placeholder: "e.g., 0.5",
+    min: 0.01,
+  },
+  {
+    name: "length",
+    label: "Length (cm)",
+    type: "number",
+    placeholder: "e.g., 10",
+    min: 1,
+  },
+  {
+    name: "breadth",
+    label: "Breadth (cm)",
+    type: "number",
+    placeholder: "e.g., 10",
+    min: 1,
+  },
+  {
+    name: "height",
+    label: "Height (cm)",
+    type: "number",
+    placeholder: "e.g., 5",
+    min: 1,
+  },
+
 ];
 
 export const shoppingViewHeaderMenuItems = [

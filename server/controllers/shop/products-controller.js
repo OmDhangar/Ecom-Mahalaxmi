@@ -58,7 +58,7 @@ const getFilteredProducts = async (req, res) => {
 
 const getFeaturedProducts = async (req, res) => {
   try {
-    const featuredProducts = await Product.find({ featured: true });
+    const featuredProducts = await Product.find({ isFeatured: true });
 
     res.status(200).json({
       success: true,
@@ -102,15 +102,15 @@ const updateAsFeatured = async (req, res) => {
   if (!req.body || !req.params.id) {
     return res.status(400).json({ success: false, message: "Invalid request" });
   }
-  const { featured, featuredDescription } = req.body;
+  const { isFeatured, featuredDescription } = req.body;
   const productId = req.params.id;
-  console.log("controller hit")
+  console.log("controller hit",isFeatured,featuredDescription);
 
   try {
     const updated = await Product.findByIdAndUpdate(
       productId,
       {
-        featured,
+        isFeatured,
         featuredDescription,
       },
       { new: true }

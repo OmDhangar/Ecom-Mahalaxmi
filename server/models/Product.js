@@ -209,7 +209,8 @@ const ProductSchema = new mongoose.Schema({
     default: false,
   },
   featuredDescription:{
-    type:String
+    type:String,
+    default:""
   },
   // Timestamps
   createdAt: {

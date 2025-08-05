@@ -3,6 +3,8 @@ import {
   ChartNoAxesCombined,
   LayoutDashboard,
   ShoppingBasket,
+  Circle ,
+  
 } from "lucide-react";
 import { Fragment } from "react";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +29,12 @@ const adminSidebarMenuItems = [
     path: "/admin/orders",
     icon: <BadgeCheck />,
   },
+  {
+    id: "Carousel",
+    label: "Carousel",
+    path: "/admin/carousel",
+    icon: <Circle />,
+  }
 ];
 
 function MenuItems({ setOpen }) {

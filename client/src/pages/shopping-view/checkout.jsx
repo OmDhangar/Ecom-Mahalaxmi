@@ -171,8 +171,8 @@ function ShoppingCheckout() {
         quantity: singleCartItem?.quantity,
       })),
       addressInfo: {
-        name:currentSelectedAddress?.name,
-        email:currentSelectedAddress?.email,
+        name:currentSelectedAddress?.name || user?.name,
+        email:currentSelectedAddress?.email || user?.email,
         addressId: currentSelectedAddress?._id,
         address: currentSelectedAddress?.address,
         city: currentSelectedAddress?.city,
@@ -180,8 +180,6 @@ function ShoppingCheckout() {
         pincode: currentSelectedAddress?.pincode,
         phone: currentSelectedAddress?.phone,
         Landmark: currentSelectedAddress?.Landmark,
-        name: currentSelectedAddress?.name || user?.name,
-        email: user?.email
       },
       orderStatus: "pending",
       paymentMethod: paymentMethod,

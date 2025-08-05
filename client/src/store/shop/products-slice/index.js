@@ -47,7 +47,7 @@ export const fetchFeaturedProducts = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get("http://localhost:5000/api/shop/products/featured");
-      console.log(res);
+      console.log("Featured:",res);
       return res.data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch featured products");
@@ -56,14 +56,14 @@ export const fetchFeaturedProducts = createAsyncThunk(
 );
 
 
-export const markAsFeatured = createAsyncThunk("products/markAsFeatured", async ( {id, featured, featuredDescription} ) => {
-  console.log();
+export const markAsFeatured = createAsyncThunk("products/markAsFeatured", async ( {id, isFeatured, featuredDescription} ) => {
+  console.log(isFeatured,featuredDescription);
   const response = await axios.post(`http://localhost:5000/api/shop/products/${id}/feature`, { 
-    featured,
+    isFeatured,
     featuredDescription,
    });
-   console.log(response);
-  return response.data;
+   console.log(response.data.data);
+  return response.data.data;
 });
 
 export const fetchProductDetails = createAsyncThunk(

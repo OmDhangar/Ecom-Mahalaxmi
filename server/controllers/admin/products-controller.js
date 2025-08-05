@@ -93,6 +93,7 @@ const addProduct = async (req, res) => {
 
     const newlyCreatedProduct = new Product({
       image,
+      additionalImages: req.body.additionalImages || [],
       title,
       description,
       category,
@@ -249,6 +250,7 @@ const editProduct = async (req, res) => {
 
     // Update basic fields
     if (image !== undefined) findProduct.image = image;
+    if (req.body.additionalImages !== undefined) findProduct.additionalImages = req.body.additionalImages;
     findProduct.title = title || findProduct.title;
     findProduct.description = description || findProduct.description;
     findProduct.category = category || findProduct.category;

@@ -21,6 +21,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 const initialFormData = {
   image: null,
+  additionalImages: [],
   title: "",
   description: "",
   category: "",
@@ -41,8 +42,11 @@ function AdminProducts() {
     useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [uploadedImageUrls, setUploadedImageUrls] = useState([]);
   const [imageLoadingState, setImageLoadingState] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState([]);
   const [currentEditedId, setCurrentEditedId] = useState(null);
 
   const { productList } = useSelector((state) => state.adminProducts);
@@ -52,14 +56,18 @@ function AdminProducts() {
   function onSubmit(event) {
     event.preventDefault();
 
+    // Prepare the form data with main image and additional images
+    const preparedFormData = {
+      ...formData,
+      ...(uploadedImageUrl && { image: uploadedImageUrl }),
+      additionalImages: uploadedImageUrls.length > 0 ? uploadedImageUrls : formData.additionalImages
+    };
+
     currentEditedId !== null
       ? dispatch(
           editProduct({
             id: currentEditedId,
-            formData:{
-              ...formData,
-              ...(uploadedImageUrl && {image:uploadedImageUrl} ),
-            }
+            formData: preparedFormData
           })
         ).then((data) => {
           console.log(data, "edit");
@@ -69,12 +77,17 @@ function AdminProducts() {
             setFormData(initialFormData);
             setOpenCreateProductsDialog(false);
             setCurrentEditedId(null);
+            setImageFile(null);
+            setImageFiles([]);
+            setUploadedImageUrl("");
+            setUploadedImageUrls([]);
+            setImageLoadingState(false);
+            setImageLoadingStates([]);
           }
         })
       : dispatch(
           addNewProduct({
-            ...formData,
-            image: uploadedImageUrl,
+            ...preparedFormData,
             weight: Number(formData.weight),
             length: Number(formData.length),
             breadth: Number(formData.breadth),
@@ -85,9 +98,14 @@ function AdminProducts() {
             dispatch(fetchAllProducts());
             setOpenCreateProductsDialog(false);
             setImageFile(null);
+            setImageFiles([]);
+            setUploadedImageUrl("");
+            setUploadedImageUrls([]);
+            setImageLoadingState(false);
+            setImageLoadingStates([]);
             setFormData(initialFormData);
             toast({
-              title: "Product add successfully",
+              title: "Product added successfully",
             });
           }
         });
@@ -128,8 +146,15 @@ const getDynamicFormControls = () => {
   }
 
   function isFormValid() {
+    if (!uploadedImageUrl) {
+      return false;
+    }
+    if (uploadedImageUrls.length === 0) {
+      return false;
+    }
+
     return Object.keys(formData)
-      .filter((currentKey) => currentKey !== "averageReview")
+      .filter((currentKey) => currentKey !== "averageReview" && currentKey !== "additionalImages")
       .map((key) => formData[key] !== "")
       .every((item) => item);
   }
@@ -182,6 +207,20 @@ const getDynamicFormControls = () => {
             setImageLoadingState={setImageLoadingState}
             imageLoadingState={imageLoadingState}
             isEditMode={currentEditedId !== null}
+            // Additional props for multiple images
+            imageFiles={imageFiles}
+            setImageFiles={setImageFiles}
+            uploadedImageUrls={uploadedImageUrls}
+            setUploadedImageUrls={setUploadedImageUrls}
+            imageLoadingStates={imageLoadingStates}
+            setImageLoadingStates={setImageLoadingStates}
+            existingImages={formData.additionalImages || []}
+            handleDeleteExistingImage={(index) => {
+              setFormData(prev => ({
+                ...prev,
+                additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+              }));
+            }}
           />
           <div className="py-6">
             <CommonForm

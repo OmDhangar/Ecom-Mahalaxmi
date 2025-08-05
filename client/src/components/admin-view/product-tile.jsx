@@ -1,5 +1,7 @@
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 import { Card, CardContent, CardFooter } from "../ui/card";
+import { ImageIcon } from "lucide-react";
 
 function AdminProductTile({
   product,
@@ -17,6 +19,12 @@ function AdminProductTile({
             alt={product?.title}
             className="w-full h-[300px] object-cover rounded-t-lg"
           />
+          {product?.additionalImages && product.additionalImages.length > 0 && (
+            <Badge className="absolute top-2 right-2 bg-primary/80 hover:bg-primary">
+              <ImageIcon className="h-3 w-3 mr-1" />
+              +{product.additionalImages.length}
+            </Badge>
+          )}
         </div>
         <CardContent>
           <h2 className="text-xl font-bold mb-2 mt-2">{product?.title}</h2>

@@ -1,4 +1,4 @@
-import { StarIcon } from "lucide-react";
+import { StarIcon, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent,DialogTitle,DialogDescription } from "../ui/dialog";
@@ -12,14 +12,20 @@ import { Label } from "../ui/label";
 import StarRatingComponent from "../common/star-rating";
 import { useEffect, useState } from "react";
 import { addReview, getReviews } from "@/store/shop/review-slice";
+import { Badge } from "../ui/badge";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);
+  
+  // Combine main image with additional images for the carousel
+  const allProductImages = productDetails ? 
+    [productDetails.image, ...(productDetails.additionalImages || []).filter((img) => img !== productDetails.image)] : [];
 
   const { toast } = useToast();
 
@@ -67,11 +73,35 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     });
   }
 
+  // Navigate to the next image in the carousel
+  const nextImage = () => {
+    if (allProductImages.length > 1) {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === allProductImages.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  };
+
+  // Navigate to the previous image in the carousel
+  const prevImage = () => {
+    if (allProductImages.length > 1) {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === 0 ? allProductImages.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  // Go to a specific image by index
+  const goToImage = (index) => {
+    setCurrentImageIndex(index);
+  };
+
   function handleDialogClose() {
     setOpen(false);
     dispatch(setProductDetails());
     setRating(0);
     setReviewMsg("");
+    setCurrentImageIndex(0); // Reset image index when closing dialog
   }
 
   function handleAddReview() {
@@ -117,13 +147,61 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             Detailed view and reviews for {productDetails?.title}
           </DialogDescription>
         <div className="relative overflow-hidden rounded-lg">
-          <img
-            src={productDetails?.image}
-            alt={productDetails?.title}
-            width={600}
-            height={600}
-            className="aspect-square w-full object-cover"
-          />
+          {/* Main image carousel */}
+          <div className="relative aspect-square w-full">
+            {allProductImages.length > 0 ? (
+              <img
+                src={allProductImages[currentImageIndex]}
+                alt={`${productDetails?.title} - Image ${currentImageIndex + 1}`}
+                width={600}
+                height={600}
+                className="aspect-square w-full object-cover rounded-lg"
+              />
+            ) : (
+              <div className="aspect-square w-full bg-gray-100 flex items-center justify-center rounded-lg">
+                <ImageIcon className="w-16 h-16 text-gray-400" />
+              </div>
+            )}
+            
+            {/* Navigation arrows - only show if there are multiple images */}
+            {allProductImages.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow transition-colors z-10"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow transition-colors z-10"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+          
+          {/* Thumbnail navigation - only show if there are multiple images */}
+          {allProductImages.length > 1 && (
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+              {allProductImages.map((imgSrc, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToImage(index)}
+                  className={`relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border-2 ${currentImageIndex === index ? 'border-primary' : 'border-transparent'}`}
+                >
+                  <img 
+                    src={imgSrc} 
+                    alt={`Thumbnail ${index + 1}`} 
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="">
           <div>

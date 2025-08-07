@@ -53,63 +53,88 @@ function AdminProducts() {
   const dispatch = useDispatch();
   const { toast } = useToast();
 
+  function resetFormState() {
+  setOpenCreateProductsDialog(false);
+  setImageFile(null);
+  setImageFiles([]);
+  setUploadedImageUrl("");
+  setUploadedImageUrls([]);
+  setImageLoadingState(false);
+  setImageLoadingStates([]);
+  setFormData(initialFormData);
+  setCurrentEditedId(null);
+}
+
+
   function onSubmit(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    // Prepare the form data with main image and additional images
-    const preparedFormData = {
-      ...formData,
-      ...(uploadedImageUrl && { image: uploadedImageUrl }),
-      additionalImages: uploadedImageUrls.length > 0 ? uploadedImageUrls : formData.additionalImages
-    };
+  const missingFields = [];
 
-    currentEditedId !== null
-      ? dispatch(
-          editProduct({
-            id: currentEditedId,
-            formData: preparedFormData
-          })
-        ).then((data) => {
-          console.log(data, "edit");
-
-          if (data?.payload?.success) {
-            dispatch(fetchAllProducts());
-            setFormData(initialFormData);
-            setOpenCreateProductsDialog(false);
-            setCurrentEditedId(null);
-            setImageFile(null);
-            setImageFiles([]);
-            setUploadedImageUrl("");
-            setUploadedImageUrls([]);
-            setImageLoadingState(false);
-            setImageLoadingStates([]);
-          }
-        })
-      : dispatch(
-          addNewProduct({
-            ...preparedFormData,
-            weight: Number(formData.weight),
-            length: Number(formData.length),
-            breadth: Number(formData.breadth),
-            height: Number(formData.height),
-          })
-        ).then((data) => {
-          if (data?.payload?.success) {
-            dispatch(fetchAllProducts());
-            setOpenCreateProductsDialog(false);
-            setImageFile(null);
-            setImageFiles([]);
-            setUploadedImageUrl("");
-            setUploadedImageUrls([]);
-            setImageLoadingState(false);
-            setImageLoadingStates([]);
-            setFormData(initialFormData);
-            toast({
-              title: "Product added successfully",
-            });
-          }
-        });
+  // Check image
+  if (!uploadedImageUrl) {
+    missingFields.push("Main Image");
   }
+
+  if (uploadedImageUrls.length === 0) {
+    missingFields.push("Additional Images");
+  }
+
+  // Check form fields
+  Object.entries(formData).forEach(([key, value]) => {
+    if (
+      key !== "averageReview" &&
+      key !== "additionalImages" &&
+      key !== "featuredDescription" &&
+
+      value === ""
+    ) {
+      missingFields.push(key);
+    }
+  });
+
+  if (missingFields.length > 0) {
+    toast({
+      title: "Please complete all required fields",
+      description: `Missing: ${missingFields.join(", ")}`,
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Prepare final form data
+  const preparedFormData = {
+    ...formData,
+    ...(uploadedImageUrl && { image: uploadedImageUrl }),
+    additionalImages: uploadedImageUrls.length > 0 ? uploadedImageUrls : formData.additionalImages
+  };
+
+  if (currentEditedId !== null) {
+    dispatch(editProduct({ id: currentEditedId, formData: preparedFormData }))
+      .then((data) => {
+        if (data?.payload?.success) {
+          dispatch(fetchAllProducts());
+          resetFormState();
+        }
+      });
+  } else {
+    dispatch(addNewProduct({
+      ...preparedFormData,
+      weight: Number(formData.weight),
+      length: Number(formData.length),
+      breadth: Number(formData.breadth),
+      height: Number(formData.height),
+    }))
+    .then((data) => {
+      if (data?.payload?.success) {
+        dispatch(fetchAllProducts());
+        resetFormState();
+        toast({ title: "Product added successfully" });
+      }
+    });
+  }
+}
+
 
 const getDynamicFormControls = () => {
   return baseFormElements.map((field) => {
@@ -202,7 +227,7 @@ const getDynamicFormControls = () => {
           <ProductImageUpload
             imageFile={imageFile}
             setImageFile={setImageFile}
-            uploadedImageUrl={uploadedImageUrl}
+            uploadedImageUrl={uploadedImageUrl || currentEditedId !== null ? formData.image:""}
             setUploadedImageUrl={setUploadedImageUrl}
             setImageLoadingState={setImageLoadingState}
             imageLoadingState={imageLoadingState}
@@ -229,7 +254,6 @@ const getDynamicFormControls = () => {
               setFormData={setFormData}
               buttonText={currentEditedId !== null ? "Edit" : "Add"}
               formControls={getDynamicFormControls()}
-              isBtnDisabled={!isFormValid()}
             />
           </div>
         </SheetContent>

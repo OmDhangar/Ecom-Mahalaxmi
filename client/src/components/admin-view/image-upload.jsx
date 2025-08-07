@@ -11,6 +11,7 @@ import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 
+
 function ProductImageUpload({
   imageFile,
   setImageFile,
@@ -35,10 +36,58 @@ function ProductImageUpload({
 
   const MAX_IMAGES = 4; // 1 main + 3 additional
 
+  function extractPublicIdFromUrl(url) {
+  try {
+    // Parse the URL to extract the public_id
+    const urlParts = url.split('/');
+    const uploadIndex = urlParts.findIndex(part => part === 'upload');
+    
+    if (uploadIndex === -1) return null;
+    
+    // Get everything after 'upload' and before file extension
+    const pathAfterUpload = urlParts.slice(uploadIndex + 2).join('/');
+    const publicId = pathAfterUpload.split('.')[0];
+    
+    return publicId;
+  } catch (error) {
+    console.error('Error extracting public_id:', error);
+    return null;
+  }
+}
+
+// Add this function to delete image from Cloudinary
+async function deleteImageFromCloudinary(imageUrl) {
+  try {
+    const publicId = extractPublicIdFromUrl(imageUrl);
+    
+    if (!publicId) {
+      console.error('Could not extract public_id from URL:', imageUrl);
+      return false;
+    }
+    
+    const response = await axios.post('http://localhost:5000/api/admin/products/delete-image', {
+      public_id: publicId
+    });
+    
+    return response.data.success;
+  } catch (error) {
+    console.error('Error deleting image from Cloudinary:', error);
+    return false;
+  }
+}
+
   useEffect(() => {
     const totalImages = (uploadedImageUrls?.length || 0) + (existingImages?.length || 0);
     setMaxImagesReached(totalImages >= MAX_IMAGES - 1); // exclude main image
   }, [uploadedImageUrls, existingImages]);
+
+  // Prefill main image in edit mode
+  // useEffect(() => {
+  //   if (isEditMode && existingImages.length > 0 && !uploadedImageUrl) {
+  //     setUploadedImageUrl(existingImages[0]); // assuming first image is the main one
+  //   }
+  // }, [isEditMode, existingImages, uploadedImageUrl]);
+
 
   async function handleMainImageUpload(event) {
     const file = event.target.files[0];
@@ -161,15 +210,14 @@ function ProductImageUpload({
             className="hidden"
             ref={mainImageInputRef}
             onChange={handleMainImageUpload}
-            disabled={isEditMode}
           />
           <Label
             htmlFor="main-image-upload"
             className={`
-              ${isEditMode ? "cursor-not-allowed" : "cursor-pointer"}
+              cursor-pointer
               flex items-center gap-2 bg-gray-100 px-4 py-2 rounded hover:bg-gray-200
             `}
-            onClick={() => !isEditMode && mainImageInputRef.current?.click()}
+            onClick={() => mainImageInputRef.current?.click()}
           >
             <UploadCloudIcon className="w-4 h-4" />
             {uploadedImageUrl ? "Change Main Image" : "Upload Main Image"}
@@ -180,22 +228,24 @@ function ProductImageUpload({
           ) : uploadedImageUrl ? (
             <div className="relative group border rounded-md overflow-hidden">
               <img src={uploadedImageUrl} alt="Main" className="w-24 h-24 object-cover" />
-              {!isEditMode && (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => {
-                    setUploadedImageUrl("");
-                    setImageFile(null);
-                    if (mainImageInputRef.current) {
-                      mainImageInputRef.current.value = "";
-                    }
-                  }}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => {
+                  // Delete from Cloudinary first
+                  if (uploadedImageUrl) {
+                    deleteImageFromCloudinary(uploadedImageUrl);
+                  }
+                  setUploadedImageUrl("");
+                  setImageFile(null);
+                  if (mainImageInputRef.current) {
+                    mainImageInputRef.current.value = "";
+                  }
+                }}
+              >
+                <XIcon className="w-4 h-4" />
+              </Button>
             </div>
           ) : null}
         </div>
@@ -203,7 +253,7 @@ function ProductImageUpload({
 
       {/* 🟩 Additional Images */}
       <div className="flex justify-between items-center mb-2">
-        <Label className="text-lg font-semibold">Additional Images</Label>
+        <Label className="text-lg font-semibold">Additional Images {isEditMode ? "(optional)" : "*"} </Label>
         <Badge variant={maxImagesReached ? "destructive" : "outline"}>
           {(uploadedImageUrls?.length || 0) + (existingImages?.length || 0)}/{MAX_IMAGES - 1}
         </Badge>
@@ -214,16 +264,18 @@ function ProductImageUpload({
           {existingImages.map((image, index) => (
             <div key={`existing-${index}`} className="relative group border rounded-md overflow-hidden">
               <img src={image} alt={`Image ${index + 1}`} className="w-full h-24 object-cover" />
-              {!isEditMode && (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                  onClick={() => handleDeleteExistingImage(index)}
-                >
-                  <Trash2Icon className="w-4 h-4" />
-                </Button>
-              )}
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
+                onClick={() => {
+                  // Delete from Cloudinary first
+                  deleteImageFromCloudinary(image);
+                  handleDeleteExistingImage(index);
+                }}
+              >
+                <Trash2Icon className="w-4 h-4" />
+              </Button>
             </div>
           ))}
         </div>
@@ -242,7 +294,11 @@ function ProductImageUpload({
                     variant="destructive"
                     size="icon"
                     className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                    onClick={() => handleRemoveImage(index)}
+                    onClick={() => {
+                      // Delete from Cloudinary first
+                      deleteImageFromCloudinary(url);
+                      handleRemoveImage(index);
+                    }}
                   >
                     <XIcon className="w-4 h-4" />
                   </Button>
@@ -258,7 +314,7 @@ function ProductImageUpload({
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={`
-          ${isEditMode || maxImagesReached ? "opacity-50 cursor-not-allowed" : ""}
+          ${maxImagesReached ? "opacity-50 cursor-not-allowed" : ""}
           border-2 border-dashed rounded-lg p-4
         `}
       >
@@ -269,14 +325,14 @@ function ProductImageUpload({
           className="hidden"
           ref={inputRef}
           onChange={handleImageFileChange}
-          disabled={isEditMode || maxImagesReached}
+          disabled={maxImagesReached}
         />
         <Label
           className={`
-            ${isEditMode || maxImagesReached ? "cursor-not-allowed" : "cursor-pointer"}
+            ${maxImagesReached ? "cursor-not-allowed" : "cursor-pointer"}
             flex flex-col items-center justify-center h-24
           `}
-          onClick={() => !isEditMode && !maxImagesReached && inputRef.current?.click()}
+          onClick={() => !maxImagesReached && inputRef.current?.click()}
         >
           <UploadCloudIcon className="w-8 h-8 text-muted-foreground mb-2" />
           <span className="text-center text-sm">
@@ -290,5 +346,6 @@ function ProductImageUpload({
     </div>
   );
 }
+
 
 export default ProductImageUpload;

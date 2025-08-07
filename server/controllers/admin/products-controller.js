@@ -1,4 +1,4 @@
-const { imageUploadUtil } = require("../../helpers/cloudinary");
+const { imageUploadUtil,cloudinary } = require("../../helpers/cloudinary");
 const Product = require("../../models/Product");
 
 const handleImageUpload = async (req, res) => {
@@ -349,6 +349,15 @@ const deleteProduct = async (req, res) => {
         message: "Product not found",
       });
     }
+    // Delete images from Cloudinary
+    if (product.image) {
+      await deleteImageFromCloudinary(product.image);
+    }
+    if (product.additionalImages) {
+      for (const image of product.additionalImages) {
+        await deleteImageFromCloudinary(image);
+      }
+    }
 
     // Check if product is part of any pending orders (optional check)
     // You can implement this check if needed
@@ -501,6 +510,84 @@ const bulkUpdateProducts = async (req, res) => {
     });
   }
 };
+const deleteImageFromCloudinary = async (reqOrUrl, res) => {
+  try {
+    let publicId;
+    
+    // Check if this is an API call or a direct function call
+    if (typeof reqOrUrl === 'string') {
+      // Direct call with URL string
+      publicId = extractPublicIdFromUrl(reqOrUrl);
+    } else {
+      // API call with req object
+      const { public_id } = reqOrUrl.body;
+      publicId = public_id;
+    }
+    
+    if (!publicId) {
+      console.error('Public ID is required or could not be extracted from URL');
+      if (res) {
+        return res.status(400).json({
+          success: false,
+          message: "Public ID is required"
+        });
+      }
+      return false;
+    }
+    
+    // Use Cloudinary's destroy method to delete the image
+    const result = await cloudinary.uploader.destroy(publicId);
+    
+    if (result.result === 'ok') {
+      if (res) {
+        return res.status(200).json({
+          success: true,
+          message: "Image deleted successfully"
+        });
+      }
+      return true;
+    } else {
+      console.error('Failed to delete image:', result);
+      if (res) {
+        return res.status(400).json({
+          success: false,
+          message: "Failed to delete image",
+          error: result
+        });
+      }
+      return false;
+    }
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    if (res) {
+      return res.status(500).json({
+        success: false,
+        message: "Error occurred while deleting image",
+        error: error.message
+      });
+    }
+    return false;
+  }
+};
+
+function extractPublicIdFromUrl(url) {
+  try {
+    const urlParts = url.split('/');
+    const uploadIndex = urlParts.findIndex(part => part === 'upload');
+    
+    if (uploadIndex === -1) return null;
+    
+    // Get everything after 'upload' and before file extension
+    const pathAfterUpload = urlParts.slice(uploadIndex + 2).join('/');
+    const publicId = pathAfterUpload.split('.')[0];
+    
+    return publicId;
+  } catch (error) {
+    console.error('Error extracting public_id:', error);
+    return null;
+  }
+}
+
 
 module.exports = {
   handleImageUpload,
@@ -510,5 +597,6 @@ module.exports = {
   deleteProduct,
   getProductBySKU,
   updateStock,
+  deleteImageFromCloudinary,
   bulkUpdateProducts,
 };

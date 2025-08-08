@@ -147,7 +147,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
           Detailed view and reviews for {productDetails?.title}
         </DialogDescription>
         
-        {/* Mobile Header */}
+        {/* Mobile Header - Fixed at top */}
         <div className="sticky top-0 z-20 bg-white border-b px-4 py-3 flex items-center justify-between sm:hidden">
           <Button
             variant="ghost"
@@ -177,11 +177,12 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
           <X className="w-5 h-5" />
         </Button>
 
-        <div className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6">
+        {/* Main Content Container - Scrollable on mobile */}
+        <div className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6 h-full sm:h-auto overflow-y-auto sm:overflow-visible">
           {/* Product Images Section */}
-          <div className="relative">
-            {/* Main Image */}
-            <div className="relative aspect-square w-full bg-gray-50">
+          <div className="relative flex-shrink-0">
+            {/* Main Image - Smaller on mobile */}
+            <div className="relative aspect-square w-full bg-gray-50 sm:aspect-square">
               {allProductImages.length > 0 ? (
                 <img
                   src={allProductImages[currentImageIndex]}
@@ -243,7 +244,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             
             {/* Mobile Thumbnail Dots */}
             {allProductImages.length > 1 && (
-              <div className="flex justify-center gap-2 mt-4 sm:hidden">
+              <div className="flex justify-center gap-2 mt-3 pb-3 sm:hidden">
                 {allProductImages.map((_, index) => (
                   <button
                     key={index}
@@ -257,8 +258,8 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             )}
           </div>
 
-          {/* Product Info Section */}
-          <div className="flex-1 p-4 sm:p-0">
+          {/* Product Info Section - Scrollable content */}
+          <div className="flex-1 p-4 sm:p-0 min-h-0">
             {/* Product Title & Description */}
             <div className="mb-4">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-2">
@@ -283,14 +284,14 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             </div>
 
             {/* Price Section */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <div className="flex items-baseline gap-3">
                 {productDetails?.salePrice > 0 ? (
                   <>
-                    <span className="text-2xl sm:text-3xl font-bold text-green-600">
+                    <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
                       ₹{productDetails?.salePrice}
                     </span>
-                    <span className="text-lg text-gray-500 line-through">
+                    <span className="text-base sm:text-lg text-gray-500 line-through">
                       ₹{productDetails?.price}
                     </span>
                     <Badge variant="destructive" className="text-xs">
@@ -298,7 +299,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                     </Badge>
                   </>
                 ) : (
-                  <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                     ₹{productDetails?.price}
                   </span>
                 )}
@@ -311,7 +312,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             </div>
 
             {/* Stock Status */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               {productDetails?.totalStock > 0 ? (
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -326,16 +327,41 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 </div>
               )}
             </div>
-
-            {/* Add to Cart Button */}
-            <div className="mb-6">
+            {/* Mobile Phone Specifications */}
+            {productDetails?.category === 'electronics' && (
+                  <div className="mt-4">
+                    <h3 className="font-bold text-lg mb-2">Specifications</h3>
+                    <div className="grid gap-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Battery Health</span>
+                        <span>{productDetails.specifications?.batteryHealth}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Condition</span>
+                        <span>{productDetails.specifications?.condition}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+             {productDetails?.category === 'fashion' && (
+                <div className="mt-4">
+                  <h3 className="font-bold text-lg mb-2">Available Sizes</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {productDetails.specifications?.sizes.map(size => (
+                      <Badge key={size} variant="outline">{size}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}    
+            {/* Add to Cart Button - Sticky on mobile */}
+            <div className="mb-4 sm:mb-6 sticky bottom-4 sm:static bg-white sm:bg-transparent p-0 sm:p-0 z-10">
               {productDetails?.totalStock === 0 ? (
                 <Button className="w-full py-3 text-base bg-gray-400 cursor-not-allowed" disabled>
                   Out of Stock
                 </Button>
               ) : (
                 <Button
-                  className="w-full py-3 text-base bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                  className="w-full py-3 text-base bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg sm:shadow-none"
                   onClick={() =>
                     handleAddToCart(
                       productDetails?._id,
@@ -348,10 +374,10 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               )}
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-4 sm:my-6" />
 
             {/* Reviews Section */}
-            <div>
+            <div className="pb-4 sm:pb-0">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold">Customer Reviews</h2>
                 <Button
@@ -402,7 +428,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               )}
 
               {/* Reviews List */}
-              <div className="max-h-80 sm:max-h-96 overflow-y-auto space-y-4">
+              <div className="max-h-60 sm:max-h-80 lg:max-h-96 overflow-y-auto space-y-4">
                 {reviews && reviews.length > 0 ? (
                   reviews.map((reviewItem, index) => (
                     <div key={index} className="flex gap-3 pb-4 border-b border-gray-100 last:border-b-0">

@@ -30,6 +30,9 @@ const initialFormData = {
   salePrice: "",
   totalStock: "",
   averageReview: 0,
+  batteryHealth:"",
+  condition:"",
+  sizes:[],
   weight: "",      // 🚀 Required for Shiprocket
   length: "",
   breadth: "",
@@ -38,8 +41,7 @@ const initialFormData = {
 
 
 function AdminProducts() {
-  const [openCreateProductsDialog, setOpenCreateProductsDialog] =
-    useState(false);
+  const [openCreateProductsDialog, setOpenCreateProductsDialog] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [imageFile, setImageFile] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
@@ -64,7 +66,17 @@ function AdminProducts() {
   setFormData(initialFormData);
   setCurrentEditedId(null);
 }
+  useEffect(() => {
+    if (uploadedImageUrl) {
+      setFormData((prev) => ({ ...prev, image: uploadedImageUrl }));
+    }
+  }, [uploadedImageUrl]);
 
+
+
+
+  console.log("image file",uploadedImageUrl);
+  console.log("additional image file",uploadedImageUrls);
 
   function onSubmit(event) {
   event.preventDefault();
@@ -103,10 +115,18 @@ function AdminProducts() {
   }
 
   // Prepare final form data
-  const preparedFormData = {
+ const preparedFormData = {
     ...formData,
-    ...(uploadedImageUrl && { image: uploadedImageUrl }),
-    additionalImages: uploadedImageUrls.length > 0 ? uploadedImageUrls : formData.additionalImages
+    image: uploadedImageUrl,
+    additionalImages: uploadedImageUrls,
+    // Convert numeric fields
+    price: Number(formData.price),
+    salePrice: Number(formData.salePrice),
+    totalStock: Number(formData.totalStock),
+    weight: Number(formData.weight),
+    length: Number(formData.length),
+    breadth: Number(formData.breadth),
+    height: Number(formData.height),
   };
 
   if (currentEditedId !== null) {
@@ -118,13 +138,8 @@ function AdminProducts() {
         }
       });
   } else {
-    dispatch(addNewProduct({
-      ...preparedFormData,
-      weight: Number(formData.weight),
-      length: Number(formData.length),
-      breadth: Number(formData.breadth),
-      height: Number(formData.height),
-    }))
+    console.log(preparedFormData);
+    dispatch(addNewProduct(preparedFormData))
     .then((data) => {
       if (data?.payload?.success) {
         dispatch(fetchAllProducts());
@@ -158,8 +173,13 @@ const getDynamicFormControls = () => {
     }
 
     return field;
-  });
+  }).filter((field)=> !field.showWhen || field.showWhen(formData))
 };
+
+//  // Add category-specific form elements
+//   const visibleFields = addProductFormElements.filter(field => 
+//     !field.showWhen || field.showWhen(formData)
+//   );
 
 
   function handleDelete(getCurrentProductId) {
@@ -227,7 +247,7 @@ const getDynamicFormControls = () => {
           <ProductImageUpload
             imageFile={imageFile}
             setImageFile={setImageFile}
-            uploadedImageUrl={uploadedImageUrl || currentEditedId !== null ? formData.image:""}
+            uploadedImageUrl={ currentEditedId ? formData.image :uploadedImageUrl}
             setUploadedImageUrl={setUploadedImageUrl}
             setImageLoadingState={setImageLoadingState}
             imageLoadingState={imageLoadingState}
@@ -235,7 +255,7 @@ const getDynamicFormControls = () => {
             // Additional props for multiple images
             imageFiles={imageFiles}
             setImageFiles={setImageFiles}
-            uploadedImageUrls={uploadedImageUrls}
+            uploadedImageUrls={currentEditedId ? formData.additionalImages:uploadedImageUrls}
             setUploadedImageUrls={setUploadedImageUrls}
             imageLoadingStates={imageLoadingStates}
             setImageLoadingStates={setImageLoadingStates}

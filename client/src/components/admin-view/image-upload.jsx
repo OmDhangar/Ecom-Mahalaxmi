@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
+import { toast } from "../ui/use-toast";
 
 
 function ProductImageUpload({
@@ -19,20 +20,20 @@ function ProductImageUpload({
   setUploadedImageUrl,
   setImageLoadingState,
   imageLoadingState,
+  isEditMode,
   imageFiles,
   setImageFiles,
-  imageLoadingStates,
   uploadedImageUrls,
   setUploadedImageUrls,
+  imageLoadingStates,
   setImageLoadingStates,
-  isEditMode,
-  isCustomStyling = false,
   existingImages = [],
   handleDeleteExistingImage,
 }) {
   const inputRef = useRef(null);
   const mainImageInputRef = useRef(null);
   const [maxImagesReached, setMaxImagesReached] = useState(false);
+  const [formData ,setFormData] = useState();
 
   const MAX_IMAGES = 4; // 1 main + 3 additional
 
@@ -93,6 +94,7 @@ async function deleteImageFromCloudinary(imageUrl) {
     const file = event.target.files[0];
     if (!file) return;
 
+    console.log("MAin file:",file);
     setImageFile(file);
     setImageLoadingState(true);
 
@@ -106,10 +108,15 @@ async function deleteImageFromCloudinary(imageUrl) {
       );
 
       if (response?.data?.success) {
+        console.log(response.data.result.url);
         setUploadedImageUrl(response.data.result.url);
       }
     } catch (error) {
       console.error("Error uploading main image:", error);
+      toast({
+        title:"Error Uploading image",
+        variant:"destructive"
+      })
     } finally {
       setImageLoadingState(false);
     }
@@ -194,7 +201,7 @@ async function deleteImageFromCloudinary(imageUrl) {
   }, [imageFiles]);
 
   return (
-    <div className={`w-full mt-4 ${isCustomStyling ? "" : "max-w-md mx-auto"}`}>
+    <div className={`w-full mt-4 ${ "max-w-md mx-auto"}`}>
       
       {/* 🟦 Main Product Image */}
       <div className="mb-6 p-4 border rounded-lg bg-gray-50">

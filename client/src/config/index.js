@@ -38,6 +38,25 @@ export const loginFormControls = [
     type: "password",
   },
 ];
+export const mobileConditionOptions = [
+  { id: "new", label: "New" },
+  { id: "refurbished", label: "Refurbished" },
+  { id: "Second-hand", label: "Second-hand" },
+];
+
+// Add clothing size options
+export const clothingSizeOptions = [
+  { id: "XS", label: "XS" },
+  { id: "S", label: "S" },
+  { id: "M", label: "M" },
+  { id: "L", label: "L" },
+  { id: "XL", label: "XL" },
+  { id: "XXL", label: "XXL" },
+  { id: "3XL", label: "3XL" },
+  { id: "4XL", label: "4XL" },
+  { id: "5XL", label: "5XL" },
+];
+
 
 export const addProductFormElements = [
   {
@@ -64,6 +83,34 @@ export const addProductFormElements = [
       { id: "farming", label: "Farming" },
     ],
   },
+  //Dynamic fields based on category
+  {
+    label:"Battery Health",
+    name: "batteryHealth",
+    componentType: "input",
+    type:"text",
+    placeholder: "Enter Battery health percentage",
+    showWhen: (formData)=> formData.category == "electronics"
+  },
+  {
+    label: "Condition",
+    name: "condition",
+    componentType: "select",
+    options: [
+      { id: "new", label: "New" },
+      { id: "refurbished", label: "Refurbished" },
+      { id: "second-hand", label: "Second-hand" }
+    ],
+    showWhen: (formData) => formData.category === "electronics"
+  },
+  {
+    label: "Sizes",
+    name: "sizes",
+    componentType: "multiselect",
+    options: clothingSizeOptions,
+    showWhen: (formData) => formData.category === "fashion"
+  },
+
   {
     label: "Brand",
     name: "brand",
@@ -120,6 +167,7 @@ export const addProductFormElements = [
     min: 1,
   },
 
+
 ];
 
 export const shoppingViewHeaderMenuItems = [
@@ -153,6 +201,11 @@ export const brandOptionsMap = {
   apple: "Apple",
   lg: "LG",
   panasonic: "Panasonic",
+  xiaomi: "Xiaomi",
+  oneplus: "OnePlus",
+  nokia: "Nokia",
+  motorola: "Motorola",
+  google: "Google",
   // Toys
   lego: "LEGO",
   nerf: "NERF",
@@ -188,6 +241,11 @@ export const filterOptions = {
       { id: "apple", label: "Apple" },
       { id: "lg", label: "LG" },
       { id: "panasonic", label: "Panasonic" },
+      { id: "xiaomi", label: "Xiaomi" },
+      { id: "oneplus", label: "OnePlus" },
+      { id: "nokia", label: "Nokia" },
+      { id: "motorola", label: "Motorola" },
+      { id: "google", label: "Google" },
     ],
     toys: [
       { id: "lego", label: "LEGO" },

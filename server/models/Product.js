@@ -29,6 +29,48 @@ const ProductSchema = new mongoose.Schema({
     trim: true,
   },
   
+batteryHealth: {
+    type: String,
+    trim: true,
+    required: function () {
+      return this.category === 'electronics';
+    },
+    validate: {
+      validator: function(v) {
+        if (this.category === 'electronics') {
+          return v && v.length > 0;
+        }
+        return true;
+      },
+      message: 'Battery health is required for electronics products'
+    }
+  },
+
+
+condition: {
+    type: String,
+    enum: ['new', 'refurbished', 'second-hand'],
+    default: 'new',
+    required: function () {
+      return this.category === 'electronics';
+    }
+  },
+
+sizes: [{
+    type: String,
+    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
+    validate: {
+      validator: function(v) {
+        if (this.category === 'fashion') {
+          return Array.isArray(v) && v.length > 0;
+        }
+        return true;
+      },
+      message: 'At least one size is required for fashion products'
+    }
+  }],
+
+
   // Pricing information
   price: {
     type: Number,
@@ -227,18 +269,6 @@ const ProductSchema = new mongoose.Schema({
     type: String,
   }],
   
-  // Product specifications
-  specifications: [{
-    key: {
-      type: String,
-      required: true,
-    },
-    value: {
-      type: String,
-      required: true,
-    }
-  }],
-  
   // Discount information
   discountType: {
     type: String,
@@ -356,6 +386,20 @@ ProductSchema.pre('save', function(next) {
   if (this.reviews && this.reviews.length > 0) {
     const totalRating = this.reviews.reduce((sum, review) => sum + review.rating, 0);
     this.averageReview = totalRating / this.reviews.length;
+  }
+   // Category-specific validations
+  if (this.category === 'electronics') {
+    if (!this.batteryHealth || !this.condition) {
+      next(new Error('Battery health and condition are required for electronics products'));
+      return;
+    }
+  }
+
+  if (this.category === 'fashion') {
+    if (!Array.isArray(this.sizes) || this.sizes.length === 0) {
+      next(new Error('Sizes are required for fashion products'));
+      return;
+    }
   }
   
   next();

@@ -60,9 +60,13 @@ const addProduct = async (req, res) => {
       careInstructions,
       warranty,
       returnPolicy,
+      batteryHealth,
+      condition,
+      sizes
     } = req.body;
 
-    console.log(averageReview, "averageReview");
+    console.log(req.body, "averageReview");
+
 
     // Generate SKU if not provided
     const productSKU = sku || generateSKU(title, category, brand);
@@ -91,36 +95,66 @@ const addProduct = async (req, res) => {
       });
     }
 
+    // Construct specifications object manually based on category
+    let finalSpecifications = {};
+
+    if (category === 'electronics') {
+      if (!batteryHealth || !condition) {
+        return res.status(400).json({
+          success: false,
+          message: 'Battery health and condition are required for electronics',
+        });
+      }
+      finalSpecifications = {
+        batteryHealth,
+        condition,
+      };
+    }
+
+    if (category === 'fashion') {
+      if (!sizes || sizes.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Sizes are required for fashion items',
+        });
+      }
+      finalSpecifications = {
+        sizes,
+      };
+    }
+
+
     const newlyCreatedProduct = new Product({
-      image,
-      additionalImages: req.body.additionalImages || [],
-      title,
-      description,
-      category,
-      brand,
-      price,
-      salePrice,
-      totalStock,
-      averageReview,
-      // Shipping information
-      weight: parseFloat(weight),
-      length: parseFloat(length),
-      breadth: parseFloat(breadth),
-      height: parseFloat(height),
-      sku: productSKU,
-      hsn: hsn || "0000",
-      tax: parseFloat(tax) || 0,
-      // Additional details
-      manufacturer: manufacturer || brand,
-      countryOfOrigin: countryOfOrigin || "India",
-      materialComposition,
-      careInstructions,
-      warranty,
-      returnPolicy,
-      // Auto-generated fields
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  image,
+  additionalImages: req.body.additionalImages || [],
+  title,
+  description,
+  category,
+  brand,
+  price,
+  salePrice,
+  totalStock,
+  averageReview,
+  weight: parseFloat(weight),
+  length: parseFloat(length),
+  breadth: parseFloat(breadth),
+  height: parseFloat(height),
+  sku: productSKU,
+  hsn: hsn || "0000",
+  tax: parseFloat(tax) || 0,
+  manufacturer: manufacturer || brand,
+  countryOfOrigin: countryOfOrigin || "India",
+  materialComposition,
+  careInstructions,
+  warranty,
+  returnPolicy,
+  batteryHealth,  // Direct field
+  condition,      // Direct field
+  sizes, 
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
 
     await newlyCreatedProduct.save();
     res.status(201).json({
@@ -227,6 +261,7 @@ const editProduct = async (req, res) => {
       careInstructions,
       warranty,
       returnPolicy,
+      specifications,
     } = req.body;
 
     let findProduct = await Product.findById(id);
@@ -316,6 +351,7 @@ const editProduct = async (req, res) => {
     findProduct.careInstructions = careInstructions || findProduct.careInstructions;
     findProduct.warranty = warranty || findProduct.warranty;
     findProduct.returnPolicy = returnPolicy || findProduct.returnPolicy;
+    findProduct.specifications = specifications || findProduct.specifications;
 
     // Update timestamp
     findProduct.updatedAt = new Date();

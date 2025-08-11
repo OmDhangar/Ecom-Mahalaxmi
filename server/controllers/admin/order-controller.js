@@ -33,6 +33,24 @@ const getAllOrdersOfAllUsers = async (req, res) => {
   }
 };
 
+const getShippingFailedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ orderStatus: "shipping_failed" })
+                              .sort({ orderDate: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: orders
+    });
+  } catch (error) {
+    console.error("Error fetching shipping failed orders:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching shipping failed orders"
+    });
+  }
+};
+
 const getOrderDetailsForAdmin = async (req, res) => {
   try {
     const { id } = req.params;
@@ -89,6 +107,7 @@ const updateOrderStatus = async (req, res) => {
 };
 
 module.exports = {
+  getShippingFailedOrders,
   getAllOrdersOfAllUsers,
   getOrderDetailsForAdmin,
   updateOrderStatus,

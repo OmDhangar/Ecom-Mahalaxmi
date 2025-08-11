@@ -16,12 +16,13 @@ import {
   getAllOrdersForAdmin,
   getOrderDetailsForAdmin,
   resetOrderDetails,
+  getShippingFailedOrders,
 } from "@/store/admin/order-slice";
 import { Badge } from "../ui/badge";
-import axios from "axios";
 
 function AdminOrdersView() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("all"); // "all" | "shippingError"
   const [fromDate, setFromDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -31,17 +32,19 @@ function AdminOrdersView() {
     return today.toISOString().split("T")[0];
   });
 
-  const { orderList, orderDetails } = useSelector((state) => state.adminOrder);
+  const { orderList, shippingFailedOrders, orderDetails } = useSelector(
+    (state) => state.adminOrder
+  );
   const dispatch = useDispatch();
 
   function handleFetchOrderDetails(getId) {
     dispatch(getOrderDetailsForAdmin(getId));
   }
 
-
   useEffect(() => {
-    dispatch(getAllOrdersForAdmin({fromDate,toDate}));
-  }, [dispatch,fromDate, toDate]);
+    dispatch(getAllOrdersForAdmin({ fromDate, toDate }));
+    dispatch(getShippingFailedOrders());
+  }, [dispatch, fromDate, toDate]);
 
   useEffect(() => {
     if (orderDetails !== null) setOpenDetailsDialog(true);
@@ -50,57 +53,80 @@ function AdminOrdersView() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>All Orders</CardTitle>
-          <div className="mt-4 flex flex-wrap gap-4 items-center">
-            <label className="text-sm text-gray-700">
-              From:
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="ml-2 px-3 py-2 border rounded-md bg-white text-black"
-              />
-            </label>
+        <CardTitle>Admin Orders</CardTitle>
 
-            <label className="text-sm text-gray-700">
-              To:
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="ml-2 px-3 py-2 border rounded-md bg-white text-black"
-              />
-            </label>
+        <div className="mt-4 flex flex-wrap gap-4 items-center">
+          <label className="text-sm text-gray-700">
+            From:
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="ml-2 px-3 py-2 border rounded-md bg-white text-black"
+            />
+          </label>
 
-            <Button
-              onClick={() => dispatch(getAllOrdersForAdmin({ fromDate, toDate }))}
-              className="ml-4"
-            >
-              Filter Range
-            </Button>
-          </div>
+          <label className="text-sm text-gray-700">
+            To:
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="ml-2 px-3 py-2 border rounded-md bg-white text-black"
+            />
+          </label>
 
+          <Button
+            onClick={() => {
+              dispatch(getAllOrdersForAdmin({ fromDate, toDate }));
+              dispatch(getShippingFailedOrders());
+            }}
+            className="ml-4"
+          >
+            Filter Range
+          </Button>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant={activeTab === "all" ? "default" : "outline"}
+            onClick={() => setActiveTab("all")}
+          >
+            All Orders
+          </Button>
+          <Button
+            variant={activeTab === "shippingError" ? "default" : "outline"}
+            onClick={() => setActiveTab("shippingError")}
+          >
+            Shipping Errors
+          </Button>
+        </div>
       </CardHeader>
+
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Order Date</TableHead>
-              <TableHead>Shipment Status</TableHead>
-              <TableHead>Payment Status</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>
-                <span className="sr-only">Details</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orderList && orderList.length > 0
-              ? orderList.map((orderItem) => (
+        {activeTab === "all" ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Order Date</TableHead>
+                <TableHead>Shipment Status</TableHead>
+                <TableHead>Payment Status</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>
+                  <span className="sr-only">Details</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderList && orderList.length > 0 ? (
+                orderList.map((orderItem) => (
                   <TableRow key={orderItem._id}>
                     <TableCell>{orderItem._id}</TableCell>
-                    <TableCell>{orderItem.orderDate?.split("T")[0]}</TableCell>
+                    <TableCell>
+                      {orderItem.orderDate?.split("T")[0] || "N/A"}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         className={`py-1 px-3 capitalize ${
@@ -112,6 +138,8 @@ function AdminOrdersView() {
                             ? "bg-blue-500"
                             : orderItem.orderStatus === "delivered"
                             ? "bg-purple-600"
+                            : orderItem.orderStatus === "shipping_failed"
+                            ? "bg-red-500"
                             : "bg-gray-500"
                         }`}
                       >
@@ -152,9 +180,76 @@ function AdminOrdersView() {
                     </TableCell>
                   </TableRow>
                 ))
-              : null}
-          </TableBody>
-        </Table>
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-gray-500">
+                    No orders found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        ) : (
+          // Shipping Error Tab
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Order Date</TableHead>
+                <TableHead>Error Message</TableHead>
+                <TableHead>Error Details</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {shippingFailedOrders && shippingFailedOrders.length > 0 ? (
+                shippingFailedOrders.map((orderItem) => (
+                  <TableRow key={orderItem._id}>
+                    <TableCell>{orderItem._id}</TableCell>
+                    <TableCell>{orderItem.userId}</TableCell>
+                    <TableCell>
+                      {orderItem.orderDate?.split("T")[0] || "N/A"}
+                    </TableCell>
+                    <TableCell className="text-red-500 font-semibold">
+                      {orderItem.shippingError?.message || "Unknown error"}
+                    </TableCell>
+                    <TableCell>
+                      {orderItem.shippingError?.details
+                        ? JSON.stringify(orderItem.shippingError.details)
+                        : "No details"}
+                    </TableCell>
+                    <TableCell>
+                      <Dialog
+                        open={openDetailsDialog}
+                        onOpenChange={() => {
+                          setOpenDetailsDialog(false);
+                          dispatch(resetOrderDetails());
+                        }}
+                      >
+                        <Button
+                          onClick={() =>
+                            handleFetchOrderDetails(orderItem._id)
+                          }
+                        >
+                          View Details
+                        </Button>
+                        <AdminOrderDetailsView orderDetails={orderDetails} />
+                      </Dialog>
+                      {/* You can add Retry button here */}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-gray-500">
+                    No shipping error orders.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

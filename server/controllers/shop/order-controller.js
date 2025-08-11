@@ -46,6 +46,48 @@ const authenticateShiprocket = async () => {
   }
 };
 
+// Process Shiprocket for order with proper error handling
+async function processShiprocketForOrder(order, products, cartId) {
+  try {
+    const shiprocketResponse = await createShiprocketOrder(order, products);
+
+    order.shiprocketOrderId = shiprocketResponse.order_id;
+    order.shipmentId = shiprocketResponse.shipment_id;
+    order.orderStatus = "confirmed";
+    order.shippingError = undefined; // Clear any previous error
+
+    // ✅ Update stock & delete cart only after shipping success
+    if (cartId) await Cart.findByIdAndDelete(cartId);
+
+    for (let item of order.cartItems) {
+      let product = await Product.findById(item.productId);
+      if (!product) throw new Error(`Product not found: ${item.productId}`);
+      if (product.totalStock < item.quantity)
+        throw new Error(`Insufficient stock for ${product.title}`);
+
+      product.totalStock -= item.quantity;
+      await product.save();
+    }
+
+    await order.save();
+    return { success: true, order };
+
+  } catch (err) {
+    console.error("🚨 Shiprocket Order Creation Failed:", err.details || err.message);
+
+    order.orderStatus = "shipping_failed";
+    order.shippingError = {
+      message: err.message || "Unknown Shiprocket error",
+      details: err.details || { name: err.name || "UnknownError" },
+      date: new Date()
+    };
+
+    await order.save();
+    return { success: false, order, error: order.shippingError };
+  }
+}
+
+
 // Create Shiprocket order
 const createShiprocketOrder = async (orderData, products) => {
   try {
@@ -126,8 +168,38 @@ const createShiprocketOrder = async (orderData, products) => {
 
     return response.data;
   } catch (error) {
-    console.error('Shiprocket order creation failed:', error.response?.data || error.message);
-    throw new Error('Failed to create Shiprocket order');
+    // ✅ Enhanced error object with detailed info
+    const enhancedError = new Error();
+    enhancedError.name = 'ShiprocketError';
+    if (error.response) {
+      // Shiprocket API returned an error response
+      enhancedError.message = error.response.data?.message || 'Shiprocket API error';
+      enhancedError.statusCode = error.response.status;
+      enhancedError.details = {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url,
+        method: error.config?.method
+      };
+    } else if (error.request) {
+      // Request was made but no response received
+      enhancedError.message = 'No response from Shiprocket API';
+      enhancedError.details = {
+        error: 'Network error',
+        timeout: error.code === 'ECONNABORTED',
+        code: error.code
+      };
+    } else {
+      // Something else happened
+      enhancedError.message = error.message || 'Unknown Shiprocket error';
+      enhancedError.details = {
+        error: 'Request setup error',
+        originalMessage: error.message
+      };
+    }
+    
+    throw enhancedError;
   }
 };
 
@@ -156,260 +228,115 @@ const trackShiprocketOrder = async (shipmentId) => {
 const createOrder = async (req, res) => {
   try {
     const {
-      userId,
-      cartItems,
-      addressInfo,
-      orderStatus = "pending",
-      paymentMethod = "cod", // Default to COD
-      paymentStatus,
-      totalAmount,
-      cartId,
+      userId, cartItems, addressInfo,
+      paymentMethod = "cod", paymentStatus,
+      totalAmount, cartId
     } = req.body;
 
-    // Set payment status based on payment method
-    let finalPaymentStatus = paymentStatus;
-    if (paymentMethod === 'cod') {
-      finalPaymentStatus = 'pending'; // COD payment is pending until delivery
-    } else if (paymentMethod === 'razorpay') {
-      finalPaymentStatus = 'pending'; // Will be updated after payment verification
-    }
+    let finalPaymentStatus = paymentMethod === "cod" ? "pending" : (paymentStatus || "pending");
 
-    // Create a new order in your database first
-    const newlyCreatedOrder = new Order({
-      userId,
-      cartId,
-      cartItems,
-      addressInfo,
-      orderStatus,
-      paymentMethod,
-      paymentStatus: finalPaymentStatus,
-      totalAmount,
-      orderDate: new Date(),
-      orderUpdateDate: new Date(),
+    const order = new Order({
+      userId, cartId, cartItems, addressInfo,
+      orderStatus: "pending",
+      paymentMethod, paymentStatus: finalPaymentStatus,
+      totalAmount, orderDate: new Date(), orderUpdateDate: new Date()
     });
+    await order.save();
 
-    await newlyCreatedOrder.save();
+    const products = await Promise.all(cartItems.map(async item => {
+      const p = await Product.findById(item.productId);
+      return { ...p._doc, quantity: item.quantity };
+    }));
 
-    // Handle COD orders
-    if (paymentMethod === 'cod') {
-      try {
-        // Update product stocks for COD orders immediately
-        for (let item of newlyCreatedOrder.cartItems) {
-          let product = await Product.findById(item.productId);
-
-          if (!product) {
-            return res.status(404).json({
-              success: false,
-              message: `Product not found: ${item.productId}`,
-            });
-          }
-
-          if (product.totalStock < item.quantity) {
-            return res.status(400).json({
-              success: false,
-              message: `Not enough stock for product: ${product.title}`,
-            });
-          }
-
-          product.totalStock -= item.quantity;
-          await product.save();
-        }
-
-        // Delete the cart for COD orders
-        if (newlyCreatedOrder.cartId) {
-          await Cart.findByIdAndDelete(newlyCreatedOrder.cartId);
-        }
-
-        // Create Shiprocket order for COD
-        try {
-          const products = await Promise.all(
-            cartItems.map(async (item) => {
-              const product = await Product.findById(item.productId);
-              return {
-                ...product._doc,
-                quantity: item.quantity
-              };
-            })
-          );
-
-          const shiprocketResponse = await createShiprocketOrder(newlyCreatedOrder, products);
-          
-          // Update order with Shiprocket details
-          newlyCreatedOrder.shiprocketOrderId = shiprocketResponse.order_id;
-          newlyCreatedOrder.shipmentId = shiprocketResponse.shipment_id;
-          newlyCreatedOrder.orderStatus = "confirmed";
-          await newlyCreatedOrder.save();
-
-        } catch (shiprocketError) {
-          console.error('Shiprocket integration failed for COD order:', shiprocketError);
-          // Don't fail the order creation, just log the error
-        }
-
-        return res.status(201).json({
-          success: true,
-          message: "COD order created successfully",
-          order: newlyCreatedOrder,
-          paymentMethod: 'cod'
-        });
-
-      } catch (error) {
-        console.error('COD order processing failed:', error);
+    // COD flow → Process Shiprocket immediately
+    if (paymentMethod === "cod") {
+      const result = await processShiprocketForOrder(order, products, cartId);
+      if (!result.success) {
         return res.status(500).json({
           success: false,
-          message: "Failed to process COD order",
+          message: "Order created but shipping failed. Admin notified.",
+          order: result.order
         });
       }
-    }
-
-    // Handle Razorpay orders (existing logic)
-    if (paymentMethod === 'razorpay') {
-      const options = {
-        amount: totalAmount * 100,
-        currency: "INR",
-        receipt: `order_${newlyCreatedOrder._id}`,
-        payment_capture: 1,
-        notes: {
-          orderId: newlyCreatedOrder._id.toString(),
-          userId: userId
-        }
-      };
-
-      razorpay.orders.create(options, (err, razorpayOrder) => {
-        if (err) {
-          console.error("Razorpay order creation error:", err);
-          return res.status(500).json({
-            success: false,
-            message: "Error while creating Razorpay order",
-          });
-        }
-
-        res.status(201).json({
-          success: true,
-          order: newlyCreatedOrder,
-          razorpayOrderId: razorpayOrder.id,
-          key: process.env.RAZORPAY_KEY_ID,
-          amount: options.amount,
-          currency: options.currency,
-          name: "Your Company Name",
-          description: `Order for ${userId}`,
-          prefill: {
-            name: addressInfo?.name || "",
-            email: addressInfo?.email || "",
-            contact: addressInfo?.phone || ""
-          },
-          theme: {
-            color: "#F37254"
-          }
-        });
+      return res.status(201).json({
+        success: true,
+        message: "Order created & shipping initiated successfully",
+        order: result.order
       });
     }
 
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
+    // Razorpay flow → Prepare payment
+    const razorpayOrder = await razorpay.orders.create({
+      amount: totalAmount * 100,
+      currency: "INR",
+      receipt: `order_${order._id}`,
+      payment_capture: 1,
+      notes: { orderId: order._id.toString(), userId }
     });
+
+    res.status(201).json({
+      success: true,
+      order,
+      razorpayOrderId: razorpayOrder.id,
+      key: process.env.RAZORPAY_KEY_ID
+    });
+
+  } catch (err) {
+    console.error("❌ Order Creation Error:", err);
+    res.status(500).json({ success: false, message: err.message || "Order creation failed" });
   }
 };
 
-// Enhanced verifyPayment function
+
+
 const verifyPayment = async (req, res) => {
   try {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature, orderId } = req.body;
 
-    // Verify the payment signature
-    const generated_signature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
+    const generatedSig = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    if (generated_signature !== razorpay_signature) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment verification failed"
-      });
+    if (generatedSig !== razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
     let order = await Order.findById(orderId);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order cannot be found",
-      });
-    }
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     order.paymentStatus = "paid";
-    order.orderStatus = "confirmed";
     order.paymentId = razorpay_payment_id;
     order.razorpayOrderId = razorpay_order_id;
 
-    // Update product stocks
-    for (let item of order.cartItems) {
-      let product = await Product.findById(item.productId);
+    const products = await Promise.all(order.cartItems.map(async item => {
+      const p = await Product.findById(item.productId);
+      return { ...p._doc, quantity: item.quantity };
+    }));
 
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: `Product not found: ${item.productId}`,
-        });
-      }
-
-      if (product.totalStock < item.quantity) {
-        return res.status(400).json({
-          success: false,
-          message: `Not enough stock for product: ${product.title}`,
-        });
-      }
-
-      product.totalStock -= item.quantity;
-      await product.save();
+    const result = await processShiprocketForOrder(order, products, order.cartId);
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: "Payment verified, but shipping failed. Admin notified.",
+        order: result.order,
+        shippingError: result.error
+      });
     }
-
-    // Delete the cart
-    if (order.cartId) {
-      await Cart.findByIdAndDelete(order.cartId);
-    }
-
-    // Create Shiprocket order after successful payment
-    try {
-      const products = await Promise.all(
-        order.cartItems.map(async (item) => {
-          const product = await Product.findById(item.productId);
-          return {
-            ...product._doc,
-            quantity: item.quantity
-          };
-        })
-      );
-
-      const shiprocketResponse = await createShiprocketOrder(order, products);
-      
-      // Update order with Shiprocket details
-      order.shiprocketOrderId = shiprocketResponse.order_id;
-      order.shipmentId = shiprocketResponse.shipment_id;
-      
-    } catch (shiprocketError) {
-      console.error('Shiprocket integration failed after payment:', shiprocketError);
-      // Don't fail the payment verification, just log the error
-    }
-
-    await order.save();
 
     res.status(200).json({
       success: true,
-      message: "Payment verified and order confirmed",
-      data: order,
+      message: "Payment verified & shipping initiated",
+      order: result.order
     });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+
+  } catch (err) {
+    console.error("❌ Payment Verification Error:", err);
+    res.status(500).json({ success: false, message: err.message || "Verification failed" });
   }
 };
+
+
+
 
 // New function to track order
 const trackOrder = async (req, res) => {

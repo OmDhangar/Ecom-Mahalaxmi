@@ -1,4 +1,4 @@
-import { StarIcon, ChevronLeft, ChevronRight, ImageIcon, X, Share, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image, X, Share, Heart, ShoppingCart, Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../ui/dialog";
@@ -13,16 +13,21 @@ import StarRatingComponent from "../common/star-rating";
 import { useEffect, useState } from "react";
 import { addReview, getReviews } from "@/store/shop/review-slice";
 import { Badge } from "../ui/badge";
+import { Card, CardContent } from "../ui/card";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [similarProducts, setSimilarProducts] = useState([]);
+  
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);
+  const { productList } = useSelector((state) => state.shopProducts);
   
   // Combine main image with additional images for the carousel
   const allProductImages = productDetails ? 
@@ -60,6 +65,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
         userId: user?.id,
         productId: getCurrentProductId,
         quantity: 1,
+        selectedSize: selectedSize, // Include selected size for fashion items
       })
     ).then((data) => {
       if (data?.payload?.success) {
@@ -70,6 +76,19 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
       }
     });
   }
+
+  // Get similar products based on category and brand
+  useEffect(() => {
+    if (productDetails && productList) {
+      const similar = productList
+        .filter(product => 
+          product._id !== productDetails._id && 
+          (product.category === productDetails.category || product.brand === productDetails.brand)
+        )
+        .slice(0, 6); // Limit to 6 similar products
+      setSimilarProducts(similar);
+    }
+  }, [productDetails, productList]);
 
   // Navigate to the next image in the carousel
   const nextImage = () => {
@@ -101,6 +120,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     setReviewMsg("");
     setCurrentImageIndex(0);
     setShowReviewForm(false);
+    setSelectedSize("");
   }
 
   function handleAddReview() {
@@ -125,6 +145,13 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     });
   }
 
+  // Handle similar product click
+  const handleSimilarProductClick = (product) => {
+    dispatch(setProductDetails(product));
+    setCurrentImageIndex(0);
+    setSelectedSize("");
+  };
+
   useEffect(() => {
     if (productDetails !== null) dispatch(getReviews(productDetails?._id));
   }, [productDetails]);
@@ -137,9 +164,35 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
         reviews.length
       : 0;
 
+  // Get condition badge color
+  const getConditionBadgeVariant = (condition) => {
+    switch(condition) {
+      case 'new': return 'default';
+      case 'refurbished': return 'secondary';
+      case 'second-hand': return 'outline';
+      default: return 'default';
+    }
+  };
+
+  // Get battery health color
+  const getBatteryHealthColor = (health) => {
+    if (!health) return 'text-gray-500';
+    const healthLower = health.toLowerCase();
+    if (healthLower.includes('excellent') || healthLower.includes('100%') || healthLower.includes('good')) {
+      return 'text-green-600';
+    }
+    if (healthLower.includes('fair') || healthLower.includes('average')) {
+      return 'text-yellow-600';
+    }
+    if (healthLower.includes('poor') || healthLower.includes('bad')) {
+      return 'text-red-600';
+    }
+    return 'text-gray-700';
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="p-0 max-w-full h-full sm:max-w-4xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg overflow-hidden">
+      <DialogContent className="p-0 max-w-full h-full sm:max-w-6xl sm:h-auto sm:max-h-[95vh] sm:rounded-lg overflow-hidden">
         <DialogTitle className="sr-only">
           {productDetails?.title || "Product Details"}
         </DialogTitle>
@@ -178,288 +231,406 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
         </Button>
 
         {/* Main Content Container - Scrollable on mobile */}
-        <div className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6 h-full sm:h-auto overflow-y-auto sm:overflow-visible">
-          {/* Product Images Section */}
-          <div className="relative flex-shrink-0">
-            {/* Main Image - Smaller on mobile */}
-            <div className="relative aspect-square w-full bg-gray-50 sm:aspect-square">
-              {allProductImages.length > 0 ? (
-                <img
-                  src={allProductImages[currentImageIndex]}
-                  alt={`${productDetails?.title} - Image ${currentImageIndex + 1}`}
-                  className="aspect-square w-full object-cover"
-                />
-              ) : (
-                <div className="aspect-square w-full bg-gray-100 flex items-center justify-center">
-                  <ImageIcon className="w-16 h-16 text-gray-400" />
+        <div className="flex flex-col h-full sm:h-auto overflow-y-auto sm:overflow-visible">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6">
+            {/* Product Images Section */}
+            <div className="relative flex-shrink-0">
+              {/* Main Image */}
+              <div className="relative aspect-square w-full bg-gray-50 sm:aspect-square">
+                {allProductImages.length > 0 ? (
+                  <img
+                    src={allProductImages[currentImageIndex]}
+                    alt={`${productDetails?.title} - Image ${currentImageIndex + 1}`}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="aspect-square w-full bg-gray-100 flex items-center justify-center">
+                    <Image className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+                
+                {/* Navigation arrows - only show if there are multiple images */}
+                {allProductImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors z-10"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors z-10"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                    
+                    {/* Image Counter */}
+                    <div className="absolute bottom-4 right-4 bg-black/60 text-white px-2 py-1 rounded-full text-sm">
+                      {currentImageIndex + 1} / {allProductImages.length}
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* Thumbnail Navigation - Only on Desktop */}
+              {allProductImages.length > 1 && (
+                <div className="hidden sm:flex gap-2 mt-4 overflow-x-auto pb-2">
+                  {allProductImages.map((imgSrc, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border-2 ${
+                        currentImageIndex === index ? 'border-blue-500' : 'border-gray-200'
+                      }`}
+                    >
+                      <img 
+                        src={imgSrc} 
+                        alt={`Thumbnail ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
                 </div>
               )}
               
-              {/* Navigation arrows - only show if there are multiple images */}
+              {/* Mobile Thumbnail Dots */}
               {allProductImages.length > 1 && (
-                <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors z-10"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors z-10"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Image Counter */}
-                  <div className="absolute bottom-4 right-4 bg-black/60 text-white px-2 py-1 rounded-full text-sm">
-                    {currentImageIndex + 1} / {allProductImages.length}
-                  </div>
-                </>
+                <div className="flex justify-center gap-2 mt-3 pb-3 sm:hidden">
+                  {allProductImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        currentImageIndex === index ? 'bg-blue-500' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
               )}
             </div>
-            
-            {/* Thumbnail Navigation - Only on Desktop */}
-            {allProductImages.length > 1 && (
-              <div className="hidden sm:flex gap-2 mt-4 overflow-x-auto pb-2">
-                {allProductImages.map((imgSrc, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToImage(index)}
-                    className={`relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border-2 ${
-                      currentImageIndex === index ? 'border-blue-500' : 'border-gray-200'
-                    }`}
-                  >
-                    <img 
-                      src={imgSrc} 
-                      alt={`Thumbnail ${index + 1}`} 
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {/* Mobile Thumbnail Dots */}
-            {allProductImages.length > 1 && (
-              <div className="flex justify-center gap-2 mt-3 pb-3 sm:hidden">
-                {allProductImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToImage(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      currentImageIndex === index ? 'bg-blue-500' : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Product Info Section - Scrollable content */}
-          <div className="flex-1 p-4 sm:p-0 min-h-0">
-            {/* Product Title & Description */}
-            <div className="mb-4">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-2">
-                {productDetails?.title}
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                {productDetails?.description}
-              </p>
-            </div>
+            {/* Product Info Section */}
+            <div className="flex-1 p-4 sm:p-0 min-h-0">
+              {/* Product Title & Description */}
+              <div className="mb-4">
+                <div className="flex items-start gap-2 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight flex-1">
+                    {productDetails?.title}
+                  </h1>
+                  <div className="flex gap-1">
+                    <Badge variant="secondary" className="text-xs">
+                      {productDetails?.brand}
+                    </Badge>
+                    {productDetails?.category && (
+                      <Badge variant="outline" className="text-xs">
+                        {productDetails?.category}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                  {productDetails?.description}
+                </p>
+              </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-1">
-                <StarRatingComponent rating={averageReview} />
-                <span className="text-sm font-medium">
-                  {averageReview.toFixed(1)}
+              {/* Rating */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-1">
+                  <StarRatingComponent rating={averageReview} />
+                  <span className="text-sm font-medium">
+                    {averageReview.toFixed(1)}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500">
+                  ({reviews?.length || 0} reviews)
                 </span>
               </div>
-              <span className="text-sm text-gray-500">
-                ({reviews?.length || 0} reviews)
-              </span>
-            </div>
 
-            {/* Price Section */}
-            <div className="mb-4 sm:mb-6">
-              <div className="flex items-baseline gap-3">
-                {productDetails?.salePrice > 0 ? (
-                  <>
-                    <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
-                      ₹{productDetails?.salePrice}
-                    </span>
-                    <span className="text-base sm:text-lg text-gray-500 line-through">
-                      ₹{productDetails?.price}
-                    </span>
-                    <Badge variant="destructive" className="text-xs">
-                      {Math.round(((productDetails?.price - productDetails?.salePrice) / productDetails?.price) * 100)}% OFF
-                    </Badge>
-                  </>
-                ) : (
-                  <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                    ₹{productDetails?.price}
-                  </span>
-                )}
-              </div>
-              {productDetails?.salePrice > 0 && (
-                <p className="text-sm text-green-600 mt-1">
-                  You save ₹{productDetails?.price - productDetails?.salePrice}
-                </p>
-              )}
-            </div>
-
-            {/* Stock Status */}
-            <div className="mb-4 sm:mb-6">
-              {productDetails?.totalStock > 0 ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-600 font-medium">
-                    In Stock ({productDetails?.totalStock} available)
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-red-600 font-medium">Out of Stock</span>
-                </div>
-              )}
-            </div>
-            {/* Mobile Phone Specifications */}
-            {productDetails?.category === 'electronics' && (
-                  <div className="mt-4">
-                    <h3 className="font-bold text-lg mb-2">Specifications</h3>
-                    <div className="grid gap-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Battery Health</span>
-                        <span>{productDetails.specifications?.batteryHealth}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Condition</span>
-                        <span>{productDetails.specifications?.condition}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-             {productDetails?.category === 'fashion' && (
-                <div className="mt-4">
-                  <h3 className="font-bold text-lg mb-2">Available Sizes</h3>
-                  <div className="flex gap-2 flex-wrap">
-                    {productDetails.specifications?.sizes.map(size => (
-                      <Badge key={size} variant="outline">{size}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}    
-            {/* Add to Cart Button - Sticky on mobile */}
-            <div className="mb-4 sm:mb-6 sticky bottom-4 sm:static bg-white sm:bg-transparent p-0 sm:p-0 z-10">
-              {productDetails?.totalStock === 0 ? (
-                <Button className="w-full py-3 text-base bg-gray-400 cursor-not-allowed" disabled>
-                  Out of Stock
-                </Button>
-              ) : (
-                <Button
-                  className="w-full py-3 text-base bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg sm:shadow-none"
-                  onClick={() =>
-                    handleAddToCart(
-                      productDetails?._id,
-                      productDetails?.totalStock
-                    )
-                  }
-                >
-                  Add to Cart
-                </Button>
-              )}
-            </div>
-
-            <Separator className="my-4 sm:my-6" />
-
-            {/* Reviews Section */}
-            <div className="pb-4 sm:pb-0">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold">Customer Reviews</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowReviewForm(!showReviewForm)}
-                  className="text-sm"
-                >
-                  Write Review
-                </Button>
-              </div>
-
-              {/* Review Form */}
-              {showReviewForm && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <Label className="text-sm font-medium mb-2 block">Rate this product</Label>
-                  <div className="flex gap-1 mb-3">
-                    <StarRatingComponent
-                      rating={rating}
-                      handleRatingChange={handleRatingChange}
-                    />
-                  </div>
-                  <Input
-                    name="reviewMsg"
-                    value={reviewMsg}
-                    onChange={(event) => setReviewMsg(event.target.value)}
-                    placeholder="Share your experience with this product..."
-                    className="mb-3"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleAddReview}
-                      disabled={reviewMsg.trim() === "" || rating === 0}
-                      size="sm"
-                      className="flex-1"
-                    >
-                      Submit Review
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowReviewForm(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Reviews List */}
-              <div className="max-h-60 sm:max-h-80 lg:max-h-96 overflow-y-auto space-y-4">
-                {reviews && reviews.length > 0 ? (
-                  reviews.map((reviewItem, index) => (
-                    <div key={index} className="flex gap-3 pb-4 border-b border-gray-100 last:border-b-0">
-                      <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
-                        <AvatarFallback className="bg-blue-100 text-blue-600 text-xs sm:text-sm">
-                          {reviewItem?.userName[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm text-gray-900 truncate">
-                            {reviewItem?.userName}
-                          </h4>
-                        </div>
-                        <div className="flex items-center gap-0.5 mb-2">
-                          <StarRatingComponent rating={reviewItem?.reviewValue} />
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {reviewItem.reviewMessage}
+              {/* Category-specific Fields */}
+              {productDetails?.category === 'electronics' && (
+                <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Device Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {productDetails.batteryHealth && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Battery Health</Label>
+                        <p className={`text-sm font-medium ${getBatteryHealthColor(productDetails.batteryHealth)}`}>
+                          {productDetails.batteryHealth}
                         </p>
                       </div>
-                    </div>
-                  ))
+                    )}
+                    {productDetails.condition && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Condition</Label>
+                        <div className="mt-1">
+                          <Badge variant={getConditionBadgeVariant(productDetails.condition)} className="text-xs">
+                            {productDetails.condition.charAt(0).toUpperCase() + productDetails.condition.slice(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && (
+                <div className="mb-4 p-4 bg-pink-50 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                    Available Sizes
+                  </h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {productDetails.sizes.map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(selectedSize === size ? "" : size)}
+                        className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                          selectedSize === size
+                            ? 'bg-pink-500 text-white border-pink-500'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-pink-300'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedSize && (
+                    <p className="text-sm text-pink-600 mt-2">Selected: {selectedSize}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Price Section */}
+              <div className="mb-4 sm:mb-6">
+                <div className="flex items-baseline gap-3">
+                  {productDetails?.salePrice > 0 ? (
+                    <>
+                      <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
+                        ₹{productDetails?.salePrice}
+                      </span>
+                      <span className="text-base sm:text-lg text-gray-500 line-through">
+                        ₹{productDetails?.price}
+                      </span>
+                      <Badge variant="destructive" className="text-xs">
+                        {Math.round(((productDetails?.price - productDetails?.salePrice) / productDetails?.price) * 100)}% OFF
+                      </Badge>
+                    </>
+                  ) : (
+                    <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                      ₹{productDetails?.price}
+                    </span>
+                  )}
+                </div>
+                {productDetails?.salePrice > 0 && (
+                  <p className="text-sm text-green-600 mt-1">
+                    You save ₹{productDetails?.price - productDetails?.salePrice}
+                  </p>
+                )}
+              </div>
+
+              {/* Stock Status */}
+              <div className="mb-4 sm:mb-6">
+                {productDetails?.totalStock > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-green-600 font-medium">
+                      In Stock ({productDetails?.totalStock} available)
+                    </span>
+                  </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 text-sm">No reviews yet. Be the first to review!</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span className="text-sm text-red-600 font-medium">Out of Stock</span>
                   </div>
                 )}
+              </div>
+                
+              {/* Add to Cart Button */}
+              <div className="mb-4 sm:mb-6 sticky bottom-4 sm:static bg-white sm:bg-transparent p-0 sm:p-0 z-10">
+                {productDetails?.totalStock === 0 ? (
+                  <Button className="w-full py-3 text-base bg-gray-400 cursor-not-allowed" disabled>
+                    Out of Stock
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full py-3 text-base bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg sm:shadow-none"
+                    onClick={() =>
+                      handleAddToCart(
+                        productDetails?._id,
+                        productDetails?.totalStock
+                      )
+                    }
+                    disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize
+                      ? 'Select Size First'
+                      : 'Add to Cart'
+                    }
+                  </Button>
+                )}
+              </div>
+
+              <Separator className="my-4 sm:my-6" />
+
+              {/* Reviews Section */}
+              <div className="pb-4 sm:pb-0">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-bold">Customer Reviews</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowReviewForm(!showReviewForm)}
+                    className="text-sm"
+                  >
+                    Write Review
+                  </Button>
+                </div>
+
+                {/* Review Form */}
+                {showReviewForm && (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <Label className="text-sm font-medium mb-2 block">Rate this product</Label>
+                    <div className="flex gap-1 mb-3">
+                      <StarRatingComponent
+                        rating={rating}
+                        handleRatingChange={handleRatingChange}
+                      />
+                    </div>
+                    <Input
+                      name="reviewMsg"
+                      value={reviewMsg}
+                      onChange={(event) => setReviewMsg(event.target.value)}
+                      placeholder="Share your experience with this product..."
+                      className="mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleAddReview}
+                        disabled={reviewMsg.trim() === "" || rating === 0}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        Submit Review
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowReviewForm(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews List */}
+                <div className="max-h-60 sm:max-h-80 lg:max-h-96 overflow-y-auto space-y-4">
+                  {reviews && reviews.length > 0 ? (
+                    reviews.map((reviewItem, index) => (
+                      <div key={index} className="flex gap-3 pb-4 border-b border-gray-100 last:border-b-0">
+                        <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+                          <AvatarFallback className="bg-blue-100 text-blue-600 text-xs sm:text-sm">
+                            {reviewItem?.userName[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-sm text-gray-900 truncate">
+                              {reviewItem?.userName}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-0.5 mb-2">
+                            <StarRatingComponent rating={reviewItem?.reviewValue} />
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {reviewItem.reviewMessage}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-sm">No reviews yet. Be the first to review!</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Similar Products Section */}
+          {similarProducts.length > 0 && (
+            <div className="border-t bg-gray-50 p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Similar Products</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {similarProducts.map((product) => (
+                  <Card 
+                    key={product._id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow bg-white"
+                    onClick={() => handleSimilarProductClick(product)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="aspect-square bg-gray-100 rounded-md mb-3 overflow-hidden">
+                        <img 
+                          src={product.image} 
+                          alt={product.title}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
+                        {product.title}
+                      </h3>
+                      <div className="flex items-center gap-1 mb-2">
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(product.averageReview || 0)
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          ({product.averageReview?.toFixed(1) || '0.0'})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {product.salePrice > 0 ? (
+                          <>
+                            <span className="text-sm font-bold text-green-600">
+                              ₹{product.salePrice}
+                            </span>
+                            <span className="text-xs text-gray-500 line-through">
+                              ₹{product.price}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm font-bold text-gray-900">
+                            ₹{product.price}
+                          </span>
+                        )}
+                      </div>
+                      {product.category && (
+                        <Badge variant="outline" className="text-xs mt-2">
+                          {product.category}
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

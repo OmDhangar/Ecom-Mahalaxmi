@@ -88,11 +88,6 @@ function ShoppingCheckout() {
           setSuccessOrderDetails(orderDetails.order);
           setIsPaymentStart(false);
           
-          // Optional: Redirect to success page after a delay
-          setTimeout(() => {
-            window.location.href = `/payment-success?orderId=${orderDetails.order._id}`;
-          }, 2000);
-          
         } catch (error) {
           toast({
             title: 'Payment Verification Failed',

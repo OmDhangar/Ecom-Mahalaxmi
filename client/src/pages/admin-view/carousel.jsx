@@ -43,13 +43,26 @@ const CarouselAdmin = () => {
   });
 
   const backgroundOptions = [
-    { value: "from-blue-500 to-indigo-500", label: "Blue to Indigo" },
-    { value: "from-pink-500 to-rose-500", label: "Pink to Rose" },
-    { value: "from-yellow-400 to-orange-400", label: "Yellow to Orange" },
-    { value: "from-green-500 to-emerald-500", label: "Green to Emerald" },
-    { value: "from-purple-500 to-violet-500", label: "Purple to Violet" },
-    { value: "from-red-500 to-pink-500", label: "Red to Pink" }
-  ];
+  { value: "from-blue-500 to-indigo-500", label: "Blue to Indigo" },
+  { value: "from-pink-500 to-rose-500", label: "Pink to Rose" },
+  { value: "from-yellow-400 to-orange-400", label: "Yellow to Orange" },
+  { value: "from-green-500 to-emerald-500", label: "Green to Emerald" },
+  { value: "from-purple-500 to-violet-500", label: "Purple to Violet" },
+  { value: "from-red-500 to-pink-500", label: "Red to Pink" },
+
+  // New vibrant, festival-inspired gradients
+  { value: "from-orange-500 to-pink-500", label: "Sunset Orange to Pink (Diwali Glow)" },
+  { value: "from-fuchsia-500 to-yellow-400", label: "Fuchsia to Yellow (Holi Splash)" },
+  { value: "from-rose-500 to-purple-600", label: "Rose to Royal Purple (Navratri Vibes)" },
+  { value: "from-teal-500 to-lime-400", label: "Teal to Lime (Spring Festival)" },
+  { value: "from-amber-400 to-red-500", label: "Amber to Red (Festive Warmth)" },
+  { value: "from-indigo-500 to-pink-500", label: "Indigo to Pink (Celebration Night)" },
+  { value: "from-green-500 to-yellow-400", label: "Green to Yellow (Harvest Joy)" },
+  { value: "from-cyan-400 to-violet-500", label: "Cyan to Violet (Fireworks Sky)" },
+  // Indian Independence Day Tricolour
+  { value: "from-orange-500 via-white to-green-500", label: "Indian Tricolour (Independence Day)" }
+];
+
 
   // Fetch slides on component mount
   useEffect(() => {

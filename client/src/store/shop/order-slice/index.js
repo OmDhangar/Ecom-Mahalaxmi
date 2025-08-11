@@ -36,7 +36,7 @@ export const verifyPayment = createAsyncThunk(
   async (paymentData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/shop/order/verify-payment",
+        "http://localhost:5000/api/shop/order/verify",
         paymentData
       );
       return response.data;

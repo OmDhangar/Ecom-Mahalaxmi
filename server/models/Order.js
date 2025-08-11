@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 
+const ShippingErrorSchema = new mongoose.Schema({
+  message: { type: String }, // brief error message
+  details: { type: Object }, // raw response or error stack
+  date: { type: Date, default: Date.now } // when the error happened
+});
+
 const OrderSchema = new mongoose.Schema({
   userId: {
     type: String,
@@ -28,7 +34,16 @@ const OrderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"],
+    enum: [
+      "pending",
+      "confirmed",
+      "processing",
+      "shipped",
+      "delivered",
+      "cancelled",
+      "returned",
+      "shipping_failed" // ✅ New status for Shiprocket error
+    ],
     default: "pending"
   },
   paymentMethod: {
@@ -64,7 +79,13 @@ const OrderSchema = new mongoose.Schema({
   courierCompanyId: Number,
   courierName: String,
   
-  // Additional fields for better order management
+  // ✅ Inline Shiprocket error info
+  shippingError: {
+    message: { type: String },
+    details: { type: Object }, // store full API error here
+    date: { type: Date }
+  },
+
   estimatedDeliveryDate: Date,
   actualDeliveryDate: Date,
   trackingUrl: String,
@@ -86,14 +107,14 @@ const OrderSchema = new mongoose.Schema({
     default: 0
   },
   
-  // Order notes and comments
+  // Notes
   orderNotes: String,
   adminNotes: String,
 }, {
   timestamps: true
 });
 
-// Index for better query performance
+// Index
 OrderSchema.index({ userId: 1, orderDate: -1 });
 OrderSchema.index({ orderStatus: 1 });
 OrderSchema.index({ paymentStatus: 1 });

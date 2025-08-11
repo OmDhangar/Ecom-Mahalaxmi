@@ -1,44 +1,57 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { data } from "autoprefixer";
 import axios from "axios";
 
 const initialState = {
   orderList: [],
   orderDetails: null,
+  shippingFailedOrders: [],
+  isLoading: false,
 };
 
+// ✅ Get all orders (date filtered)
 export const getAllOrdersForAdmin = createAsyncThunk(
   "/order/getAllOrdersForAdmin",
-  async ({ fromDate , toDate }) => {
+  async ({ fromDate, toDate }) => {
     const response = await axios.get(
       `http://localhost:5000/api/admin/orders/get?fromDate=${fromDate}&toDate=${toDate}`
     );
-
     return response.data;
   }
-); 
+);
 
+// ✅ Get single order details
 export const getOrderDetailsForAdmin = createAsyncThunk(
   "/order/getOrderDetailsForAdmin",
   async (id) => {
     const response = await axios.get(
       `http://localhost:5000/api/admin/orders/details/${id}`
     );
-
     return response.data;
   }
 );
 
+// ✅ Update order status
 export const updateOrderStatus = createAsyncThunk(
   "/order/updateOrderStatus",
-  async ({ id, orderStatus }) => {
+  async ({ id, orderStatus, paymentStatus }) => {
     const response = await axios.put(
       `http://localhost:5000/api/admin/orders/update/${id}`,
       {
         orderStatus,
+        ...(paymentStatus && { paymentStatus }),
       }
     );
+    return response.data;
+  }
+);
 
+// ✅ Get orders with shipping errors
+export const getShippingFailedOrders = createAsyncThunk(
+  "/order/getShippingFailedOrders",
+  async () => {
+    const response = await axios.get(
+      "http://localhost:5000/api/admin/orders/shipping-failed"
+    );
     return response.data;
   }
 );
@@ -48,13 +61,12 @@ const adminOrderSlice = createSlice({
   initialState,
   reducers: {
     resetOrderDetails: (state) => {
-      console.log("resetOrderDetails");
-
       state.orderDetails = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      // GET ALL ORDERS
       .addCase(getAllOrdersForAdmin.pending, (state) => {
         state.isLoading = true;
       })
@@ -66,6 +78,8 @@ const adminOrderSlice = createSlice({
         state.isLoading = false;
         state.orderList = [];
       })
+
+      // GET ORDER DETAILS
       .addCase(getOrderDetailsForAdmin.pending, (state) => {
         state.isLoading = true;
       })
@@ -76,10 +90,22 @@ const adminOrderSlice = createSlice({
       .addCase(getOrderDetailsForAdmin.rejected, (state) => {
         state.isLoading = false;
         state.orderDetails = null;
+      })
+
+      // GET SHIPPING FAILED ORDERS
+      .addCase(getShippingFailedOrders.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getShippingFailedOrders.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.shippingFailedOrders = action.payload.data;
+      })
+      .addCase(getShippingFailedOrders.rejected, (state) => {
+        state.isLoading = false;
+        state.shippingFailedOrders = [];
       });
   },
 });
 
 export const { resetOrderDetails } = adminOrderSlice.actions;
-
 export default adminOrderSlice.reducer;

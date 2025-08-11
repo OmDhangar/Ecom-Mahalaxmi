@@ -38,6 +38,25 @@ export const loginFormControls = [
     type: "password",
   },
 ];
+export const mobileConditionOptions = [
+  { id: "new", label: "New" },
+  { id: "refurbished", label: "Refurbished" },
+  { id: "Second-hand", label: "Second-hand" },
+];
+
+// Add clothing size options
+export const clothingSizeOptions = [
+  { id: "XS", label: "XS" },
+  { id: "S", label: "S" },
+  { id: "M", label: "M" },
+  { id: "L", label: "L" },
+  { id: "XL", label: "XL" },
+  { id: "XXL", label: "XXL" },
+  { id: "3XL", label: "3XL" },
+  { id: "4XL", label: "4XL" },
+  { id: "5XL", label: "5XL" },
+];
+
 
 export const addProductFormElements = [
   {
@@ -61,8 +80,37 @@ export const addProductFormElements = [
       { id: "electronics", label: "Electronics" },
       { id: "fashion", label: "Fashion" },
       { id: "toys", label: "Toys" },
+      { id: "farming", label: "Farming" },
     ],
   },
+  //Dynamic fields based on category
+  {
+    label:"Battery Health",
+    name: "batteryHealth",
+    componentType: "input",
+    type:"text",
+    placeholder: "Enter Battery health percentage",
+    showWhen: (formData)=> formData.category == "electronics"
+  },
+  {
+    label: "Condition",
+    name: "condition",
+    componentType: "select",
+    options: [
+      { id: "new", label: "New" },
+      { id: "refurbished", label: "Refurbished" },
+      { id: "second-hand", label: "Second-hand" }
+    ],
+    showWhen: (formData) => formData.category === "electronics"
+  },
+  {
+    label: "Sizes",
+    name: "sizes",
+    componentType: "multiselect",
+    options: clothingSizeOptions,
+    showWhen: (formData) => formData.category === "fashion"
+  },
+
   {
     label: "Brand",
     name: "brand",
@@ -90,6 +138,36 @@ export const addProductFormElements = [
     type: "number",
     placeholder: "Enter total stock",
   },
+  {
+    name: "weight",
+    label: "Weight (kg)",
+    type: "number",
+    placeholder: "e.g., 0.5",
+    min: 0.01,
+  },
+  {
+    name: "length",
+    label: "Length (cm)",
+    type: "number",
+    placeholder: "e.g., 10",
+    min: 1,
+  },
+  {
+    name: "breadth",
+    label: "Breadth (cm)",
+    type: "number",
+    placeholder: "e.g., 10",
+    min: 1,
+  },
+  {
+    name: "height",
+    label: "Height (cm)",
+    type: "number",
+    placeholder: "e.g., 5",
+    min: 1,
+  },
+
+
 ];
 
 export const shoppingViewHeaderMenuItems = [
@@ -98,6 +176,7 @@ export const shoppingViewHeaderMenuItems = [
   { id: "electronics", label: "Electronics", path: "/shop/listing?category=electronics" },
   { id: "fashion", label: "Fashion", path: "/shop/listing?category=fashion" },
   { id: "toys", label: "Toys", path: "/shop/listing?category=toys" },
+  { id: "farming", label: "Farming", path: "/shop/listing?category=farming" },
   { id: "search", label: "Search", path: "/shop/search" },
 ];
 
@@ -105,6 +184,7 @@ export const categoryOptionsMap = {
   electronics: "Electronics",
   fashion: "Fashion",
   toys: "Toys",
+  farming :"Farming"
 };
 
 export const brandOptionsMap = {
@@ -121,12 +201,22 @@ export const brandOptionsMap = {
   apple: "Apple",
   lg: "LG",
   panasonic: "Panasonic",
+  xiaomi: "Xiaomi",
+  oneplus: "OnePlus",
+  nokia: "Nokia",
+  motorola: "Motorola",
+  google: "Google",
   // Toys
   lego: "LEGO",
   nerf: "NERF",
   hasbro: "Hasbro",
   barbie: "Barbie",
   hotwheels: "Hot Wheels",
+  //Farming
+   kraftseeds: "KraftSeeds",          
+  crompton: "Crompton",              
+  kisankraft: "KisanKraft",          
+  mahindraagri: "Mahindra Agri",
 };
 
 export const filterOptions = {
@@ -134,6 +224,7 @@ export const filterOptions = {
     { id: "electronics", label: "Electronics" },
     { id: "fashion", label: "Fashion" },
     { id: "toys", label: "Toys" },
+    { id: "farming", label: "Farming" },
   ],
   brand: {
     fashion: [
@@ -150,6 +241,11 @@ export const filterOptions = {
       { id: "apple", label: "Apple" },
       { id: "lg", label: "LG" },
       { id: "panasonic", label: "Panasonic" },
+      { id: "xiaomi", label: "Xiaomi" },
+      { id: "oneplus", label: "OnePlus" },
+      { id: "nokia", label: "Nokia" },
+      { id: "motorola", label: "Motorola" },
+      { id: "google", label: "Google" },
     ],
     toys: [
       { id: "lego", label: "LEGO" },
@@ -157,6 +253,12 @@ export const filterOptions = {
       { id: "hasbro", label: "Hasbro" },
       { id: "barbie", label: "Barbie" },
       { id: "hotwheels", label: "Hot Wheels" },
+    ],
+     farming: [
+      { id: "kraftseeds", label: "KraftSeeds" },     // ✅ Added
+      { id: "crompton", label: "Crompton" },         // ✅ Added
+      { id: "kisankraft", label: "KisanKraft" },     // ✅ Added
+      { id: "mahindraagri", label: "Mahindra Agri" } // ✅ Added
     ],
   },
 };
@@ -172,6 +274,27 @@ export const sortOptions = [
 
 export const addressFormControls = [
   {
+    label: "Full Name",
+    name: "name",
+    componentType: "input",
+    type: "text",
+    placeholder: "Enter your full name",
+  },
+  {
+    label: "Email",
+    name: "email",
+    componentType: "input",
+    type: "email",
+    placeholder: "Enter your email address",
+  },
+  {
+    label: "Phone",
+    name: "phone",
+    componentType: "input",
+    type: "text",
+    placeholder: "Enter your phone number",
+  },
+  {
     label: "Address",
     name: "address",
     componentType: "input",
@@ -186,6 +309,13 @@ export const addressFormControls = [
     placeholder: "Enter your city",
   },
   {
+    label: "State",
+    name: "state",
+    componentType: "input",
+    type: "text",
+    placeholder: "Enter your state",
+  },
+  {
     label: "Pincode",
     name: "pincode",
     componentType: "input",
@@ -193,16 +323,9 @@ export const addressFormControls = [
     placeholder: "Enter your pincode",
   },
   {
-    label: "Phone",
-    name: "phone",
-    componentType: "input",
-    type: "text",
-    placeholder: "Enter your phone number",
-  },
-  {
-    label: "Notes",
-    name: "notes",
+    label: "Landmark / Notes",
+    name: "notes", // ✅ Corrected to match formData
     componentType: "textarea",
-    placeholder: "Enter any additional notes",
+    placeholder: "Enter any additional notes or landmark",
   },
 ];

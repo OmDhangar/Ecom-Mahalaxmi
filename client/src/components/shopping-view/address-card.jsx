@@ -23,8 +23,11 @@ function AddressCard({
       }`}
     >
       <CardContent className="grid p-4 gap-4">
+        <Label>Name: {addressInfo?.name}</Label>
         <Label>Address: {addressInfo?.address}</Label>
         <Label>City: {addressInfo?.city}</Label>
+        <Label>State: {addressInfo?.state}</Label>
+        <Label>Country: {addressInfo?.coutry}</Label>
         <Label>pincode: {addressInfo?.pincode}</Label>
         <Label>Phone: {addressInfo?.phone}</Label>
         <Label>Notes: {addressInfo?.notes}</Label>

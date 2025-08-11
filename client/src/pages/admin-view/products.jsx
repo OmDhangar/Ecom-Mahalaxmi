@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/use-toast";
-import { addProductFormElements as baseFormElements ,filterOptions } from "@/config";
+import { addProductFormElements as baseFormElements, filterOptions } from "@/config";
 import {
   addNewProduct,
   deleteProduct,
@@ -19,8 +19,11 @@ import {
 import { Fragment, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+const MAX_IMAGES = 5; // 🚀 Set your max limit
+
 const initialFormData = {
   image: null,
+  additionalImages: [],
   title: "",
   description: "",
   category: "",
@@ -29,83 +32,147 @@ const initialFormData = {
   salePrice: "",
   totalStock: "",
   averageReview: 0,
+  batteryHealth: "",
+  condition: "",
+  sizes: [],
+  weight: "",
+  length: "",
+  breadth: "",
+  height: "",
 };
 
 function AdminProducts() {
-  const [openCreateProductsDialog, setOpenCreateProductsDialog] =
-    useState(false);
+  const [openCreateProductsDialog, setOpenCreateProductsDialog] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [uploadedImageUrls, setUploadedImageUrls] = useState([]);
   const [imageLoadingState, setImageLoadingState] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState([]);
   const [currentEditedId, setCurrentEditedId] = useState(null);
 
   const { productList } = useSelector((state) => state.adminProducts);
   const dispatch = useDispatch();
   const { toast } = useToast();
 
+  function resetFormState() {
+    setOpenCreateProductsDialog(false);
+    setImageFile(null);
+    setImageFiles([]);
+    setUploadedImageUrl("");
+    setUploadedImageUrls([]);
+    setImageLoadingState(false);
+    setImageLoadingStates([]);
+    setFormData(initialFormData);
+    setCurrentEditedId(null);
+  }
+
+  useEffect(() => {
+    if (uploadedImageUrl) {
+      setFormData((prev) => ({ ...prev, image: uploadedImageUrl }));
+    }
+  }, [uploadedImageUrl]);
+
   function onSubmit(event) {
     event.preventDefault();
 
-    currentEditedId !== null
-      ? dispatch(
-          editProduct({
-            id: currentEditedId,
-            formData,
-          })
-        ).then((data) => {
-          console.log(data, "edit");
+    const missingFields = [];
 
+    // Check images only when adding new product
+    if (currentEditedId === null) {
+      if (!uploadedImageUrl) missingFields.push("Main Image");
+      if (uploadedImageUrls.length === 0) missingFields.push("Additional Images");
+    }
+
+    // Check other fields
+    Object.entries(formData).forEach(([key, value]) => {
+      if (
+        key !== "averageReview" &&
+        key !== "additionalImages" &&
+        key !== "featuredDescription" &&
+        value === ""
+      ) {
+        missingFields.push(key);
+      }
+    });
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Please complete all required fields",
+        description: `Missing: ${missingFields.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // ✅ Merge old + new additional images without duplication
+    const mergedAdditionalImages = [
+      ...(formData.additionalImages || []),
+      ...(uploadedImageUrls || []),
+    ]
+      .filter((item, index, self) => self.indexOf(item) === index) // remove duplicates
+      .slice(0, MAX_IMAGES); // enforce max limit
+
+    const preparedFormData = {
+      ...formData,
+      image:
+        uploadedImageUrl && uploadedImageUrl.trim() !== ""
+          ? uploadedImageUrl
+          : formData.image,
+      additionalImages: mergedAdditionalImages,
+      price: Number(formData.price),
+      salePrice: Number(formData.salePrice),
+      totalStock: Number(formData.totalStock),
+      weight: Number(formData.weight),
+      length: Number(formData.length),
+      breadth: Number(formData.breadth),
+      height: Number(formData.height),
+    };
+
+    if (currentEditedId !== null) {
+      dispatch(editProduct({ id: currentEditedId, formData: preparedFormData }))
+        .then((data) => {
           if (data?.payload?.success) {
             dispatch(fetchAllProducts());
-            setFormData(initialFormData);
-            setOpenCreateProductsDialog(false);
-            setCurrentEditedId(null);
-          }
-        })
-      : dispatch(
-          addNewProduct({
-            ...formData,
-            image: uploadedImageUrl,
-          })
-        ).then((data) => {
-          if (data?.payload?.success) {
-            dispatch(fetchAllProducts());
-            setOpenCreateProductsDialog(false);
-            setImageFile(null);
-            setFormData(initialFormData);
-            toast({
-              title: "Product add successfully",
-            });
+            resetFormState();
           }
         });
+    } else {
+      dispatch(addNewProduct(preparedFormData)).then((data) => {
+        if (data?.payload?.success) {
+          dispatch(fetchAllProducts());
+          resetFormState();
+          toast({ title: "Product added successfully" });
+        }
+      });
+    }
   }
 
-const getDynamicFormControls = () => {
-  return baseFormElements.map((field) => {
-    if (field.name === "category") {
-      return {
-        ...field,
-        options: filterOptions.category,
-      };
-    }
-
-    if (field.name === "brand") {
-      const selectedCategory = formData.category;
-      const brandOptions = selectedCategory && filterOptions.brand[selectedCategory]
-        ? filterOptions.brand[selectedCategory]
-        : [];
-
-      return {
-        ...field,
-        options: brandOptions,
-      };
-    }
-
-    return field;
-  });
-};
-
+  const getDynamicFormControls = () => {
+    return baseFormElements
+      .map((field) => {
+        if (field.name === "category") {
+          return {
+            ...field,
+            options: filterOptions.category,
+          };
+        }
+        if (field.name === "brand") {
+          const selectedCategory = formData.category;
+          const brandOptions =
+            selectedCategory && filterOptions.brand[selectedCategory]
+              ? filterOptions.brand[selectedCategory]
+              : [];
+          return {
+            ...field,
+            options: brandOptions,
+          };
+        }
+        return field;
+      })
+      .filter((field) => !field.showWhen || field.showWhen(formData));
+  };
 
   function handleDelete(getCurrentProductId) {
     dispatch(deleteProduct(getCurrentProductId)).then((data) => {
@@ -115,18 +182,9 @@ const getDynamicFormControls = () => {
     });
   }
 
-  function isFormValid() {
-    return Object.keys(formData)
-      .filter((currentKey) => currentKey !== "averageReview")
-      .map((key) => formData[key] !== "")
-      .every((item) => item);
-  }
-
   useEffect(() => {
     dispatch(fetchAllProducts());
   }, [dispatch]);
-
-  console.log(formData, "productList");
 
   return (
     <Fragment>
@@ -165,11 +223,35 @@ const getDynamicFormControls = () => {
           <ProductImageUpload
             imageFile={imageFile}
             setImageFile={setImageFile}
-            uploadedImageUrl={uploadedImageUrl}
+            uploadedImageUrl={currentEditedId ? formData.image : uploadedImageUrl}
             setUploadedImageUrl={setUploadedImageUrl}
             setImageLoadingState={setImageLoadingState}
             imageLoadingState={imageLoadingState}
             isEditMode={currentEditedId !== null}
+            imageFiles={imageFiles}
+            setImageFiles={setImageFiles}
+            uploadedImageUrls={uploadedImageUrls} // always from state
+            setUploadedImageUrls={(urls) => {
+              // 🚀 enforce max limit at selection time
+              if (urls.length > MAX_IMAGES) {
+                toast({
+                  title: `You can upload a maximum of ${MAX_IMAGES} images.`,
+                  variant: "destructive",
+                });
+                setUploadedImageUrls(urls.slice(0, MAX_IMAGES));
+              } else {
+                setUploadedImageUrls(urls);
+              }
+            }}
+            imageLoadingStates={imageLoadingStates}
+            setImageLoadingStates={setImageLoadingStates}
+            existingImages={currentEditedId ? formData.additionalImages || [] : []}
+            handleDeleteExistingImage={(index) => {
+              setFormData((prev) => ({
+                ...prev,
+                additionalImages: prev.additionalImages.filter((_, i) => i !== index),
+              }));
+            }}
           />
           <div className="py-6">
             <CommonForm
@@ -178,7 +260,6 @@ const getDynamicFormControls = () => {
               setFormData={setFormData}
               buttonText={currentEditedId !== null ? "Edit" : "Add"}
               formControls={getDynamicFormControls()}
-              isBtnDisabled={!isFormValid()}
             />
           </div>
         </SheetContent>

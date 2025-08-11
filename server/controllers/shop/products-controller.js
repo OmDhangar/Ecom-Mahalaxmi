@@ -1,5 +1,6 @@
 const Product = require("../../models/Product");
 
+
 const getFilteredProducts = async (req, res) => {
   try {
     const { category = [], brand = [], sortBy = "price-lowtohigh" } = req.query;
@@ -55,6 +56,23 @@ const getFilteredProducts = async (req, res) => {
   }
 };
 
+const getFeaturedProducts = async (req, res) => {
+  try {
+    const featuredProducts = await Product.find({ isFeatured: true });
+
+    res.status(200).json({
+      success: true,
+      data: featuredProducts,
+    });
+  } catch (error) {
+    console.error("Error fetching featured products:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to fetch featured products",
+    });
+  }
+};
+
 const getProductDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -84,15 +102,15 @@ const updateAsFeatured = async (req, res) => {
   if (!req.body || !req.params.id) {
     return res.status(400).json({ success: false, message: "Invalid request" });
   }
-  const { featured, featuredDescription } = req.body;
+  const { isFeatured, featuredDescription } = req.body;
   const productId = req.params.id;
-  console.log("controller hit")
+  console.log("controller hit",isFeatured,featuredDescription);
 
   try {
     const updated = await Product.findByIdAndUpdate(
       productId,
       {
-        featured,
+        isFeatured,
         featuredDescription,
       },
       { new: true }
@@ -103,4 +121,4 @@ const updateAsFeatured = async (req, res) => {
   }
 };
 
-module.exports = { getFilteredProducts,updateAsFeatured, getProductDetails };
+module.exports = { getFilteredProducts,updateAsFeatured,getFeaturedProducts,getProductDetails };

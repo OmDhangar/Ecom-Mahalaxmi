@@ -1,5 +1,6 @@
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ function CommonForm({
 }) {
   function renderInputsByComponentType(getControlItem) {
     let element = null;
-    const value = formData[getControlItem.name] || "";
+    const value = formData[getControlItem.name];
 
     switch (getControlItem.componentType) {
       case "input":
@@ -84,6 +85,69 @@ function CommonForm({
           />
         );
 
+        break;
+        case "multiselect":
+        const fieldPath = getControlItem.name.split('.');
+        const fieldValue = formData[getControlItem.name] ;
+        
+        element = (
+          <div className="grid grid-cols-2 gap-2">
+            {getControlItem.options && getControlItem.options.length > 0
+              ? getControlItem.options.map((optionItem) => {
+                  const isChecked = Array.isArray(fieldValue) && 
+                    fieldValue.includes(optionItem.id);
+                  
+                  return (
+                    <div key={optionItem.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`${getControlItem.name}-${optionItem.id}`}
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          let newValue;
+                          if (Array.isArray(fieldValue)) {
+                            newValue = checked 
+                              ? [...fieldValue, optionItem.id]
+                              : fieldValue.filter(val => val !== optionItem.id);
+                          } else {
+                            newValue = checked ? [optionItem.id] : [];
+                          }
+                          
+                          // Handle nested object paths
+                          if (fieldPath.length > 1) {
+                            const newFormData = {...formData};
+                            let current = newFormData;
+                            
+                            // Navigate to the parent object
+                            for (let i = 0; i < fieldPath.length - 1; i++) {
+                              if (!current[fieldPath[i]]) {
+                                current[fieldPath[i]] = {};
+                              }
+                              current = current[fieldPath[i]];
+                            }
+                            
+                            // Set the value on the parent object
+                            current[fieldPath[fieldPath.length - 1]] = newValue;
+                            setFormData(newFormData);
+                          } else {
+                            setFormData({
+                              ...formData,
+                              [getControlItem.name]: newValue,
+                            });
+                          }
+                        }}
+                      />
+                      <label 
+                        htmlFor={`${getControlItem.name}-${optionItem.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {optionItem.label}
+                      </label>
+                    </div>
+                  );
+                })
+              : null}
+          </div>
+        );
         break;
 
       default:

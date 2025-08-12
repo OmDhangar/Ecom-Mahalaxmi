@@ -38,14 +38,53 @@ const OrderSchema = new mongoose.Schema({
       "pending",
       "confirmed",
       "processing",
+      "shipping_failed",
       "shipped",
       "delivered",
       "cancelled",
-      "returned",
-      "shipping_failed" // ✅ New status for Shiprocket error
+      "returned", 
     ],
     default: "pending"
   },
+  shippingStatus: {
+    type: String,
+    enum: ["not_booked","pending", "booked", "in_transit", "delivered", "failed", "cancelled"],
+    default: "not_booked"
+  },
+  shippingErrorHistory: [
+    {
+      message: String,
+      details: Object,
+      date: { type: Date, default: Date.now },
+      attemptNumber: Number
+    }
+  ],
+  needsManualShipment: { type: Boolean, default: false },
+  needsRefund: { type: Boolean, default: false },
+  pricingSnapshot: {
+    currency: { type: String, default: "INR" },
+    subTotal: Number,
+    shippingCharges: Number,
+    tax: Number,
+    discount: Number,
+    totalAmount: Number
+  },
+  checkoutStep: {
+    type: String,
+    enum: [
+      "cart_created",
+      "address_confirmed",
+      "payment_initiated",
+      "payment_success_pending_shipment",
+      "shipment_booked",
+      "completed",
+      "failed"
+    ],
+    default: "cart_created"
+  },
+  paymentGatewayResponse: { type: Object },
+  shippingApiResponse: { type: Object },
+
   paymentMethod: {
     type: String,
     enum: ["cod", "razorpay"],
@@ -119,5 +158,9 @@ OrderSchema.index({ userId: 1, orderDate: -1 });
 OrderSchema.index({ orderStatus: 1 });
 OrderSchema.index({ paymentStatus: 1 });
 OrderSchema.index({ shiprocketOrderId: 1 });
+OrderSchema.index({ shippingStatus: 1 });
+OrderSchema.index({ paymentMethod: 1 });
+OrderSchema.index({ checkoutStep: 1 });
+
 
 module.exports = mongoose.model("Order", OrderSchema);

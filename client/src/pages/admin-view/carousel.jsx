@@ -41,6 +41,7 @@ const CarouselAdmin = () => {
     bg: "from-blue-500 to-indigo-500",
     isActive: true
   });
+  
 
   const backgroundOptions = [
   { value: "from-blue-500 to-indigo-500", label: "Blue to Indigo" },

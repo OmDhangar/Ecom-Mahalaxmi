@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 const initialState = {
   userName: "",
   email: "",
+  phone: "", // Added phone
   password: "",
 };
 
@@ -21,6 +22,7 @@ function AuthRegister() {
   function onSubmit(event) {
     event.preventDefault();
     dispatch(registerUser(formData)).then((data) => {
+      console.log(data);
       if (data?.payload?.success) {
         toast({
           title: data?.payload?.message,

@@ -56,19 +56,21 @@ condition: {
     }
   },
 
-sizes: [{
-    type: String,
-    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
-    validate: {
-      validator: function(v) {
-        if (this.category === 'fashion') {
-          return Array.isArray(v) && v.length > 0;
-        }
-        return true;
-      },
-      message: 'At least one size is required for fashion products'
-    }
-  }],
+sizes: {
+  type: [String],
+  enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
+  validate: {
+    validator: function(v) {
+      if (this.category === 'fashion') {
+        return Array.isArray(v) && v.length > 0;
+      }
+      return true;
+    },
+    message: 'At least one size is required for fashion products'
+  }
+},
+
+
 
 
   // Pricing information
@@ -82,6 +84,8 @@ sizes: [{
     default: 0,
     min: 0,
   },
+  shippingCharges: Number, // in INR, calculated once during product creation
+
   
   // Inventory
   totalStock: {
@@ -208,6 +212,9 @@ sizes: [{
   returnPolicy: {
     type: String,
     trim: true,
+  },
+  shippingCost:{
+    type: Number,
   },
   
   // Product variants (optional)

@@ -74,80 +74,114 @@ function AdminProducts() {
     }
   }, [uploadedImageUrl]);
 
-  function onSubmit(event) {
-    event.preventDefault();
+function onSubmit(event) {
+  event.preventDefault();
 
-    const missingFields = [];
+  const missingFields = [];
 
-    // Check images only when adding new product
-    if (currentEditedId === null) {
-      if (!uploadedImageUrl) missingFields.push("Main Image");
-      if (uploadedImageUrls.length === 0) missingFields.push("Additional Images");
+  // Check images only when adding new product
+  if (currentEditedId === null) {
+    if (!uploadedImageUrl) missingFields.push("Main Image");
+    if (uploadedImageUrls.length === 0) missingFields.push("Additional Images");
+  }
+
+  // Base required fields for all products
+  const baseRequiredFields = [
+    "title",
+    "description",
+    "category",
+    "brand",
+    "price",
+    "salePrice",
+    "totalStock",
+    "weight",
+    "length",
+    "breadth",
+    "height",
+  ];
+
+  // Category-based required fields config
+  const categoryRequiredFieldsMap = {
+    electronics: ["batteryHealth", "condition"],
+    fashion: ["sizes"],
+    // add more categories as needed
+    // e.g. "books": ["author", "isbn"],
+  };
+
+  // Get current category
+  const category = formData.category;
+
+  // Gather required fields: base + category-specific (if any)
+  const requiredFields = [
+    ...baseRequiredFields,
+    ...(categoryRequiredFieldsMap[category] || []),
+  ];
+
+  // Validate all required fields
+  requiredFields.forEach((field) => {
+    const value = formData[field];
+    if (
+      value === "" ||
+      value === null ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
+      missingFields.push(field);
     }
+  });
 
-    // Check other fields
-    Object.entries(formData).forEach(([key, value]) => {
-      if (
-        key !== "averageReview" &&
-        key !== "additionalImages" &&
-        key !== "featuredDescription" &&
-        value === ""
-      ) {
-        missingFields.push(key);
-      }
+  if (missingFields.length > 0) {
+    toast({
+      title: "Please complete all required fields",
+      description: `Missing: ${missingFields.join(", ")}`,
+      variant: "destructive",
     });
+    return;
+  }
 
-    if (missingFields.length > 0) {
-      toast({
-        title: "Please complete all required fields",
-        description: `Missing: ${missingFields.join(", ")}`,
-        variant: "destructive",
-      });
-      return;
-    }
+  // Prepare form data numbers etc.
+  const mergedAdditionalImages = [
+    ...(formData.additionalImages || []),
+    ...(uploadedImageUrls || []),
+  ]
+    .filter((item, index, self) => self.indexOf(item) === index) // remove duplicates
+    .slice(0, MAX_IMAGES);
 
-    // ✅ Merge old + new additional images without duplication
-    const mergedAdditionalImages = [
-      ...(formData.additionalImages || []),
-      ...(uploadedImageUrls || []),
-    ]
-      .filter((item, index, self) => self.indexOf(item) === index) // remove duplicates
-      .slice(0, MAX_IMAGES); // enforce max limit
+  const preparedFormData = {
+    ...formData,
+    image:
+      uploadedImageUrl && uploadedImageUrl.trim() !== ""
+        ? uploadedImageUrl
+        : formData.image,
+    additionalImages: mergedAdditionalImages,
+    price: Number(formData.price),
+    salePrice: Number(formData.salePrice),
+    totalStock: Number(formData.totalStock),
+    weight: Number(formData.weight),
+    length: Number(formData.length),
+    breadth: Number(formData.breadth),
+    height: Number(formData.height),
+  };
 
-    const preparedFormData = {
-      ...formData,
-      image:
-        uploadedImageUrl && uploadedImageUrl.trim() !== ""
-          ? uploadedImageUrl
-          : formData.image,
-      additionalImages: mergedAdditionalImages,
-      price: Number(formData.price),
-      salePrice: Number(formData.salePrice),
-      totalStock: Number(formData.totalStock),
-      weight: Number(formData.weight),
-      length: Number(formData.length),
-      breadth: Number(formData.breadth),
-      height: Number(formData.height),
-    };
-
-    if (currentEditedId !== null) {
-      dispatch(editProduct({ id: currentEditedId, formData: preparedFormData }))
-        .then((data) => {
-          if (data?.payload?.success) {
-            dispatch(fetchAllProducts());
-            resetFormState();
-          }
-        });
-    } else {
-      dispatch(addNewProduct(preparedFormData)).then((data) => {
+  if (currentEditedId !== null) {
+    dispatch(editProduct({ id: currentEditedId, formData: preparedFormData })).then(
+      (data) => {
         if (data?.payload?.success) {
           dispatch(fetchAllProducts());
           resetFormState();
-          toast({ title: "Product added successfully" });
         }
-      });
-    }
+      }
+    );
+  } else {
+    dispatch(addNewProduct(preparedFormData)).then((data) => {
+      if (data?.payload?.success) {
+        dispatch(fetchAllProducts());
+        resetFormState();
+        toast({ title: "Product added successfully" });
+      }
+    });
   }
+}
+
 
   const getDynamicFormControls = () => {
     return baseFormElements

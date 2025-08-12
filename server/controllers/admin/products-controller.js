@@ -44,8 +44,7 @@ const addProduct = async (req, res) => {
       price,
       salePrice,
       totalStock,
-      averageReview,
-      // New shipping fields
+      // Don't accept averageReview from client for new product creation
       weight,
       length,
       breadth,
@@ -53,7 +52,6 @@ const addProduct = async (req, res) => {
       sku,
       hsn,
       tax,
-      // Additional product details
       manufacturer,
       countryOfOrigin,
       materialComposition,
@@ -64,9 +62,6 @@ const addProduct = async (req, res) => {
       condition,
       sizes
     } = req.body;
-
-    console.log(req.body, "averageReview");
-
 
     // Generate SKU if not provided
     const productSKU = sku || generateSKU(title, category, brand);
@@ -80,14 +75,13 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // Validate required shipping fields
+    // Validate shipping fields
     if (!weight || weight <= 0) {
       return res.status(400).json({
         success: false,
         message: "Product weight is required and must be greater than 0",
       });
     }
-
     if (!length || !breadth || !height || length <= 0 || breadth <= 0 || height <= 0) {
       return res.status(400).json({
         success: false,
@@ -95,82 +89,87 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // Construct specifications object manually based on category
-    let finalSpecifications = {};
-
+    // Category-specific validations
     if (category === 'electronics') {
-      if (!batteryHealth || !condition) {
+      // condition must be one of enum values, not empty string
+      const validConditions = ['new', 'refurbished', 'second-hand'];
+      if (!batteryHealth || !condition || !validConditions.includes(condition)) {
         return res.status(400).json({
           success: false,
-          message: 'Battery health and condition are required for electronics',
+          message: 'Battery health and valid condition ("new", "refurbished", "second-hand") are required for electronics',
         });
       }
-      finalSpecifications = {
-        batteryHealth,
-        condition,
-      };
     }
 
     if (category === 'fashion') {
-      if (!sizes || sizes.length === 0) {
+      if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Sizes are required for fashion items',
+          message: 'Sizes are required for fashion items and must be a non-empty array',
         });
       }
-      finalSpecifications = {
-        sizes,
-      };
+      // Validate sizes array items against enum
+      const validSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
+      const invalidSizes = sizes.filter(size => !validSizes.includes(size));
+      if (invalidSizes.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid sizes provided: ${invalidSizes.join(', ')}`,
+        });
+      }
     }
 
+    // Construct the product data object
+    const newProductData = {
+      image,
+      additionalImages: req.body.additionalImages || [],
+      title,
+      description,
+      category,
+      brand,
+      price,
+      salePrice,
+      totalStock,
+      averageReview: 0, // start at 0 for new product
+      weight: parseFloat(weight),
+      length: parseFloat(length),
+      breadth: parseFloat(breadth),
+      height: parseFloat(height),
+      sku: productSKU,
+      hsn: hsn || "0000",
+      tax: parseFloat(tax) || 0,
+      manufacturer: manufacturer || brand,
+      countryOfOrigin: countryOfOrigin || "India",
+      materialComposition,
+      careInstructions,
+      warranty,
+      returnPolicy,
+      shippingCost: req.body.shippingCost || 0, // if you want to include this field
+      // Only add these fields if relevant
+      batteryHealth: category === 'electronics' ? batteryHealth : undefined,
+      condition: category === 'electronics' ? condition : undefined,
+      sizes: category === 'fashion' ? sizes : undefined,
+    };
 
-    const newlyCreatedProduct = new Product({
-  image,
-  additionalImages: req.body.additionalImages || [],
-  title,
-  description,
-  category,
-  brand,
-  price,
-  salePrice,
-  totalStock,
-  averageReview,
-  weight: parseFloat(weight),
-  length: parseFloat(length),
-  breadth: parseFloat(breadth),
-  height: parseFloat(height),
-  sku: productSKU,
-  hsn: hsn || "0000",
-  tax: parseFloat(tax) || 0,
-  manufacturer: manufacturer || brand,
-  countryOfOrigin: countryOfOrigin || "India",
-  materialComposition,
-  careInstructions,
-  warranty,
-  returnPolicy,
-  batteryHealth,  // Direct field
-  condition,      // Direct field
-  sizes, 
-  createdAt: new Date(),
-  updatedAt: new Date(),
-});
-
+    const newlyCreatedProduct = new Product(newProductData);
 
     await newlyCreatedProduct.save();
-    res.status(201).json({
+
+    return res.status(201).json({
       success: true,
       data: newlyCreatedProduct,
       message: "Product created successfully with shipping information",
     });
   } catch (e) {
-    console.log(e);
-    res.status(500).json({
+    console.error(e);
+    return res.status(500).json({
       success: false,
       message: "Error occurred while creating product",
       error: e.message,
     });
   }
 };
+
 
 //fetch all products
 const fetchAllProducts = async (req, res) => {

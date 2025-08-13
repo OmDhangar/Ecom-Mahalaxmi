@@ -5,7 +5,7 @@ const cors = require("cors");
 const authRouter = require("./routes/auth/auth-routes");
 const adminProductsRouter = require("./routes/admin/products-routes");
 const adminOrderRouter = require("./routes/admin/order-routes");
-
+const shippingCalculation = require("./routes/shop/shipping-routes");
 const shopProductsRouter = require("./routes/shop/products-routes");
 const shopCartRouter = require("./routes/shop/cart-routes");
 const shopAddressRouter = require("./routes/shop/address-routes");
@@ -57,6 +57,7 @@ app.use("/api/shop/search", shopSearchRouter);
 app.use("/api/shop/review", shopReviewRouter);
 app.use('/api/admin/carousel', adminCarouselRouter);
 app.use('/api/shop/carousel', shopCarouselRouter);
+app.use('/api',shippingCalculation);
 
 app.use("/api/common/feature", commonFeatureRouter);
 

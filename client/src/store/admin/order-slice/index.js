@@ -13,7 +13,7 @@ export const getAllOrdersForAdmin = createAsyncThunk(
   "/order/getAllOrdersForAdmin",
   async ({ fromDate, toDate }) => {
     const response = await axios.get(
-      `http://localhost:5000/api/admin/orders/get?fromDate=${fromDate}&toDate=${toDate}`
+      `/api/admin/orders/get?fromDate=${fromDate}&toDate=${toDate}`
     );
     return response.data;
   }
@@ -24,7 +24,7 @@ export const getOrderDetailsForAdmin = createAsyncThunk(
   "/order/getOrderDetailsForAdmin",
   async (id) => {
     const response = await axios.get(
-      `http://localhost:5000/api/admin/orders/details/${id}`
+      `/api/admin/orders/details/${id}`
     );
     return response.data;
   }
@@ -35,7 +35,7 @@ export const updateOrderStatus = createAsyncThunk(
   "/order/updateOrderStatus",
   async ({ id, orderStatus, paymentStatus }) => {
     const response = await axios.put(
-      `http://localhost:5000/api/admin/orders/update/${id}`,
+      `/api/admin/orders/update/${id}`,
       {
         orderStatus,
         ...(paymentStatus && { paymentStatus }),
@@ -50,7 +50,7 @@ export const getShippingFailedOrders = createAsyncThunk(
   "/order/getShippingFailedOrders",
   async () => {
     const response = await axios.get(
-      "http://localhost:5000/api/admin/orders/shipping-failed"
+      "/api/admin/orders/shipping-failed"
     );
     return response.data;
   }

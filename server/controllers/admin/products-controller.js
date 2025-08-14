@@ -44,8 +44,7 @@ const addProduct = async (req, res) => {
       price,
       salePrice,
       totalStock,
-      averageReview,
-      // New shipping fields
+      // Don't accept averageReview from client for new product creation
       weight,
       length,
       breadth,
@@ -53,7 +52,6 @@ const addProduct = async (req, res) => {
       sku,
       hsn,
       tax,
-      // Additional product details
       manufacturer,
       countryOfOrigin,
       materialComposition,
@@ -64,9 +62,6 @@ const addProduct = async (req, res) => {
       condition,
       sizes
     } = req.body;
-
-    console.log(req.body, "averageReview");
-
 
     // Generate SKU if not provided
     const productSKU = sku || generateSKU(title, category, brand);
@@ -80,14 +75,13 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // Validate required shipping fields
+    // Validate shipping fields
     if (!weight || weight <= 0) {
       return res.status(400).json({
         success: false,
         message: "Product weight is required and must be greater than 0",
       });
     }
-
     if (!length || !breadth || !height || length <= 0 || breadth <= 0 || height <= 0) {
       return res.status(400).json({
         success: false,
@@ -95,82 +89,108 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // Construct specifications object manually based on category
-    let finalSpecifications = {};
-
+    // Category-specific validations
     if (category === 'electronics') {
-      if (!batteryHealth || !condition) {
+      // condition must be one of enum values, not empty string
+      const validConditions = ['new', 'refurbished', 'second-hand'];
+      if (!batteryHealth || !condition || !validConditions.includes(condition)) {
         return res.status(400).json({
           success: false,
-          message: 'Battery health and condition are required for electronics',
+          message: 'Battery health and valid condition ("new", "refurbished", "second-hand") are required for electronics',
         });
       }
-      finalSpecifications = {
-        batteryHealth,
-        condition,
-      };
     }
 
     if (category === 'fashion') {
-      if (!sizes || sizes.length === 0) {
+      if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Sizes are required for fashion items',
+          message: 'Sizes are required for fashion items and must be a non-empty array',
         });
       }
-      finalSpecifications = {
-        sizes,
-      };
+      
+      // Validate sizes array - should be array of objects with size and stock
+      const validSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
+      const invalidSizes = [];
+      
+      for (const sizeItem of sizes) {
+        if (typeof sizeItem === 'object' && sizeItem.size && typeof sizeItem.stock === 'number') {
+          if (!validSizes.includes(sizeItem.size)) {
+            invalidSizes.push(sizeItem.size);
+          }
+          if (sizeItem.stock < 0) {
+            return res.status(400).json({
+              success: false,
+              message: `Stock for size ${sizeItem.size} cannot be negative`,
+            });
+          }
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'Each size item must have both size and stock properties',
+          });
+        }
+      }
+      
+      if (invalidSizes.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid sizes provided: ${invalidSizes.join(', ')}`,
+        });
+      }
     }
 
+    // Construct the product data object
+    const newProductData = {
+      image,
+      additionalImages: req.body.additionalImages || [],
+      title,
+      description,
+      category,
+      brand,
+      price,
+      salePrice,
+      totalStock,
+      averageReview: 0, // start at 0 for new product
+      weight: parseFloat(weight),
+      length: parseFloat(length),
+      breadth: parseFloat(breadth),
+      height: parseFloat(height),
+      sku: productSKU,
+      hsn: hsn || "0000",
+      tax: parseFloat(tax) || 0,
+      manufacturer: manufacturer || brand,
+      countryOfOrigin: countryOfOrigin || "India",
+      materialComposition,
+      careInstructions,
+      warranty,
+      returnPolicy,
+      shippingCost: req.body.shippingCost || 0, // if you want to include this field
+      // Only add these fields if relevant
+      batteryHealth: category === 'electronics' ? batteryHealth : undefined,
+      condition: category === 'electronics' ? condition : undefined,
+      sizes: category === 'fashion' ? sizes : undefined,
+    };
 
-    const newlyCreatedProduct = new Product({
-  image,
-  additionalImages: req.body.additionalImages || [],
-  title,
-  description,
-  category,
-  brand,
-  price,
-  salePrice,
-  totalStock,
-  averageReview,
-  weight: parseFloat(weight),
-  length: parseFloat(length),
-  breadth: parseFloat(breadth),
-  height: parseFloat(height),
-  sku: productSKU,
-  hsn: hsn || "0000",
-  tax: parseFloat(tax) || 0,
-  manufacturer: manufacturer || brand,
-  countryOfOrigin: countryOfOrigin || "India",
-  materialComposition,
-  careInstructions,
-  warranty,
-  returnPolicy,
-  batteryHealth,  // Direct field
-  condition,      // Direct field
-  sizes, 
-  createdAt: new Date(),
-  updatedAt: new Date(),
-});
-
+    const newlyCreatedProduct = new Product(newProductData);
 
     await newlyCreatedProduct.save();
-    res.status(201).json({
+
+    return res.status(201).json({
       success: true,
       data: newlyCreatedProduct,
       message: "Product created successfully with shipping information",
     });
   } catch (e) {
-    console.log(e);
-    res.status(500).json({
+    console.error(e);
+    return res.status(500).json({
       success: false,
       message: "Error occurred while creating product",
       error: e.message,
     });
   }
 };
+
 
 //fetch all products
 const fetchAllProducts = async (req, res) => {
@@ -445,13 +465,13 @@ const getProductBySKU = async (req, res) => {
   }
 };
 
-// New function to update stock
+// New function to update stock (supports size-specific updates)
 const updateStock = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity, operation = 'set' } = req.body; // operation can be 'set', 'add', 'subtract'
+    const { quantity, operation = 'set', size } = req.body; // operation can be 'set', 'add', 'subtract'
 
-    if (!quantity || quantity < 0) {
+    if (quantity === undefined || quantity < 0) {
       return res.status(400).json({
         success: false,
         message: "Valid quantity is required",
@@ -466,34 +486,71 @@ const updateStock = async (req, res) => {
       });
     }
 
-    let newStock;
-    switch (operation) {
-      case 'add':
-        newStock = product.totalStock + parseInt(quantity);
-        break;
-      case 'subtract':
-        newStock = Math.max(0, product.totalStock - parseInt(quantity));
-        break;
-      case 'set':
-      default:
-        newStock = parseInt(quantity);
-        break;
-    }
-
-    product.totalStock = newStock;
-    product.updatedAt = new Date();
-    await product.save();
+    // Use the model's updateStock method which handles size-specific updates
+    await product.updateStock(parseInt(quantity), operation, size);
 
     res.status(200).json({
       success: true,
       data: product,
-      message: `Stock ${operation}ed successfully`,
+      message: size 
+        ? `Stock ${operation}ed successfully for size ${size}` 
+        : `Stock ${operation}ed successfully`,
     });
   } catch (e) {
     console.log(e);
     res.status(500).json({
       success: false,
       message: "Error occurred while updating stock",
+      error: e.message,
+    });
+  }
+};
+
+// New function to get size-specific stock
+const getSizeStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { size } = req.query;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (size) {
+      const stock = product.getStockForSize(size);
+      return res.status(200).json({
+        success: true,
+        data: { size, stock, available: stock > 0 },
+      });
+    }
+
+    // Return all size stocks for fashion products
+    if (product.category === 'fashion' && product.sizes) {
+      const sizeStocks = product.sizes.map(s => ({
+        size: s.size,
+        stock: s.stock,
+        available: s.stock > 0
+      }));
+      return res.status(200).json({
+        success: true,
+        data: { totalStock: product.totalStock, sizes: sizeStocks },
+      });
+    }
+
+    // For non-fashion products, return total stock
+    res.status(200).json({
+      success: true,
+      data: { totalStock: product.totalStock, available: product.totalStock > 0 },
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Error occurred while fetching stock",
     });
   }
 };
@@ -550,14 +607,21 @@ const deleteImageFromCloudinary = async (reqOrUrl, res) => {
   try {
     let publicId;
     
-    // Check if this is an API call or a direct function call
     if (typeof reqOrUrl === 'string') {
-      // Direct call with URL string
       publicId = extractPublicIdFromUrl(reqOrUrl);
-    } else {
-      // API call with req object
+    } else if (reqOrUrl && reqOrUrl.body) {
+      // Only access body if reqOrUrl is not null
       const { public_id } = reqOrUrl.body;
       publicId = public_id;
+    } else {
+      console.error('Invalid request or URL passed to deleteImageFromCloudinary');
+      if (res) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid request or URL"
+        });
+      }
+      return false;
     }
     
     if (!publicId) {
@@ -633,6 +697,7 @@ module.exports = {
   deleteProduct,
   getProductBySKU,
   updateStock,
+  getSizeStock,
   deleteImageFromCloudinary,
   bulkUpdateProducts,
 };

@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
 
 const initialState = {
   carouselList: [],
@@ -6,28 +7,29 @@ const initialState = {
   error: null
 };
 
+// Axios instance (auto-sets token for every request)
+const api = axios.create({
+  baseURL: '/', // same-domain root
+});
+
+// Add Authorization header for all requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Async thunks
 export const fetchAllCarouselSlides = createAsyncThunk(
   'adminCarousel/fetchAllCarouselSlides',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/carousel', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch carousel slides');
-      }
-
-      const data = await response.json();
+      const { data } = await api.get('/api/admin/carousel');
       return data.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -36,23 +38,10 @@ export const createCarouselSlide = createAsyncThunk(
   'adminCarousel/createCarouselSlide',
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/carousel', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData // FormData object with image and other fields
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create carousel slide');
-      }
-
-      const data = await response.json();
+      const { data } = await api.post('/api/admin/carousel', formData);
       return data.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -61,23 +50,10 @@ export const updateCarouselSlide = createAsyncThunk(
   'adminCarousel/updateCarouselSlide',
   async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/carousel/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update carousel slide');
-      }
-
-      const data = await response.json();
+      const { data } = await api.put(`/api/admin/carousel/${id}`, formData);
       return data.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -86,22 +62,10 @@ export const deleteCarouselSlide = createAsyncThunk(
   'adminCarousel/deleteCarouselSlide',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/carousel/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete carousel slide');
-      }
-
+      await api.delete(`/api/admin/carousel/${id}`);
       return id;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -110,24 +74,10 @@ export const reorderCarouselSlides = createAsyncThunk(
   'adminCarousel/reorderCarouselSlides',
   async (slideOrders, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/carousel/reorder', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ slideOrders })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to reorder carousel slides');
-      }
-
-      const data = await response.json();
+      const { data } = await api.put('/api/admin/carousel/reorder', { slideOrders });
       return data.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );

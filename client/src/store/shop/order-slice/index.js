@@ -10,6 +10,9 @@ const initialState = {
   orderDetails: null,
   razorpayOrder: null,
   trackingInfo: null,
+  shippingCharge: 0,
+  shippingChargeLoading: false,
+  shippingChargeError: null,
 };
 
 // Create new order (supports both COD and Razorpay)
@@ -18,7 +21,7 @@ export const createNewOrder = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/shop/order/create",
+        "/api/shop/order/create",
         orderData
       );
       return response.data;
@@ -36,9 +39,10 @@ export const verifyPayment = createAsyncThunk(
   async (paymentData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/shop/order/verify",
+        "/api/shop/order/verify",
         paymentData
       );
+      console.log(response);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -54,7 +58,7 @@ export const getAllOrdersByUserId = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/shop/order/list/${userId}`
+        `/api/shop/order/list/${userId}`
       );
       return response.data;
     } catch (error) {
@@ -71,7 +75,7 @@ export const getOrderDetails = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/shop/order/details/${id}`
+        `/api/shop/order/details/${id}`
       );
       return response.data;
     } catch (error) {
@@ -88,7 +92,7 @@ export const trackOrder = createAsyncThunk(
   async (orderId, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/shop/order/track/${orderId}`
+        `/api/shop/order/track/${orderId}`
       );
       return response.data;
     } catch (error) {
@@ -105,7 +109,7 @@ export const cancelOrder = createAsyncThunk(
   async ({ orderId, reason }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/shop/order/update-status/${orderId}`,
+        `/api/shop/order/update-status/${orderId}`,
         { 
           orderStatus: "cancelled",
           cancellationReason: reason 
@@ -115,6 +119,26 @@ export const cancelOrder = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to cancel order"
+      );
+    }
+  }
+);
+
+// Calculate shipping charges for products using Shiprocket integration
+// This thunk calls POST /api/shipping/calculate-shipping with cartItems and deliveryPincode
+// The backend fetches product dimensions from Product database and calls Shiprocket API
+export const calculateShippingCharge = createAsyncThunk(
+  "order/calculateShippingCharge",
+  async ({ cartItems, deliveryPincode }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        "/api/shipping/calculate-shipping",
+        { cartItems, deliveryPincode }
+      );
+      return response.data; // Expected format: { success: true, shippingCharge: number }
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to calculate shipping charge"
       );
     }
   }
@@ -132,6 +156,11 @@ const shoppingOrderSlice = createSlice({
     },
     resetTrackingInfo: (state) => {
       state.trackingInfo = null;
+    },
+    resetShippingCharge: (state) => {
+      state.shippingCharge = 0;
+      state.shippingChargeError = null;
+      state.shippingChargeLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -236,10 +265,31 @@ const shoppingOrderSlice = createSlice({
       })
       .addCase(cancelOrder.rejected, (state) => {
         state.isLoading = false;
+      })
+      // Shipping charge cases
+      .addCase(calculateShippingCharge.pending, (state) => {
+        state.shippingChargeLoading = true;
+        state.shippingChargeError = null;
+      })
+      .addCase(calculateShippingCharge.fulfilled, (state, action) => {
+        state.shippingChargeLoading = false;
+        if (action.payload.success) {
+          state.shippingCharge = action.payload.shippingCharge;
+        } else {
+          state.shippingChargeError = action.payload.message || "Failed to calculate shipping charge";
+          state.shippingCharge = 0;
+        }
+      })
+      .addCase(calculateShippingCharge.rejected, (state, action) => {
+        state.shippingChargeLoading = false;
+        state.shippingChargeError = action.payload || "Failed to calculate shipping charge";
+        state.shippingCharge = 0;
       });
+
+      
   },
 });
 
-export const { resetOrderDetails, resetRazorpayOrder, resetTrackingInfo } = shoppingOrderSlice.actions;
+export const { resetOrderDetails, resetRazorpayOrder, resetTrackingInfo,resetShippingCharge } = shoppingOrderSlice.actions;
 
 export default shoppingOrderSlice.reducer;

@@ -56,19 +56,32 @@ condition: {
     }
   },
 
-sizes: [{
-    type: String,
-    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
-    validate: {
-      validator: function(v) {
-        if (this.category === 'fashion') {
-          return Array.isArray(v) && v.length > 0;
-        }
-        return true;
-      },
-      message: 'At least one size is required for fashion products'
+sizes: {
+  type: [{
+    size: {
+      type: String,
+      enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
+      required: true
+    },
+    stock: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
     }
   }],
+  validate: {
+    validator: function(v) {
+      if (this.category === 'fashion') {
+        return Array.isArray(v) && v.length > 0;
+      }
+      return true;
+    },
+    message: 'At least one size is required for fashion products'
+  }
+},
+
+
 
 
   // Pricing information
@@ -82,6 +95,8 @@ sizes: [{
     default: 0,
     min: 0,
   },
+  shippingCharges: Number, // in INR, calculated once during product creation
+
   
   // Inventory
   totalStock: {
@@ -208,6 +223,9 @@ sizes: [{
   returnPolicy: {
     type: String,
     trim: true,
+  },
+  shippingCost:{
+    type: Number,
   },
   
   // Product variants (optional)
@@ -400,6 +418,11 @@ ProductSchema.pre('save', function(next) {
       next(new Error('Sizes are required for fashion products'));
       return;
     }
+    
+    // Auto-calculate totalStock from size stocks for fashion products
+    if (this.sizes && this.sizes.length > 0) {
+      this.totalStock = this.sizes.reduce((total, sizeObj) => total + (sizeObj.stock || 0), 0);
+    }
   }
   
   next();
@@ -408,35 +431,110 @@ ProductSchema.pre('save', function(next) {
 // Static method to find products with low stock
 ProductSchema.statics.findLowStock = function() {
   return this.find({
-    $expr: { $lte: ['$totalStock', '$lowStockAlert'] },
-    totalStock: { $gt: 0 },
-    isActive: true
+    $or: [
+      // For non-fashion products, check totalStock
+      {
+        category: { $ne: 'fashion' },
+        $expr: { $lte: ['$totalStock', '$lowStockAlert'] },
+        totalStock: { $gt: 0 },
+        isActive: true
+      },
+      // For fashion products, check if any size has low stock
+      {
+        category: 'fashion',
+        $expr: {
+          $and: [
+            { $gt: ['$totalStock', 0] },
+            { $lte: ['$totalStock', '$lowStockAlert'] }
+          ]
+        },
+        isActive: true
+      }
+    ]
   });
 };
 
 // Static method to find out of stock products
 ProductSchema.statics.findOutOfStock = function() {
   return this.find({
-    totalStock: 0,
-    isActive: true
+    $or: [
+      // For non-fashion products, check totalStock = 0
+      {
+        category: { $ne: 'fashion' },
+        totalStock: 0,
+        isActive: true
+      },
+      // For fashion products, check if totalStock = 0
+      {
+        category: 'fashion',
+        totalStock: 0,
+        isActive: true
+      }
+    ]
   });
 };
 
 // Instance method to update stock
-ProductSchema.methods.updateStock = function(quantity, operation = 'set') {
-  switch (operation) {
-    case 'add':
-      this.totalStock += quantity;
-      break;
-    case 'subtract':
-      this.totalStock = Math.max(0, this.totalStock - quantity);
-      break;
-    case 'set':
-    default:
-      this.totalStock = quantity;
-      break;
+ProductSchema.methods.updateStock = function(quantity, operation = 'set', size = null) {
+  if (this.category === 'fashion' && size) {
+    // Update size-specific stock for fashion products
+    const sizeIndex = this.sizes.findIndex(s => s.size === size);
+    if (sizeIndex === -1) {
+      throw new Error(`Size ${size} not found for this product`);
+    }
+    
+    switch (operation) {
+      case 'add':
+        this.sizes[sizeIndex].stock += quantity;
+        break;
+      case 'subtract':
+        this.sizes[sizeIndex].stock = Math.max(0, this.sizes[sizeIndex].stock - quantity);
+        break;
+      case 'set':
+      default:
+        this.sizes[sizeIndex].stock = quantity;
+        break;
+    }
+    
+    // Recalculate totalStock from all sizes
+    this.totalStock = this.sizes.reduce((total, sizeObj) => total + (sizeObj.stock || 0), 0);
+  } else {
+    // Update totalStock for non-fashion products or when no size specified
+    switch (operation) {
+      case 'add':
+        this.totalStock += quantity;
+        break;
+      case 'subtract':
+        this.totalStock = Math.max(0, this.totalStock - quantity);
+        break;
+      case 'set':
+      default:
+        this.totalStock = quantity;
+        break;
+    }
   }
+  
   return this.save();
+};
+
+// Instance method to get stock for specific size
+ProductSchema.methods.getStockForSize = function(size) {
+  if (this.category !== 'fashion') {
+    return this.totalStock;
+  }
+  
+  const sizeObj = this.sizes.find(s => s.size === size);
+  return sizeObj ? sizeObj.stock : 0;
+};
+
+// Instance method to check if size is available
+ProductSchema.methods.isSizeAvailable = function(size, quantity = 1) {
+  if (this.category !== 'fashion') {
+    return this.totalStock >= quantity;
+  }
+  
+  const sizeObj = this.sizes.find(s => s.size === size);
+  return sizeObj ? sizeObj.stock >= quantity : false;
 };
 
 // Instance method to add review

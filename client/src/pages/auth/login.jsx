@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 
 const initialState = {
-  email: "",
+  emailOrPhone: "", // Changed from email to emailOrPhone
   password: "",
 };
 

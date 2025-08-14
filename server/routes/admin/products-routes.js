@@ -6,7 +6,9 @@ const {
   editProduct,
   fetchAllProducts,
   deleteProduct,
-  deleteImageFromCloudinary
+  deleteImageFromCloudinary,
+  updateStock,
+  getSizeStock
 } = require("../../controllers/admin/products-controller");
 
 const { upload } = require("../../helpers/cloudinary");
@@ -19,5 +21,8 @@ router.put("/edit/:id", editProduct);
 router.delete("/delete/:id", deleteProduct);
 router.get("/get", fetchAllProducts);
 router.post("/delete-image", deleteImageFromCloudinary);
+// Stock management routes
+router.put("/update-stock/:id", updateStock);
+router.get("/stock/:id", getSizeStock);
 
 module.exports = router;

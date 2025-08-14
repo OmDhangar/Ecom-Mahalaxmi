@@ -8,7 +8,6 @@ const axios = require("axios");
 
 dotenv.config();
 
-// Razorpay configuration
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error('Razorpay credentials are not set in environment variables');
 }
@@ -18,92 +17,42 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// Shiprocket configuration
 const SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external';
 let shiprocketToken = null;
 let tokenExpiry = null;
 
-// Shiprocket authentication
 const authenticateShiprocket = async () => {
-  try {
-    if (shiprocketToken && tokenExpiry && new Date() < tokenExpiry) {
-      return shiprocketToken;
-    }
-
-    const response = await axios.post(`${SHIPROCKET_BASE_URL}/auth/login`, {
-      email: process.env.SHIPROCKET_EMAIL,
-      password: process.env.SHIPROCKET_PASSWORD
-    });
-
-    shiprocketToken = response.data.token;
-    // Token expires in 10 days, refresh before that
-    tokenExpiry = new Date(Date.now() + 9 * 24 * 60 * 60 * 1000);
-    
+  if (shiprocketToken && tokenExpiry && new Date() < tokenExpiry) {
     return shiprocketToken;
-  } catch (error) {
-    console.error('Shiprocket authentication failed:', error.response?.data || error.message);
-    throw new Error('Failed to authenticate with Shiprocket');
   }
+  const response = await axios.post(`${SHIPROCKET_BASE_URL}/auth/login`, {
+    email: process.env.SHIPROCKET_EMAIL,
+    password: process.env.SHIPROCKET_PASSWORD
+  });
+  shiprocketToken = response.data.token;
+  tokenExpiry = new Date(Date.now() + 9 * 24 * 60 * 60 * 1000);
+  return shiprocketToken;
 };
 
-// Process Shiprocket for order with proper error handling
-async function processShiprocketForOrder(order, products, cartId) {
-  try {
-    const shiprocketResponse = await createShiprocketOrder(order, products);
-
-    order.shiprocketOrderId = shiprocketResponse.order_id;
-    order.shipmentId = shiprocketResponse.shipment_id;
-    order.orderStatus = "confirmed";
-    order.shippingError = undefined; // Clear any previous error
-
-    // ✅ Update stock & delete cart only after shipping success
-    if (cartId) await Cart.findByIdAndDelete(cartId);
-
-    for (let item of order.cartItems) {
-      let product = await Product.findById(item.productId);
-      if (!product) throw new Error(`Product not found: ${item.productId}`);
-      if (product.totalStock < item.quantity)
-        throw new Error(`Insufficient stock for ${product.title}`);
-
-      product.totalStock -= item.quantity;
-      await product.save();
-    }
-
-    await order.save();
-    return { success: true, order };
-
-  } catch (err) {
-    console.error("🚨 Shiprocket Order Creation Failed:", err.details || err.message);
-
-    order.orderStatus = "shipping_failed";
-    order.shippingError = {
-      message: err.message || "Unknown Shiprocket error",
-      details: err.details || { name: err.name || "UnknownError" },
-      date: new Date()
-    };
-
-    await order.save();
-    return { success: false, order, error: order.shippingError };
-  }
-}
-
-
-// Create Shiprocket order
-const createShiprocketOrder = async (orderData, products) => {
+async function createShiprocketOrder(orderData, products) {
   try {
     const token = await authenticateShiprocket();
-    console.log(orderData);
-    
+
     // Calculate total weight and dimensions
     let totalWeight = 0;
     let totalLength = 0, totalBreadth = 0, totalHeight = 0;
-    
+
+    // Sum shipping charges from products
+    let shippingChargesTotal = 0;
+
     const orderItems = products.map(product => {
-      totalWeight += product.weight * product.quantity;
+      totalWeight += (product.weight || 0.5) * product.quantity;
       totalLength = Math.max(totalLength, product.length || 10);
       totalBreadth = Math.max(totalBreadth, product.breadth || 10);
       totalHeight += (product.height || 5) * product.quantity;
-      
+
+      shippingChargesTotal += (product.shippingCharges || 0) * product.quantity;
+
       return {
         name: product.title,
         sku: product.sku || product._id,
@@ -119,9 +68,9 @@ const createShiprocketOrder = async (orderData, products) => {
       order_id: orderData._id.toString(),
       order_date: orderData.orderDate.toISOString().split('T')[0],
       pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-      channel_id: "", // Leave empty for manual orders
+      channel_id: "",
       comment: orderData.addressInfo.notes || "Order placed via website",
-      billing_customer_name: orderData.addressInfo.name ,
+      billing_customer_name: orderData.addressInfo.name,
       billing_last_name: "",
       billing_address: orderData.addressInfo.address,
       billing_address_2: "",
@@ -144,15 +93,15 @@ const createShiprocketOrder = async (orderData, products) => {
       shipping_phone: "",
       order_items: orderItems,
       payment_method: orderData.paymentMethod === 'cod' ? 'COD' : 'Prepaid',
-      shipping_charges: 0,
+      shipping_charges: shippingChargesTotal,
       giftwrap_charges: 0,
       transaction_charges: 0,
-      total_discount: 0,
-      sub_total: orderData.totalAmount,
+      total_discount: orderData.discount || 0,
+      sub_total: orderData.subTotal || orderData.totalAmount,
       length: totalLength,
       breadth: totalBreadth,
       height: totalHeight,
-      weight: totalWeight || 0.5 
+      weight: totalWeight || 0.5
     };
 
     const response = await axios.post(
@@ -168,11 +117,10 @@ const createShiprocketOrder = async (orderData, products) => {
 
     return response.data;
   } catch (error) {
-    // ✅ Enhanced error object with detailed info
     const enhancedError = new Error();
     enhancedError.name = 'ShiprocketError';
+
     if (error.response) {
-      // Shiprocket API returned an error response
       enhancedError.message = error.response.data?.message || 'Shiprocket API error';
       enhancedError.statusCode = error.response.status;
       enhancedError.details = {
@@ -183,7 +131,6 @@ const createShiprocketOrder = async (orderData, products) => {
         method: error.config?.method
       };
     } else if (error.request) {
-      // Request was made but no response received
       enhancedError.message = 'No response from Shiprocket API';
       enhancedError.details = {
         error: 'Network error',
@@ -191,66 +138,149 @@ const createShiprocketOrder = async (orderData, products) => {
         code: error.code
       };
     } else {
-      // Something else happened
       enhancedError.message = error.message || 'Unknown Shiprocket error';
       enhancedError.details = {
         error: 'Request setup error',
         originalMessage: error.message
       };
     }
-    
+
     throw enhancedError;
   }
-};
+}
 
-// Track Shiprocket order
-const trackShiprocketOrder = async (shipmentId) => {
+// Process Shiprocket order with retry count limit (max 2 attempts)
+async function processShiprocketForOrder(order, products, cartId) {
   try {
-    const token = await authenticateShiprocket();
-    
-    const response = await axios.get(
-      `${SHIPROCKET_BASE_URL}/courier/track/shipment/${shipmentId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    // If retry count > 2, mark needs manual intervention
+    if (order.shippingErrorHistory && order.shippingErrorHistory.length >= 2) {
+      order.needsManualShipment = true;
+      await order.save();
+      return { success: false, order, error: { message: "Max shipping retries reached, manual intervention required" } };
+    }
+
+    const shiprocketResponse = await createShiprocketOrder(order, products);
+
+    order.shiprocketOrderId = shiprocketResponse.order_id;
+    order.shipmentId = shiprocketResponse.shipment_id;
+    order.awbCode = shiprocketResponse.awb_code;
+    order.courierCompanyId = shiprocketResponse.courier_company_id;
+    order.courierName = shiprocketResponse.courier_name;
+    order.trackingUrl = shiprocketResponse.tracking_url;
+    order.shippingStatus = "booked";
+    order.orderStatus = "confirmed";
+    order.shippingError = undefined;
+    order.needsManualShipment = false;
+
+    if (cartId) await Cart.findByIdAndDelete(cartId);
+
+    for (let item of order.cartItems) {
+      let product = await Product.findById(item.productId);
+      if (!product) throw new Error(`Product not found: ${item.productId}`);
+      
+      // Handle size-specific stock deduction for fashion products
+      if (product.category === 'fashion' && item.size) {
+        if (!product.isSizeAvailable(item.size, item.quantity)) {
+          const availableStock = product.getStockForSize(item.size);
+          throw new Error(`Insufficient stock for ${product.title} size ${item.size}. Available: ${availableStock}`);
         }
+        // Update size-specific stock using the model method
+        await product.updateStock(item.quantity, 'subtract', item.size);
+      } else {
+        // Handle regular stock deduction for non-fashion products
+        if (product.totalStock < item.quantity) {
+          throw new Error(`Insufficient stock for ${product.title}. Available: ${product.totalStock}`);
+        }
+        await product.updateStock(item.quantity, 'subtract');
       }
-    );
+    }
 
-    return response.data;
-  } catch (error) {
-    console.error('Shiprocket tracking failed:', error.response?.data || error.message);
-    throw new Error('Failed to track shipment');
+    // Push success to shippingErrorHistory
+    order.shippingErrorHistory = order.shippingErrorHistory || [];
+    order.shippingErrorHistory.push({
+      message: "Shipping booked successfully",
+      details: shiprocketResponse,
+      date: new Date(),
+      attemptNumber: order.shippingErrorHistory.length + 1
+    });
+
+    await order.save();
+
+    return { success: true, order };
+
+  } catch (err) {
+    console.error("🚨 Shiprocket Order Creation Failed:", err.details || err.message);
+
+    order.shippingStatus = "failed";
+    order.orderStatus = "shipping_failed";
+
+    order.shippingError = {
+      message: err.message || "Unknown Shiprocket error",
+      details: err.details || { name: err.name || "UnknownError" },
+      date: new Date()
+    };
+
+    order.shippingErrorHistory = order.shippingErrorHistory || [];
+    order.shippingErrorHistory.push({
+      message: err.message,
+      details: err.details || {},
+      date: new Date(),
+      attemptNumber: order.shippingErrorHistory.length + 1
+    });
+
+    // Flag for manual retry by admin
+    order.needsManualShipment = true;
+
+    await order.save();
+
+    return { success: false, order, error: order.shippingError };
   }
-};
+}
 
-// Enhanced createOrder function
 const createOrder = async (req, res) => {
   try {
     const {
       userId, cartItems, addressInfo,
       paymentMethod = "cod", paymentStatus,
-      totalAmount, cartId
+      subTotal, discount = 0, tax = 0, cartId
     } = req.body;
+
+    // Calculate total shipping charges from products in cartItems
+    const productsWithShipping = await Promise.all(cartItems.map(async item => {
+      const product = await Product.findById(item.productId);
+      if (!product) throw new Error(`Product not found: ${item.productId}`);
+      return { ...product._doc, quantity: item.quantity };
+    }));
+
+    const shippingCharges = productsWithShipping.reduce((acc, p) => acc + ((p.shippingCharges || 0) * p.quantity), 0);
+
+    // Total amount = subTotal + shippingCharges + tax - discount
+    const totalAmount = subTotal + shippingCharges + tax - discount;
 
     let finalPaymentStatus = paymentMethod === "cod" ? "pending" : (paymentStatus || "pending");
 
     const order = new Order({
       userId, cartId, cartItems, addressInfo,
       orderStatus: "pending",
-      paymentMethod, paymentStatus: finalPaymentStatus,
-      totalAmount, orderDate: new Date(), orderUpdateDate: new Date()
+      paymentMethod,
+      paymentStatus: finalPaymentStatus,
+      subTotal,
+      shippingCharges,
+      tax,
+      discount,
+      totalAmount,
+      orderDate: new Date(),
+      orderUpdateDate: new Date(),
+      shippingStatus: "pending",
+      shippingErrorHistory: [],
+      needsManualShipment: false,
     });
     await order.save();
 
-    const products = await Promise.all(cartItems.map(async item => {
-      const p = await Product.findById(item.productId);
-      return { ...p._doc, quantity: item.quantity };
-    }));
-
-    // COD flow → Process Shiprocket immediately
+    // COD flow: process shipping immediately, no payment required upfront
     if (paymentMethod === "cod") {
-      const result = await processShiprocketForOrder(order, products, cartId);
+      const result = await processShiprocketForOrder(order, productsWithShipping, cartId);
+
       if (!result.success) {
         return res.status(500).json({
           success: false,
@@ -258,6 +288,7 @@ const createOrder = async (req, res) => {
           order: result.order
         });
       }
+
       return res.status(201).json({
         success: true,
         message: "Order created & shipping initiated successfully",
@@ -265,9 +296,9 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Razorpay flow → Prepare payment
+    // Razorpay flow: create order with amount including shipping
     const razorpayOrder = await razorpay.orders.create({
-      amount: totalAmount * 100,
+      amount: Math.round(totalAmount * 100), // in paise
       currency: "INR",
       receipt: `order_${order._id}`,
       payment_capture: 1,
@@ -286,7 +317,6 @@ const createOrder = async (req, res) => {
     res.status(500).json({ success: false, message: err.message || "Order creation failed" });
   }
 };
-
 
 
 const verifyPayment = async (req, res) => {
@@ -314,6 +344,7 @@ const verifyPayment = async (req, res) => {
     }));
 
     const result = await processShiprocketForOrder(order, products, order.cartId);
+
     if (!result.success) {
       return res.status(500).json({
         success: false,
@@ -335,29 +366,30 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+const trackShiprocketOrder = async (shipmentId) => {
+  try {
+    const token = await authenticateShiprocket();
+    const response = await axios.get(
+      `${SHIPROCKET_BASE_URL}/courier/track/shipment/${shipmentId}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Shiprocket tracking failed:', error.response?.data || error.message);
+    throw new Error('Failed to track shipment');
+  }
+};
 
-
-
-// New function to track order
 const trackOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
-
     const order = await Order.findById(orderId);
-
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found!",
-      });
+      return res.status(404).json({ success: false, message: "Order not found!" });
     }
 
-    let trackingInfo = {
-      order: order,
-      tracking: null
-    };
+    let trackingInfo = { order, tracking: null };
 
-    // If order has shipment ID, get tracking info from Shiprocket
     if (order.shipmentId) {
       try {
         const shiprocketTracking = await trackShiprocketOrder(order.shipmentId);
@@ -368,32 +400,21 @@ const trackOrder = async (req, res) => {
       }
     }
 
-    res.status(200).json({
-      success: true,
-      data: trackingInfo,
-    });
+    res.status(200).json({ success: true, data: trackingInfo });
   } catch (e) {
     console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    res.status(500).json({ success: false, message: "Some error occurred!" });
   }
 };
 
-// Update order status (for admin/seller)
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { orderStatus, paymentStatus } = req.body;
 
     const order = await Order.findById(orderId);
-
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found!",
-      });
+      return res.status(404).json({ success: false, message: "Order not found!" });
     }
 
     if (orderStatus) order.orderStatus = orderStatus;
@@ -414,68 +435,41 @@ const updateOrderStatus = async (req, res) => {
     });
   } catch (e) {
     console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    res.status(500).json({ success: false, message: "Some error occurred!" });
   }
 };
 
 const getAllOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const orders = await Order.find({ userId });
-
     if (!orders.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No orders found!",
-      });
+      return res.status(404).json({ success: false, message: "No orders found!" });
     }
-
-    res.status(200).json({
-      success: true,
-      data: orders,
-    });
+    res.status(200).json({ success: true, data: orders });
   } catch (e) {
     console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    res.status(500).json({ success: false, message: "Some error occurred!" });
   }
 };
 
 const getOrderDetails = async (req, res) => {
   try {
     const { id } = req.params;
-
     const order = await Order.findById(id);
-
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found!",
-      });
+      return res.status(404).json({ success: false, message: "Order not found!" });
     }
-
-    res.status(200).json({
-      success: true,
-      data: order,
-    });
+    res.status(200).json({ success: true, data: order });
   } catch (e) {
     console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    res.status(500).json({ success: false, message: "Some error occurred!" });
   }
 };
 
 module.exports = {
   createOrder,
-  verifyPayment, 
+  verifyPayment,
   getAllOrdersByUser,
   getOrderDetails,
   trackOrder,

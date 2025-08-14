@@ -316,79 +316,106 @@ function ShoppingListing() {
         </div>
       )}
 
-      {/* Products Grid - Square Cards */}
-      <div className="p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-          {productList && productList.length > 0
-            ? productList.map((productItem) => (
-                <div key={productItem._id} className="w-full">
-                  {/* Custom Square Product Card */}
-                  <div className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-300">
-                    {/* Square Image Container */}
-                    <div className="relative w-full aspect-square overflow-hidden rounded-t-lg bg-gray-100">
-                      <img
-                        src={productItem?.image}
-                        alt={productItem?.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
-                        onClick={() => handleGetProductDetails(productItem?._id)}
-                      />
-                      {/* Sale Badge */}
-                      {productItem?.salePrice && (
-                        <div className="absolute top-1.5 left-1.5 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
-                          Sale
-                        </div>
+    <div className="p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+        {productList && productList.length > 0 ? (
+          productList.map((productItem) => {
+            const discount =
+              productItem?.salePrice > 0
+                ? Math.round(((productItem.price - productItem.salePrice) / productItem.price) * 100)
+                : 0;
+
+            return (
+              <div key={productItem._id} className="w-full">
+                <div className="bg-white rounded-lg border hover:shadow-md transition-all duration-300">
+                  
+                  {/* Image */}
+                  <div
+                    className="relative w-full aspect-square overflow-hidden bg-gray-100 cursor-pointer"
+                    onClick={() => handleGetProductDetails(productItem?._id)}
+                  >
+                    <img
+                      src={productItem?.image}
+                      alt={productItem?.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+
+                    {/* Sale / Bestseller Badge */}
+                    {productItem?.salePrice > 0 && (
+                      <div className="absolute top-1.5 left-1.5 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                        Sale
+                      </div>
+                    )}
+                    {productItem?.isBestseller && (
+                      <div className="absolute top-1.5 right-1.5 bg-gray-900 text-white text-[10px] px-2 py-0.5 rounded">
+                        BESTSELLER
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="p-2 sm:p-3">
+                    
+                    {/* Rating */}
+                    {productItem?.rating && (
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                          {productItem?.rating} ★
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          | {productItem?.reviews} Reviews
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Title */}
+                    <h3
+                      className="font-semibold text-xs sm:text-sm text-gray-900 leading-snug cursor-pointer hover:text-blue-600 line-clamp-2"
+                      onClick={() => handleGetProductDetails(productItem?._id)}
+                    >
+                      {productItem?.brand} - {productItem?.title}
+                    </h3>
+
+                    {/* Price */}
+                    <div className="flex items-center gap-1 mt-1">
+                      {productItem?.salePrice > 0 && (
+                        <span className="text-sm sm:text-base font-bold text-gray-900">
+                          ₹{productItem?.salePrice}
+                        </span>
+                      )}
+                      <span
+                        className={`text-xs sm:text-sm ${
+                          productItem?.salePrice > 0 ? "line-through text-gray-500" : "font-bold text-gray-900"
+                        }`}
+                      >
+                        ₹{productItem?.price}
+                      </span>
+                      {discount > 0 && (
+                        <span className="text-green-600 text-xs font-medium">
+                          ({discount}% off)
+                        </span>
                       )}
                     </div>
-                    
-                    {/* Product Info */}
-                    <div className="p-2 sm:p-3">
-                      <h3 
-                        className="font-medium text-xs sm:text-sm text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors leading-tight"
-                        onClick={() => handleGetProductDetails(productItem?._id)}
-                      >
-                        {productItem?.title}
-                      </h3>
-                      
-                      <p className="text-xs text-gray-500 mb-2 capitalize">
-                        {productItem?.category}
-                      </p>
-                      
-                      {/* Price */}
-                      <div className="flex items-center gap-1 mb-2">
-                        {productItem?.salePrice ? (
-                          <>
-                            <span className="text-sm sm:text-base font-bold text-gray-900">
-                              ₹{productItem?.salePrice}
-                            </span>
-                            <span className="text-xs text-gray-500 line-through">
-                              ₹{productItem?.price}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-sm sm:text-base font-bold text-gray-900">
-                            ₹{productItem?.price}
-                          </span>
-                        )}
+
+                    {/* Offer Price */}
+                    {productItem?.offerPrice && (
+                      <div className="text-green-600 text-xs sm:text-sm font-semibold mt-0.5">
+                        Offer Price: ₹{productItem?.offerPrice}
                       </div>
-                      
-                      {/* Add to Cart Button */}
-                      <Button
-                        className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs py-1.5 sm:py-2 rounded-md transition-colors duration-300"
-                        onClick={() => handleAddtoCart(productItem?._id, productItem?.totalStock)}
-                      >
-                        Add to Cart
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </div>
-              ))
-            : (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-gray-500">No products found matching your filters.</p>
-                </div>
-              )}
-        </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="col-span-full text-center py-12">
+            <p className="text-gray-500">No products found matching your filters.</p>
+          </div>
+        )}
       </div>
+    </div>
+
 
       <ProductDetailsDialog
         open={openDetailsDialog}

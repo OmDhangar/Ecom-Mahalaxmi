@@ -34,7 +34,7 @@ export const fetchAllFilteredProducts = createAsyncThunk(
 
     // Build the URL with optional query
     const queryString = query.toString();
-    const url = `http://localhost:5000/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
+    const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
     console.log("Final URL:", url);
 
     const result = await axios.get(url);
@@ -46,7 +46,7 @@ export const fetchFeaturedProducts = createAsyncThunk(
   "products/fetchFeaturedProducts",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get("http://localhost:5000/api/shop/products/featured");
+      const res = await axios.get("/api/shop/products/featured");
       console.log("Featured:",res);
       return res.data.data;
     } catch (err) {
@@ -58,7 +58,7 @@ export const fetchFeaturedProducts = createAsyncThunk(
 
 export const markAsFeatured = createAsyncThunk("products/markAsFeatured", async ( {id, isFeatured, featuredDescription} ) => {
   console.log(isFeatured,featuredDescription);
-  const response = await axios.post(`http://localhost:5000/api/shop/products/${id}/feature`, { 
+  const response = await axios.post(`/api/shop/products/${id}/feature`, { 
     isFeatured,
     featuredDescription,
    });
@@ -70,7 +70,7 @@ export const fetchProductDetails = createAsyncThunk(
   "/products/fetchProductDetails",
   async (id) => {
     const result = await axios.get(
-      `http://localhost:5000/api/shop/products/get/${id}`
+      `/api/shop/products/get/${id}`
     );
 
     return result?.data.data;

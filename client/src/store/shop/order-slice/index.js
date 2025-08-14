@@ -21,7 +21,7 @@ export const createNewOrder = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/shop/order/create",
+        "/api/shop/order/create",
         orderData
       );
       return response.data;
@@ -39,7 +39,7 @@ export const verifyPayment = createAsyncThunk(
   async (paymentData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/shop/order/verify",
+        "/api/shop/order/verify",
         paymentData
       );
       console.log(response);
@@ -58,7 +58,7 @@ export const getAllOrdersByUserId = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/shop/order/list/${userId}`
+        `/api/shop/order/list/${userId}`
       );
       return response.data;
     } catch (error) {
@@ -75,7 +75,7 @@ export const getOrderDetails = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/shop/order/details/${id}`
+        `/api/shop/order/details/${id}`
       );
       return response.data;
     } catch (error) {
@@ -92,7 +92,7 @@ export const trackOrder = createAsyncThunk(
   async (orderId, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/shop/order/track/${orderId}`
+        `/api/shop/order/track/${orderId}`
       );
       return response.data;
     } catch (error) {
@@ -109,7 +109,7 @@ export const cancelOrder = createAsyncThunk(
   async ({ orderId, reason }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/shop/order/update-status/${orderId}`,
+        `/api/shop/order/update-status/${orderId}`,
         { 
           orderStatus: "cancelled",
           cancellationReason: reason 
@@ -132,7 +132,7 @@ export const calculateShippingCharge = createAsyncThunk(
   async ({ cartItems, deliveryPincode }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/shipping/calculate-shipping",
+        "/api/shipping/calculate-shipping",
         { cartItems, deliveryPincode }
       );
       return response.data; // Expected format: { success: true, shippingCharge: number }

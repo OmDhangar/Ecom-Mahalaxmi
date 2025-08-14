@@ -43,29 +43,71 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   console.log("product details", productDetails);
 
   function handleAddToCart(getCurrentProductId, getTotalStock) {
-    let getCartItems = cartItems.items || [];
+    let getCartItems = cartItems?.items || [];
 
-    if (getCartItems.length) {
-      const indexOfCurrentItem = getCartItems.findIndex(
-        (item) => item.productId === getCurrentProductId
-      );
-      if (indexOfCurrentItem > -1) {
-        const getQuantity = getCartItems[indexOfCurrentItem].quantity;
-        if (getQuantity + 1 > getTotalStock) {
-          toast({
-            title: `Only ${getQuantity} quantity can be added for this item`,
-            variant: "destructive",
-          });
-          return;
+    // For fashion products with size selection, validate size requirements
+    if (productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0) {
+      if (!selectedSize) {
+        toast({
+          title: "Please select a size first",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Get size-specific stock
+      const sizeObj = productDetails.sizes.find(s => s.size === selectedSize);
+      const sizeSpecificStock = sizeObj ? sizeObj.stock : 0;
+      
+      if (sizeSpecificStock === 0) {
+        toast({
+          title: `Size ${selectedSize} is out of stock`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check if this specific product+size combination already exists in cart
+      if (getCartItems.length) {
+        const indexOfCurrentItem = getCartItems.findIndex(
+          (item) => item.productId === getCurrentProductId && item.size === selectedSize
+        );
+        if (indexOfCurrentItem > -1) {
+          const getQuantity = getCartItems[indexOfCurrentItem].quantity;
+          if (getQuantity + 1 > sizeSpecificStock) {
+            toast({
+              title: `Only ${sizeSpecificStock} quantity available for size ${selectedSize}`,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      }
+    } else {
+      // For non-fashion products, check total stock
+      if (getCartItems.length) {
+        const indexOfCurrentItem = getCartItems.findIndex(
+          (item) => item.productId === getCurrentProductId
+        );
+        if (indexOfCurrentItem > -1) {
+          const getQuantity = getCartItems[indexOfCurrentItem].quantity;
+          if (getQuantity + 1 > getTotalStock) {
+            toast({
+              title: `Only ${getTotalStock} quantity available`,
+              variant: "destructive",
+            });
+            return;
+          }
         }
       }
     }
+    
     dispatch(
       addToCart({
         userId: user?.id,
         productId: getCurrentProductId,
         quantity: 1,
-        selectedSize: selectedSize, // Include selected size for fashion items
+        size: selectedSize, // Include selected size for fashion items
       })
     ).then((data) => {
       if (data?.payload?.success) {
@@ -192,7 +234,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="p-0 max-w-full h-full sm:max-w-6xl sm:h-auto sm:max-h-[95vh] sm:rounded-lg overflow-hidden">
+      <DialogContent className="p-0 max-w-full h-full sm:max-w-7xl sm:h-auto sm:max-h-[95vh] sm:rounded-xl overflow-scroll bg-white">
         <DialogTitle className="sr-only">
           {productDetails?.title || "Product Details"}
         </DialogTitle>
@@ -231,7 +273,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
         </Button>
 
         {/* Main Content Container - Scrollable on mobile */}
-        <div className="flex flex-col h-full sm:h-auto overflow-y-auto sm:overflow-visible">
+        <div className="flex flex-col h-full overflow-y-auto sm:h-auto ">
           <div className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6">
             {/* Product Images Section */}
             <div className="relative flex-shrink-0">
@@ -313,41 +355,46 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             </div>
 
             {/* Product Info Section */}
-            <div className="flex-1 p-4 sm:p-0 min-h-0">
-              {/* Product Title & Description */}
+            <div className="flex-1 p-6 sm:p-0 min-h-0 bg-white/70 sm:bg-transparent rounded-xl sm:rounded-none backdrop-blur-sm">
+              {/* Premium Brand Badge */}
               <div className="mb-4">
-                <div className="flex items-start gap-2 mb-2">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight flex-1">
-                    {productDetails?.title}
-                  </h1>
-                  <div className="flex gap-1">
-                    <Badge variant="secondary" className="text-xs">
-                      {productDetails?.brand}
-                    </Badge>
-                    {productDetails?.category && (
-                      <Badge variant="outline" className="text-xs">
-                        {productDetails?.category}
-                      </Badge>
-                    )}
-                  </div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full border border-amber-200/50 mb-3">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-amber-800 uppercase tracking-wide">
+                    {productDetails?.brand} • {productDetails?.category}
+                  </span>
                 </div>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+              </div>
+              
+              {/* Product Title & Description */}
+              <div className="mb-6">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight mb-3 tracking-tight">
+                  {productDetails?.title}
+                </h1>
+                <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-light">
                   {productDetails?.description}
                 </p>
               </div>
 
-              {/* Rating */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-1">
+              {/* Premium Rating Section */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-6 p-4 bg-white rounded-xl border border-yellow-100/50">
+                <div className="flex justify-center items-center gap-1 sm:gap-2 flex-1 min-w-[120px]">
                   <StarRatingComponent rating={averageReview} />
-                  <span className="text-sm font-medium">
+                  <span className="text-lg font-bold text-amber-800">
                     {averageReview.toFixed(1)}
                   </span>
                 </div>
-                <span className="text-sm text-gray-500">
-                  ({reviews?.length || 0} reviews)
-                </span>
+                <div className="hidden sm:block h-4 w-px bg-amber-200"></div>
+                <div className="flex flex-col flex-1 min-w-[100px]">
+                  <span className="text-sm font-medium text-amber-700">
+                    {reviews?.length || 0} Reviews
+                  </span>
+                  <span className="text-xs text-amber-600">
+                    Verified Customers
+                  </span>
+                </div>
               </div>
+
 
               {/* Category-specific Fields */}
               {productDetails?.category === 'electronics' && (
@@ -380,28 +427,41 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               )}
 
               {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && (
-                <div className="mb-4 p-4 bg-pink-50 rounded-lg">
+                <div className="mb-4 p-4 bg-white rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
                     Available Sizes
                   </h3>
                   <div className="flex gap-2 flex-wrap">
-                    {productDetails.sizes.map(size => (
+                    {productDetails.sizes.map(sizeObj => (
                       <button
-                        key={size}
-                        onClick={() => setSelectedSize(selectedSize === size ? "" : size)}
-                        className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                          selectedSize === size
+                        key={sizeObj.size}
+                        onClick={() => setSelectedSize(selectedSize === sizeObj.size ? "" : sizeObj.size)}
+                        disabled={sizeObj.stock === 0}
+                        className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors relative ${
+                          selectedSize === sizeObj.size
                             ? 'bg-pink-500 text-white border-pink-500'
+                            : sizeObj.stock === 0
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-pink-300'
                         }`}
                       >
-                        {size}
+                        {sizeObj.size}
+                        {sizeObj.stock === 0 && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        )}
                       </button>
                     ))}
                   </div>
                   {selectedSize && (
-                    <p className="text-sm text-pink-600 mt-2">Selected: {selectedSize}</p>
+                    <div className="mt-2">
+                      <p className="text-sm text-pink-600">Selected: {selectedSize}</p>
+                      {productDetails.sizes.find(s => s.size === selectedSize)?.stock && (
+                        <p className="text-xs text-gray-500">
+                          {productDetails.sizes.find(s => s.size === selectedSize).stock} in stock
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

@@ -108,9 +108,30 @@ const addProduct = async (req, res) => {
           message: 'Sizes are required for fashion items and must be a non-empty array',
         });
       }
-      // Validate sizes array items against enum
+      
+      // Validate sizes array - should be array of objects with size and stock
       const validSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
-      const invalidSizes = sizes.filter(size => !validSizes.includes(size));
+      const invalidSizes = [];
+      
+      for (const sizeItem of sizes) {
+        if (typeof sizeItem === 'object' && sizeItem.size && typeof sizeItem.stock === 'number') {
+          if (!validSizes.includes(sizeItem.size)) {
+            invalidSizes.push(sizeItem.size);
+          }
+          if (sizeItem.stock < 0) {
+            return res.status(400).json({
+              success: false,
+              message: `Stock for size ${sizeItem.size} cannot be negative`,
+            });
+          }
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'Each size item must have both size and stock properties',
+          });
+        }
+      }
+      
       if (invalidSizes.length > 0) {
         return res.status(400).json({
           success: false,
@@ -444,13 +465,13 @@ const getProductBySKU = async (req, res) => {
   }
 };
 
-// New function to update stock
+// New function to update stock (supports size-specific updates)
 const updateStock = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity, operation = 'set' } = req.body; // operation can be 'set', 'add', 'subtract'
+    const { quantity, operation = 'set', size } = req.body; // operation can be 'set', 'add', 'subtract'
 
-    if (!quantity || quantity < 0) {
+    if (quantity === undefined || quantity < 0) {
       return res.status(400).json({
         success: false,
         message: "Valid quantity is required",
@@ -465,34 +486,71 @@ const updateStock = async (req, res) => {
       });
     }
 
-    let newStock;
-    switch (operation) {
-      case 'add':
-        newStock = product.totalStock + parseInt(quantity);
-        break;
-      case 'subtract':
-        newStock = Math.max(0, product.totalStock - parseInt(quantity));
-        break;
-      case 'set':
-      default:
-        newStock = parseInt(quantity);
-        break;
-    }
-
-    product.totalStock = newStock;
-    product.updatedAt = new Date();
-    await product.save();
+    // Use the model's updateStock method which handles size-specific updates
+    await product.updateStock(parseInt(quantity), operation, size);
 
     res.status(200).json({
       success: true,
       data: product,
-      message: `Stock ${operation}ed successfully`,
+      message: size 
+        ? `Stock ${operation}ed successfully for size ${size}` 
+        : `Stock ${operation}ed successfully`,
     });
   } catch (e) {
     console.log(e);
     res.status(500).json({
       success: false,
       message: "Error occurred while updating stock",
+      error: e.message,
+    });
+  }
+};
+
+// New function to get size-specific stock
+const getSizeStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { size } = req.query;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (size) {
+      const stock = product.getStockForSize(size);
+      return res.status(200).json({
+        success: true,
+        data: { size, stock, available: stock > 0 },
+      });
+    }
+
+    // Return all size stocks for fashion products
+    if (product.category === 'fashion' && product.sizes) {
+      const sizeStocks = product.sizes.map(s => ({
+        size: s.size,
+        stock: s.stock,
+        available: s.stock > 0
+      }));
+      return res.status(200).json({
+        success: true,
+        data: { totalStock: product.totalStock, sizes: sizeStocks },
+      });
+    }
+
+    // For non-fashion products, return total stock
+    res.status(200).json({
+      success: true,
+      data: { totalStock: product.totalStock, available: product.totalStock > 0 },
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Error occurred while fetching stock",
     });
   }
 };
@@ -549,14 +607,21 @@ const deleteImageFromCloudinary = async (reqOrUrl, res) => {
   try {
     let publicId;
     
-    // Check if this is an API call or a direct function call
     if (typeof reqOrUrl === 'string') {
-      // Direct call with URL string
       publicId = extractPublicIdFromUrl(reqOrUrl);
-    } else {
-      // API call with req object
+    } else if (reqOrUrl && reqOrUrl.body) {
+      // Only access body if reqOrUrl is not null
       const { public_id } = reqOrUrl.body;
       publicId = public_id;
+    } else {
+      console.error('Invalid request or URL passed to deleteImageFromCloudinary');
+      if (res) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid request or URL"
+        });
+      }
+      return false;
     }
     
     if (!publicId) {
@@ -632,6 +697,7 @@ module.exports = {
   deleteProduct,
   getProductBySKU,
   updateStock,
+  getSizeStock,
   deleteImageFromCloudinary,
   bulkUpdateProducts,
 };

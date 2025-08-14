@@ -125,6 +125,9 @@ function ShoppingCheckout() {
             title: "Payment Successful",
             description: "Your order has been confirmed and will be shipped soon!",
           });
+          // Clear cart after successful payment
+          await dispatch(clearUserCart(user?.id)).unwrap();
+
 
           setOrderSuccess(true);
           setSuccessOrderDetails(orderDetails.order);
@@ -189,6 +192,7 @@ function ShoppingCheckout() {
         image: item.image,
         price: item.salePrice > 0 ? item.salePrice : item.price,
         quantity: item.quantity,
+        size: item.size || null, // Include size for fashion products
       })),
       addressInfo: {
         name: currentSelectedAddress?.name || user?.name,
@@ -232,6 +236,12 @@ function ShoppingCheckout() {
             setSuccessOrderDetails(backendOrder);
             setIsPaymentStart(false);
           }
+          // Clear cart after successful order creation
+          dispatch(clearUserCart(user?.id))
+            .unwrap()
+            .catch((error) => {
+              console.error("Failed to clear cart:", error);
+            });
           // Razorpay payment will be handled by useEffect
         } else {
           setIsPaymentStart(false);

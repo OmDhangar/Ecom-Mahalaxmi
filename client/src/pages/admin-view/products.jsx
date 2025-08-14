@@ -34,7 +34,7 @@ const initialFormData = {
   averageReview: 0,
   batteryHealth: "",
   condition: "",
-  sizes: [],
+  sizes: [], // Will be array of objects like [{size: "S", stock: 10}] for fashion products
   weight: "",
   length: "",
   breadth: "",
@@ -86,19 +86,23 @@ function onSubmit(event) {
   }
 
   // Base required fields for all products
-  const baseRequiredFields = [
+  let baseRequiredFields = [
     "title",
     "description",
     "category",
     "brand",
     "price",
     "salePrice",
-    "totalStock",
     "weight",
     "length",
     "breadth",
     "height",
   ];
+  
+  // Add totalStock requirement only for non-fashion products
+  if (formData.category !== 'fashion') {
+    baseRequiredFields.push("totalStock");
+  }
 
   // Category-based required fields config
   const categoryRequiredFieldsMap = {
@@ -146,6 +150,12 @@ function onSubmit(event) {
     .filter((item, index, self) => self.indexOf(item) === index) // remove duplicates
     .slice(0, MAX_IMAGES);
 
+  // Calculate totalStock for fashion products based on sizes
+  let calculatedTotalStock = Number(formData.totalStock);
+  if (formData.category === 'fashion' && Array.isArray(formData.sizes) && formData.sizes.length > 0) {
+    calculatedTotalStock = formData.sizes.reduce((total, sizeObj) => total + (sizeObj.stock || 0), 0);
+  }
+
   const preparedFormData = {
     ...formData,
     image:
@@ -155,7 +165,7 @@ function onSubmit(event) {
     additionalImages: mergedAdditionalImages,
     price: Number(formData.price),
     salePrice: Number(formData.salePrice),
-    totalStock: Number(formData.totalStock),
+    totalStock: calculatedTotalStock,
     weight: Number(formData.weight),
     length: Number(formData.length),
     breadth: Number(formData.breadth),

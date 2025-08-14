@@ -19,6 +19,7 @@ const OrderSchema = new mongoose.Schema({
       image: String,
       price: String,
       quantity: Number,
+      size: String, // Size for fashion products
     },
   ],
   addressInfo: {

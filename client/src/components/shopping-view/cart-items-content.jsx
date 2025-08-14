@@ -13,29 +13,50 @@ function UserCartItemsContent({ cartItem }) {
 
   function handleUpdateQuantity(getCartItem, typeOfAction) {
     if (typeOfAction == "plus") {
-      let getCartItems = cartItems.items || [];
+      let getCartItems = cartItems?.items || [];
 
       if (getCartItems.length) {
         const indexOfCurrentCartItem = getCartItems.findIndex(
-          (item) => item.productId === getCartItem?.productId
+          (item) => {
+            if (getCartItem?.size) {
+              // For fashion products, match both productId and size
+              return item.productId === getCartItem?.productId && item.size === getCartItem?.size;
+            } else {
+              // For non-fashion products, match only productId
+              return item.productId === getCartItem?.productId;
+            }
+          }
         );
 
         const getCurrentProductIndex = productList.findIndex(
           (product) => product._id === getCartItem?.productId
         );
-        const getTotalStock = productList[getCurrentProductIndex].totalStock;
+        
+        if (getCurrentProductIndex > -1) {
+          const currentProduct = productList[getCurrentProductIndex];
+          let availableStock;
+          
+          if (currentProduct.category === 'fashion' && getCartItem?.size) {
+            // For fashion products, check size-specific stock
+            const sizeObj = currentProduct.sizes?.find(s => s.size === getCartItem.size);
+            availableStock = sizeObj ? sizeObj.stock : 0;
+          } else {
+            // For non-fashion products, use total stock
+            availableStock = currentProduct.totalStock;
+          }
 
-        console.log(getCurrentProductIndex, getTotalStock, "getTotalStock");
+          console.log(getCurrentProductIndex, availableStock, "availableStock");
 
-        if (indexOfCurrentCartItem > -1) {
-          const getQuantity = getCartItems[indexOfCurrentCartItem].quantity;
-          if (getQuantity + 1 > getTotalStock) {
-            toast({
-              title: `Only ${getQuantity} quantity can be added for this item`,
-              variant: "destructive",
-            });
-
-            return;
+          if (indexOfCurrentCartItem > -1) {
+            const getQuantity = getCartItems[indexOfCurrentCartItem].quantity;
+            if (getQuantity + 1 > availableStock) {
+              const sizeText = getCartItem?.size ? ` for size ${getCartItem.size}` : '';
+              toast({
+                title: `Only ${availableStock} quantity available${sizeText}`,
+                variant: "destructive",
+              });
+              return;
+            }
           }
         }
       }
@@ -49,6 +70,7 @@ function UserCartItemsContent({ cartItem }) {
           typeOfAction === "plus"
             ? getCartItem?.quantity + 1
             : getCartItem?.quantity - 1,
+        size: getCartItem?.size, // Include size for fashion products
       })
     ).then((data) => {
       if (data?.payload?.success) {
@@ -61,7 +83,11 @@ function UserCartItemsContent({ cartItem }) {
 
   function handleCartItemDelete(getCartItem) {
     dispatch(
-      deleteCartItem({ userId: user?.id, productId: getCartItem?.productId })
+      deleteCartItem({ 
+        userId: user?.id, 
+        productId: getCartItem?.productId, 
+        size: getCartItem?.size // Include size for fashion products
+      })
     ).then((data) => {
       if (data?.payload?.success) {
         toast({
@@ -80,6 +106,11 @@ function UserCartItemsContent({ cartItem }) {
       />
       <div className="flex-1">
         <h3 className="font-extrabold">{cartItem?.title}</h3>
+        {cartItem?.size && (
+          <p className="text-sm text-gray-600 mt-1">
+            Size: <span className="font-medium">{cartItem.size}</span>
+          </p>
+        )}
         <div className="flex items-center gap-2 mt-1">
           <Button
             variant="outline"

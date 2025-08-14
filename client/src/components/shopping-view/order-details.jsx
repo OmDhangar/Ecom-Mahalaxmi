@@ -62,11 +62,27 @@ function ShoppingOrderDetailsView({ orderDetails }) {
                 ? orderDetails.cartItems.map((item, index) => (
                     <li
                       key={item._id || item.title || index}
-                      className="flex items-center justify-between"
+                      className="flex flex-col gap-2 p-3 border rounded-lg bg-gray-50"
                     >
-                      <span>Title: {item.title}</span>
-                      <span>Quantity: {item.quantity}</span>
-                      <span>Price: ${item.price}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{item.title}</span>
+                        <span className="text-green-600 font-semibold">${item.price}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span>Quantity: {item.quantity}</span>
+                        {item.size && (
+                          <span>Size: <span className="font-medium text-gray-800">{item.size}</span></span>
+                        )}
+                      </div>
+                      {item.image && (
+                        <div className="mt-2">
+                          <img 
+                            src={item.image} 
+                            alt={item.title}
+                            className="w-16 h-16 object-cover rounded border"
+                          />
+                        </div>
+                      )}
                     </li>
                   ))
                 : null}

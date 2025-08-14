@@ -14,7 +14,6 @@ const shopSearchRouter = require("./routes/shop/search-routes");
 const shopReviewRouter = require("./routes/shop/review-routes");
 const adminCarouselRouter = require('./routes/admin/carousel-routes');
 const shopCarouselRouter = require('./routes/shop/carousel-routes');
-
 const commonFeatureRouter = require("./routes/common/feature-routes");
 
 //create a database connection -> u can also

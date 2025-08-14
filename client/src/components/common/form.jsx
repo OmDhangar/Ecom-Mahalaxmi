@@ -149,6 +149,92 @@ function CommonForm({
           </div>
         );
         break;
+      case "fashionsizes":
+        const sizesValue = formData[getControlItem.name] || [];
+        
+        element = (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3">
+              {getControlItem.options && getControlItem.options.length > 0
+                ? getControlItem.options.map((optionItem) => {
+                    const existingSizeObj = Array.isArray(sizesValue) 
+                      ? sizesValue.find(item => item.size === optionItem.id)
+                      : null;
+                    const isSelected = !!existingSizeObj;
+                    const currentStock = existingSizeObj ? existingSizeObj.stock : 0;
+                    
+                    return (
+                      <div key={optionItem.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`${getControlItem.name}-${optionItem.id}`}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              let newValue;
+                              if (Array.isArray(sizesValue)) {
+                                if (checked) {
+                                  // Add size with default stock of 0
+                                  newValue = [...sizesValue, { size: optionItem.id, stock: 0 }];
+                                } else {
+                                  // Remove size
+                                  newValue = sizesValue.filter(item => item.size !== optionItem.id);
+                                }
+                              } else {
+                                newValue = checked ? [{ size: optionItem.id, stock: 0 }] : [];
+                              }
+                              
+                              setFormData({
+                                ...formData,
+                                [getControlItem.name]: newValue,
+                              });
+                            }}
+                          />
+                          <label 
+                            htmlFor={`${getControlItem.name}-${optionItem.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Size {optionItem.label}
+                          </label>
+                        </div>
+                        
+                        {isSelected && (
+                          <div className="flex items-center space-x-2 flex-1">
+                            <label className="text-xs text-gray-500 min-w-[40px]">Stock:</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              value={currentStock}
+                              className="w-20 h-8 text-sm"
+                              onChange={(e) => {
+                                const newStock = parseInt(e.target.value) || 0;
+                                const newValue = sizesValue.map(item => 
+                                  item.size === optionItem.id 
+                                    ? { ...item, stock: newStock }
+                                    : item
+                                );
+                                
+                                setFormData({
+                                  ...formData,
+                                  [getControlItem.name]: newValue,
+                                });
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                : null}
+            </div>
+            {sizesValue.length > 0 && (
+              <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
+                <strong>Total Stock:</strong> {sizesValue.reduce((total, item) => total + (item.stock || 0), 0)}
+              </div>
+            )}
+          </div>
+        );
+        break;
 
       default:
         element = (

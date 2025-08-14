@@ -177,10 +177,22 @@ async function processShiprocketForOrder(order, products, cartId) {
     for (let item of order.cartItems) {
       let product = await Product.findById(item.productId);
       if (!product) throw new Error(`Product not found: ${item.productId}`);
-      if (product.totalStock < item.quantity) throw new Error(`Insufficient stock for ${product.title}`);
-
-      product.totalStock -= item.quantity;
-      await product.save();
+      
+      // Handle size-specific stock deduction for fashion products
+      if (product.category === 'fashion' && item.size) {
+        if (!product.isSizeAvailable(item.size, item.quantity)) {
+          const availableStock = product.getStockForSize(item.size);
+          throw new Error(`Insufficient stock for ${product.title} size ${item.size}. Available: ${availableStock}`);
+        }
+        // Update size-specific stock using the model method
+        await product.updateStock(item.quantity, 'subtract', item.size);
+      } else {
+        // Handle regular stock deduction for non-fashion products
+        if (product.totalStock < item.quantity) {
+          throw new Error(`Insufficient stock for ${product.title}. Available: ${product.totalStock}`);
+        }
+        await product.updateStock(item.quantity, 'subtract');
+      }
     }
 
     // Push success to shippingErrorHistory

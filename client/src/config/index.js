@@ -108,7 +108,7 @@ export const addProductFormElements = [
   {
     label: "Sizes",
     name: "sizes",
-    componentType: "multiselect",
+    componentType: "fashionsizes",
     options: clothingSizeOptions,
     showWhen: (formData) => formData.category === "fashion"
   },
@@ -139,6 +139,7 @@ export const addProductFormElements = [
     componentType: "input",
     type: "number",
     placeholder: "Enter total stock",
+    showWhen: (formData) => formData.category !== "fashion"
   },
   {
     name: "weight",

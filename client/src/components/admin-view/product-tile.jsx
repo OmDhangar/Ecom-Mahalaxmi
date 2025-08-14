@@ -47,8 +47,6 @@ function AdminProductTile({
               setOpenCreateProductsDialog(true);
               setCurrentEditedId(product?._id);
               setFormData(product);
-              setUploadedImageUrl(product?.image);
-              setUploadedImageUrls(product?.additionalImages);
             }}
           >
             Edit

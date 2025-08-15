@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllFilteredProducts, markAsFeatured } from "@/store/shop/products-slice";
 import { categoryOptionsMap } from "@/config";
+import { Helmet } from "react-helmet";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -139,6 +140,10 @@ const Dashboard = () => {
 
   return (
     <div className="p-4">
+      <Helmet>
+        <title>Admin Dashboard - Shri Mahalaxmi Mobile</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <h1 className="text-2xl font-bold mb-4">Shop Dashboard</h1>
 
       {/* Category Filter */}

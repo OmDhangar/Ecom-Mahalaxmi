@@ -2,10 +2,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import accImg from "../../assets/account.jpg";
 import Address from "@/components/shopping-view/address";
 import ShoppingOrders from "@/components/shopping-view/orders";
+import { Helmet } from "react-helmet";
 
 function ShoppingAccount() {
   return (
     <div className="flex flex-col">
+      <Helmet>
+        <title>My Account - Shri Mahalaxmi Mobile</title>
+        <meta name="description" content="View and manage your orders, addresses, and account details at Shri Mahalaxmi Mobile." />
+      </Helmet>
       <div className="relative h-[300px] w-full overflow-hidden">
         <img
           src={accImg}

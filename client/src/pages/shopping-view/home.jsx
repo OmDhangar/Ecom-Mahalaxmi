@@ -33,6 +33,7 @@ import { getFeatureImages } from "@/store/common-slice";
 import SocialUpdates from "@/components/ui/SocialUpdates";
 import CustomerTestimonials from "@/components/ui/CustomerTestimonials";
 import OfferCarousel from "@/components/ui/OfferCarousel";
+import { Helmet } from "react-helmet";
 
 // i18n
 import { useTranslation } from "react-i18next";
@@ -142,6 +143,12 @@ function ShoppingHome() {
 
   return (
     <div className="flex flex-col min-h-screen">
+
+      <Helmet>
+        <title>Shri Mahalaxmi Mobile - Best Mobile Shop Online</title>
+        <meta name="description" content="Buy the latest mobiles, accessories, and gadgets at Shri Mahalaxmi Mobile. Great offers and fast delivery!" />
+        <meta name="keywords" content="mobile, smartphones, buy online, Mahalaxmi Mobile, accessories" />
+      </Helmet>
       {/* OFFER CAROUSEL */}
       <OfferCarousel />
 
@@ -163,10 +170,24 @@ function ShoppingHome() {
             
             {/* Mobile: Stacked buttons, smaller size */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center lg:justify-start">
-              <Button className="bg-gradient-to-r from-blue-500 to-teal-400 text-white font-semibold px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base">
+              <Button
+              onClick={() => {
+                  const productsSection = document.getElementById("featured-products-scroll");
+                  if (productsSection) {
+                    productsSection.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+               className="bg-gradient-to-r from-blue-500 to-teal-400 text-white font-semibold px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base">
                 {t("home.hero.shopDeals")}
               </Button>
-              <Button variant="outline" className="px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base">
+              <Button variant="outline" 
+              onClick={() => {
+                  window.open(
+                    "https://www.instagram.com/bhushan_rajput_307?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+                    "_blank"
+                  );
+                }}
+              className="px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base">
                 {t("home.hero.followInstagram")}
               </Button>
             </div>

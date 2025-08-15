@@ -1,4 +1,4 @@
-import { HousePlug, LogOut, Menu, ShoppingCart, UserCog } from "lucide-react";
+import { HousePlug, LogOut, Menu, ShoppingCart, UserCog, LogIn, UserPlus } from "lucide-react";
 import {
   Link,
   useLocation,
@@ -23,8 +23,6 @@ import UserCartWrapper from "./cart-wrapper";
 import { useEffect, useState } from "react";
 import { fetchCartItems } from "@/store/shop/cart-slice";
 import { Label } from "../ui/label";
-
-// Language Switcher Import
 import LanguageSwitcher from "../common/LanguageSwitcher";
 
 function MenuItems({ closeSheet }) {
@@ -47,7 +45,6 @@ function MenuItems({ closeSheet }) {
       ? setSearchParams(new URLSearchParams(`?category=${getCurrentMenuItem.id}`))
       : navigate(getCurrentMenuItem.path);
 
-    // Close hamburger on mobile
     if (closeSheet) closeSheet();
   }
 
@@ -67,7 +64,7 @@ function MenuItems({ closeSheet }) {
 }
 
 function HeaderRightContent({ closeSheet }) {
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const [openCartSheet, setOpenCartSheet] = useState(false);
   const navigate = useNavigate();
@@ -75,7 +72,7 @@ function HeaderRightContent({ closeSheet }) {
 
   function handleLogout() {
     dispatch(logoutUser());
-    if (closeSheet) closeSheet(); // close hamburger on logout
+    if (closeSheet) closeSheet();
   }
 
   useEffect(() => {
@@ -86,50 +83,80 @@ function HeaderRightContent({ closeSheet }) {
 
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
-      {/* Cart Button */}
-      <Sheet open={openCartSheet} onOpenChange={() => setOpenCartSheet(false)}>
-        <Button
-          onClick={() => setOpenCartSheet(true)}
-          variant="outline"
-          size="icon"
-          className="relative"
-        >
-          <ShoppingCart className="w-6 h-6" />
-          <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
-            {cartItems?.items?.length || 0}
-          </span>
-          <span className="sr-only">User cart</span>
-        </Button>
-        <UserCartWrapper
-          setOpenCartSheet={setOpenCartSheet}
-          cartItems={
-            cartItems?.items && cartItems.items.length > 0
-              ? cartItems.items
-              : []
-          }
-        />
-      </Sheet>
+      {/* Show login/signup buttons when not authenticated */}
+      {!isAuthenticated && (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigate("/auth/login");
+              if (closeSheet) closeSheet();
+            }}
+            className="gap-1"
+          >
+            <LogIn className="h-4 w-4" />
+            <span>Login</span>
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              navigate("/auth/register");
+              if (closeSheet) closeSheet();
+            }}
+            className="gap-1"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Sign Up</span>
+          </Button>
+        </>
+      )}
 
-      {/* User Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Avatar className="bg-black">
-            <AvatarFallback className="bg-black text-white font-extrabold">
-              {user?.userName ? user.userName[0].toUpperCase() : "U"}
-            </AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" className="w-56">
-          <DropdownMenuLabel>
-            {user?.userName ? `Logged in as ${user.userName}` : "Guest"}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {user && (
-            <>
+      {/* Show cart and user dropdown when authenticated */}
+      {isAuthenticated && (
+        <>
+          {/* Cart Button */}
+          <Sheet open={openCartSheet} onOpenChange={() => setOpenCartSheet(false)}>
+            <Button
+              onClick={() => setOpenCartSheet(true)}
+              variant="outline"
+              size="icon"
+              className="relative"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
+                {cartItems?.items?.length || 0}
+              </span>
+              <span className="sr-only">User cart</span>
+            </Button>
+            <UserCartWrapper
+              setOpenCartSheet={setOpenCartSheet}
+              cartItems={
+                cartItems?.items && cartItems.items.length > 0
+                  ? cartItems.items
+                  : []
+              }
+            />
+          </Sheet>
+
+          {/* User Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="bg-black">
+                <AvatarFallback className="bg-black text-white font-extrabold">
+                  {user?.userName ? user.userName[0].toUpperCase() : "U"}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" className="w-56">
+              <DropdownMenuLabel>
+                {user?.userName ? `Logged in as ${user.userName}` : "Guest"}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
                   navigate("/shop/account");
-                  if (closeSheet) closeSheet(); // close hamburger on mobile
+                  if (closeSheet) closeSheet();
                 }}
               >
                 <UserCog className="mr-2 h-4 w-4" />
@@ -140,10 +167,10 @@ function HeaderRightContent({ closeSheet }) {
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      )}
     </div>
   );
 }
@@ -155,8 +182,8 @@ function ShoppingHeader() {
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <Link to="/shop/home" className="flex items-center gap-2">
-          <HousePlug className="h-6 w-6" />
+        <Link to="/home" className="flex items-center gap-2">
+          <img src="/fav.png" className="h-10 w-14" alt="" />
           <span className="font-bold">Shri MahaLaxmi Mobile</span>
         </Link>
 

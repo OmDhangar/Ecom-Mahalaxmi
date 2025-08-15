@@ -99,7 +99,6 @@ const seoMap = {
 };
 
 function getSeo(pathname) {
-  // Try exact match, else fallback to 404
   return seoMap[pathname] || {
     title: "404 Not Found - Shri Mahalaxmi Mobile",
     description: "The page you are looking for does not exist.",
@@ -130,30 +129,31 @@ function App() {
         {seo.robots && <meta name="robots" content={seo.robots} />}
       </Helmet>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <CheckAuth
-              isAuthenticated={isAuthenticated}
-              user={user}
-            ></CheckAuth>
-          }
-        />
-        <Route
-          path="/auth"
-          element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
-              <AuthLayout />
-            </CheckAuth>
-          }
-        >
+        {/* Public routes - no authentication needed */}
+        <Route path="/" element={<ShoppingLayout />}>
+          <Route index element={<ShoppingHome />} />
+          <Route path="home" element={<ShoppingHome />} />
+          <Route path="listing" element={<ShoppingListing />} />
+          <Route path="search" element={<SearchProducts />} />
+        </Route>
+
+
+        <Route path="/shop" element={<ShoppingLayout />}>
+          <Route path="listing" element={<ShoppingListing />} />
+          <Route path="search" element={<SearchProducts />} />
+        </Route>
+
+        {/* Auth routes - for login/register */}
+        <Route path="/auth" element={<AuthLayout />}>
           <Route path="login" element={<AuthLogin />} />
           <Route path="register" element={<AuthRegister />} />
         </Route>
+
+        {/* Protected admin routes */}
         <Route
           path="/admin"
           element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+            <CheckAuth isAuthenticated={isAuthenticated} user={user} requiredRole="admin">
               <AdminLayout />
             </CheckAuth>
           }
@@ -164,6 +164,8 @@ function App() {
           <Route path="features" element={<AdminFeatures />} />
           <Route path="carousel" element={<CarouselAdmin />} />
         </Route>
+
+        {/* Protected shopping routes (account, checkout) */}
         <Route
           path="/shop"
           element={
@@ -172,14 +174,13 @@ function App() {
             </CheckAuth>
           }
         >
-          <Route path="home" element={<ShoppingHome />} />
-          <Route path="listing" element={<ShoppingListing />} />
           <Route path="checkout" element={<ShoppingCheckout />} />
           <Route path="account" element={<ShoppingAccount />} />
           <Route path="paypal-return" element={<PaypalReturnPage />} />
           <Route path="payment-success" element={<PaymentSuccessPage />} />
-          <Route path="search" element={<SearchProducts />} />
         </Route>
+
+        {/* Other routes */}
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

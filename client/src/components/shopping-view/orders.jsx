@@ -70,7 +70,7 @@ function ShoppingOrders() {
                 </p>
 
                 {/* Total Price */}
-                <p className="font-medium mb-4">${orderItem.totalAmount}</p>
+                <p className="font-medium mb-4">₹{orderItem.totalAmount}</p>
 
                 {/* View Details Button + Dialog */}
                 <Dialog

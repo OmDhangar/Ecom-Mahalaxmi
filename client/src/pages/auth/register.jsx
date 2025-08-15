@@ -47,6 +47,14 @@ function AuthRegister() {
         <meta name="description" content="Create your account at Shri Mahalaxmi Mobile and start shopping for the latest mobiles and accessories." />
       </Helmet>
       <div className="text-center">
+         {/* Centered Logo with proper sizing and spacing */}
+                  <div className="mb-6 flex justify-center">
+                    <img 
+                      src="/fav.png" 
+                      className="h-24 w-24 object-contain" 
+                      alt="Shri Mahalaxmi Mobile Logo"
+                    />
+                  </div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Create new account
         </h1>

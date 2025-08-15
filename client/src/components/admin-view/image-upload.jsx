@@ -66,7 +66,7 @@ async function deleteImageFromCloudinary(imageUrl) {
       return false;
     }
     
-    const response = await axios.post('http://localhost:5000/api/admin/products/delete-image', {
+    const response = await axios.post('/api/admin/products/delete-image', {
       public_id: publicId
     });
     
@@ -103,7 +103,7 @@ async function deleteImageFromCloudinary(imageUrl) {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-image",
+        "/api/admin/products/upload-image",
         data
       );
 
@@ -172,7 +172,7 @@ async function deleteImageFromCloudinary(imageUrl) {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-image",
+        "/api/admin/products/upload-image",
         data
       );
 

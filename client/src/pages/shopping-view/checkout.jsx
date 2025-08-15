@@ -3,81 +3,67 @@ import img from "../../assets/account.jpg";
 import { useDispatch, useSelector } from "react-redux";
 import UserCartItemsContent from "@/components/shopping-view/cart-items-content";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { createNewOrder, verifyPayment } from "@/store/shop/order-slice";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { createNewOrder, verifyPayment, calculateShippingCharge } from "@/store/shop/order-slice";
 import { useToast } from "@/components/ui/use-toast";
 import { loadScript } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard, Truck, CheckCircle } from "lucide-react";
-import { calculateShippingCharge } from "@/store/shop/order-slice";
+import { Helmet } from "react-helmet";
 
 function ShoppingCheckout() {
-  const { cartItems } = useSelector((state) => state.shopCart);
-  const { user } = useSelector((state) => state.auth);
-  const { razorpayOrder } = useSelector((state) => state.shopOrder);
   const dispatch = useDispatch();
   const { toast } = useToast();
 
+  const { cartItems } = useSelector((state) => state.shopCart);
+  const { user } = useSelector((state) => state.auth);
+  const { razorpayOrder, shippingCharge, shippingChargeLoading, shippingChargeError } = useSelector(
+    (state) => state.shopOrder
+  );
+
   const [currentSelectedAddress, setCurrentSelectedAddress] = useState(null);
   const [isPaymentStart, setIsPaymentStart] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // Default COD
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [successOrderDetails, setSuccessOrderDetails] = useState(null);
 
-  // Redux state for shipping charge calculation
-  const { shippingCharge, shippingChargeLoading, shippingChargeError } = useSelector(state => state.shopOrder);
-  
-  // Backend amounts after order creation (fallback to 0)
   const [backendShippingCharges, setBackendShippingCharges] = useState(0);
   const [backendSubTotal, setBackendSubTotal] = useState(0);
   const [backendTotalAmount, setBackendTotalAmount] = useState(0);
 
-  // Calculate cart subtotal locally as fallback
-  const totalCartAmount =
-    cartItems?.items?.length > 0
+  // Optimized subtotal calculation with useMemo
+  const totalCartAmount = useMemo(() => {
+    return cartItems?.items?.length
       ? cartItems.items.reduce(
           (sum, item) =>
             sum + (item?.salePrice > 0 ? item.salePrice : item.price) * item.quantity,
           0
         )
       : 0;
+  }, [cartItems]);
 
-  // Effect to calculate shipping charges when cart items or delivery pincode changes
+  const displaySubTotal = backendSubTotal || totalCartAmount;
+  const displayShippingCharges = shippingChargeLoading ? 0 : shippingCharge;
+  const displayTotalAmount = displaySubTotal + displayShippingCharges;
+
+  // Calculate shipping charges
   useEffect(() => {
-    // Call the backend API to get dynamic shipping charges when both cart and address are available
     if (cartItems?.items?.length > 0 && currentSelectedAddress?.pincode) {
-      // Prepare cart items in the format expected by backend
       const formattedCartItems = cartItems.items.map((item) => ({
         productId: item.productId,
         title: item.title,
         price: item.salePrice > 0 ? item.salePrice : item.price,
         quantity: item.quantity,
       }));
-      
-      dispatch(calculateShippingCharge({ 
-        cartItems: formattedCartItems, 
-        deliveryPincode: currentSelectedAddress.pincode 
-      }));
+
+      dispatch(calculateShippingCharge({ cartItems: formattedCartItems, deliveryPincode: currentSelectedAddress.pincode }));
     }
   }, [dispatch, cartItems?.items, currentSelectedAddress?.pincode]);
 
-  // Effect to calculate shipping charges on initial page load if cart is available
-  useEffect(() => {
-    // If user lands on checkout page with cart items but no address selected yet,
-    // we'll wait for them to select an address before calculating shipping
-    // This effect ensures we calculate shipping as soon as both are available
-  }, []);
-
-  // Amounts to display in summary - prefer backend values if available
-  const displaySubTotal = backendSubTotal || totalCartAmount;
-  const displayShippingCharges = shippingChargeLoading ? 0 : shippingCharge;
-  const displayTotalAmount = displaySubTotal + displayShippingCharges;
-
-
-  // Load Razorpay checkout.js script once on mount
+  // Load Razorpay once
   useEffect(() => {
     async function loadRzp() {
       try {
@@ -94,91 +80,80 @@ function ShoppingCheckout() {
     loadRzp();
   }, [toast]);
 
-  // Open Razorpay window when razorpayOrder is ready
+  // Open Razorpay when order is ready
   useEffect(() => {
     if (razorpayOrder?.success && isRazorpayLoaded && paymentMethod === "razorpay") {
       openRazorpayWindow(razorpayOrder);
     }
   }, [razorpayOrder, isRazorpayLoaded, paymentMethod]);
 
-  // Razorpay payment modal opener
-  const openRazorpayWindow = (orderDetails) => {
-    const options = {
-      key: orderDetails.key,
-      amount: orderDetails.amount,
-      currency: orderDetails.currency,
-      name: orderDetails.name,
-      description: orderDetails.description,
-      order_id: orderDetails.razorpayOrderId,
-      handler: async (response) => {
-        try {
-          const verificationData = {
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature,
-            orderId: orderDetails.order._id,
-          };
+  const openRazorpayWindow = useCallback(
+    (orderDetails) => {
+      const options = {
+        key: orderDetails.key,
+        amount: orderDetails.amount,
+        currency: orderDetails.currency,
+        name: orderDetails.name,
+        description: orderDetails.description,
+        order_id: orderDetails.razorpayOrderId,
+        handler: async (response) => {
+          try {
+            await dispatch(
+              verifyPayment({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: orderDetails.order._id,
+              })
+            ).unwrap();
 
-          await dispatch(verifyPayment(verificationData)).unwrap();
+            toast({
+              title: "Payment Successful",
+              description: "Your order has been confirmed and will be shipped soon!",
+            });
 
-          toast({
-            title: "Payment Successful",
-            description: "Your order has been confirmed and will be shipped soon!",
-          });
-          // Clear cart after successful payment
-          await dispatch(clearUserCart(user?.id)).unwrap();
+            setOrderSuccess(true);
+            setSuccessOrderDetails(orderDetails.order);
 
+            setBackendShippingCharges(orderDetails.order.shippingCharges || 0);
+            setBackendSubTotal(orderDetails.order.subTotal || 0);
+            setBackendTotalAmount(orderDetails.order.totalAmount || 0);
 
-          setOrderSuccess(true);
-          setSuccessOrderDetails(orderDetails.order);
-
-          setBackendShippingCharges(orderDetails.order.shippingCharges || 0);
-          setBackendSubTotal(orderDetails.order.subTotal || 0);
-          setBackendTotalAmount(orderDetails.order.totalAmount || 0);
-
-          setIsPaymentStart(false);
-        } catch (error) {
-          toast({
-            title: "Payment Verification Failed",
-            description: error.message || "Please contact support",
-            variant: "destructive",
-          });
-          setIsPaymentStart(false);
-        }
-      },
-      prefill: orderDetails.prefill,
-      theme: orderDetails.theme,
-      modal: {
-        ondismiss: () => {
-          toast({
-            title: "Payment Cancelled",
-            description: "You closed the payment window",
-            variant: "destructive",
-          });
-          setIsPaymentStart(false);
+            setIsPaymentStart(false);
+          } catch (error) {
+            toast({
+              title: "Payment Verification Failed",
+              description: error.message || "Please contact support",
+              variant: "destructive",
+            });
+            setIsPaymentStart(false);
+          }
         },
-      },
-    };
+        prefill: orderDetails.prefill,
+        theme: orderDetails.theme,
+        modal: {
+          ondismiss: () => {
+            toast({
+              title: "Payment Cancelled",
+              description: "You closed the payment window",
+              variant: "destructive",
+            });
+            setIsPaymentStart(false);
+          },
+        },
+      };
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  };
+      new window.Razorpay(options).open();
+    },
+    [dispatch, toast]
+  );
 
-  // Initiate order creation and payment flow
-  const handleInitiatePayment = () => {
-    if (!cartItems?.items || cartItems.items.length === 0) {
-      toast({
-        title: "Your cart is empty. Please add items to proceed.",
-        variant: "destructive",
-      });
-      return;
+  const handleInitiatePayment = useCallback(() => {
+    if (!cartItems?.items?.length) {
+      return toast({ title: "Your cart is empty. Please add items to proceed.", variant: "destructive" });
     }
     if (!currentSelectedAddress) {
-      toast({
-        title: "Please select an address to proceed.",
-        variant: "destructive",
-      });
-      return;
+      return toast({ title: "Please select an address to proceed.", variant: "destructive" });
     }
 
     setIsPaymentStart(true);
@@ -192,7 +167,7 @@ function ShoppingCheckout() {
         image: item.image,
         price: item.salePrice > 0 ? item.salePrice : item.price,
         quantity: item.quantity,
-        size: item.size || null, // Include size for fashion products
+        size: item.size || null,
       })),
       addressInfo: {
         name: currentSelectedAddress?.name || user?.name,
@@ -222,95 +197,45 @@ function ShoppingCheckout() {
       .then((data) => {
         if (data.success) {
           const backendOrder = data.order;
-
           setBackendShippingCharges(backendOrder.shippingCharges);
-          setBackendSubTotal(backendOrder.subTotal );
-          setBackendTotalAmount(backendOrder.totalAmount );
+          setBackendSubTotal(backendOrder.subTotal);
+          setBackendTotalAmount(backendOrder.totalAmount);
 
           if (paymentMethod === "cod") {
-            toast({
-              title: "Order Placed Successfully!",
-              description: "Your COD order has been confirmed and will be processed soon.",
-            });
+            toast({ title: "Order Placed Successfully!", description: "Your COD order will be processed soon." });
             setOrderSuccess(true);
             setSuccessOrderDetails(backendOrder);
             setIsPaymentStart(false);
           }
-          // Clear cart after successful order creation
-          dispatch(clearUserCart(user?.id))
-            .unwrap()
-            .catch((error) => {
-              console.error("Failed to clear cart:", error);
-            });
-          // Razorpay payment will be handled by useEffect
         } else {
           setIsPaymentStart(false);
-          toast({
-            title: "Order Creation Failed",
-            description: data.message || "Something went wrong",
-            variant: "destructive",
-          });
+          toast({ title: "Order Creation Failed", description: data.message || "Something went wrong", variant: "destructive" });
         }
       })
       .catch((error) => {
         setIsPaymentStart(false);
-        toast({
-          title: "Order Creation Failed",
-          description: error.message || "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
+        toast({ title: "Order Creation Failed", description: error.message || "Please try again.", variant: "destructive" });
       });
-  };
-
-  // Success screen after order placed
-  if (orderSuccess && successOrderDetails) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-5 bg-gray-50">
-        <div className="text-center space-y-5 max-w-md w-full bg-white p-6 rounded-lg shadow-lg">
-          <CheckCircle className="w-16 h-16 text-green-600 mx-auto" />
-          <h1 className="text-3xl font-bold text-green-700">Order Confirmed!</h1>
-          <p className="text-gray-700 break-words">
-            <strong>Order ID:</strong>{" "}
-            <code className="bg-gray-100 px-2 py-1 rounded">{successOrderDetails._id}</code>
-          </p>
-          <p className="text-gray-700">
-            <strong>Payment Method:</strong> <span className="capitalize">{paymentMethod}</span>
-          </p>
-          <p className="text-gray-700">
-            <strong>Subtotal:</strong> ₹{backendSubTotal.toFixed(2)}
-          </p>
-          <p className="text-gray-700">
-            <strong>Shipping Charges:</strong> ₹{backendShippingCharges.toFixed(2)}
-          </p>
-          <p className="text-lg font-semibold text-gray-900 border-t pt-2 mt-2">
-            Total Amount: ₹{backendTotalAmount.toFixed(2)}
-          </p>
-          <p className="text-sm text-gray-600 mt-4">
-            {paymentMethod === "cod"
-              ? "Please keep the exact amount ready for delivery."
-              : "Your payment has been processed successfully."}
-          </p>
-          <Button
-            variant="outline"
-            className="mt-6 w-full"
-            onClick={() => {
-              setOrderSuccess(false);
-              setSuccessOrderDetails(null);
-              setCurrentSelectedAddress(null);
-            }}
-          >
-            Back to Shopping
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  }, [cartItems, currentSelectedAddress, dispatch, paymentMethod, displayTotalAmount, displayShippingCharges, displaySubTotal, toast, user]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header image */}
+      <Helmet>
+        <title>Checkout - Shri Mahalaxmi Mobile</title>
+        <meta name="description" content="Complete your secure checkout for Shri Mahalaxmi Mobile purchases. Choose COD or online payment." />
+        <link rel="preload" as="image" href={img} />
+      </Helmet>
+
       <div className="relative h-48 sm:h-64 w-full overflow-hidden">
-        <img src={img} alt="Shopping header" className="h-full w-full object-cover object-center" />
+        <img
+          src={img}
+          alt="Secure mobile checkout page header"
+          className="h-full w-full object-cover object-center"
+          width="1920"
+          height="400"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
 
       {/* Main content */}

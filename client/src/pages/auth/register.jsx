@@ -5,6 +5,7 @@ import { registerUser } from "@/store/auth-slice";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 const initialState = {
   userName: "",
@@ -41,6 +42,10 @@ function AuthRegister() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6">
+      <Helmet>
+        <title>Register - Shri Mahalaxmi Mobile</title>
+        <meta name="description" content="Create your account at Shri Mahalaxmi Mobile and start shopping for the latest mobiles and accessories." />
+      </Helmet>
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Create new account

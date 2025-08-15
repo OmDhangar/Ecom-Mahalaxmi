@@ -5,6 +5,7 @@ import { loginUser } from "@/store/auth-slice";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 const initialState = {
   emailOrPhone: "", // Changed from email to emailOrPhone
@@ -35,6 +36,10 @@ function AuthLogin() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6">
+      <Helmet>
+        <title>Login - Shri Mahalaxmi Mobile</title>
+        <meta name="description" content="Login to your Shri Mahalaxmi Mobile account to access exclusive deals and manage your orders." />
+      </Helmet>
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Sign in to your account

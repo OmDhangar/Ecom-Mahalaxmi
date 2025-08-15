@@ -20,6 +20,7 @@ import { ArrowUpDownIcon, FilterIcon, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 function createSearchParamsHelper(filterParams) {
   const queryParams = [];
@@ -202,6 +203,11 @@ function ShoppingListing() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>Shop Mobiles - Shri Mahalaxmi Mobile</title>
+        <meta name="description" content="Browse our wide range of mobiles and accessories. Find the perfect device for you at the best price." />
+        <meta name="keywords" content="mobile listing, smartphones, shop, Mahalaxmi Mobile" />
+      </Helmet>
       {/* Header with Sort */}
       <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">

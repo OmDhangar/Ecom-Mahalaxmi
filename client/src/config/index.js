@@ -180,7 +180,6 @@ export const shoppingViewHeaderMenuItems = [
   { id: "fashion", label: "Fashion", path: "/shop/listing?category=fashion" },
   { id: "toys", label: "Toys", path: "/shop/listing?category=toys" },
   { id: "farming", label: "Farming", path: "/shop/listing?category=farming" },
-  { id: "search", label: "Search", path: "/shop/search" },
 ];
 
 export const categoryOptionsMap = {
@@ -192,18 +191,14 @@ export const categoryOptionsMap = {
 
 export const brandOptionsMap = {
   // Fashion
-  nike: "Nike",
-  adidas: "Adidas",
-  puma: "Puma",
-  levi: "Levi's",
-  zara: "Zara",
-  "h&m": "H&M",
+  KittuFashion:"Kittu Fashion",
   // Electronics
   samsung: "Samsung",
   sony: "Sony",
   apple: "Apple",
   lg: "LG",
   panasonic: "Panasonic",
+  iqoo:"IQOO",
   xiaomi: "Xiaomi",
   oneplus: "OnePlus",
   nokia: "Nokia",
@@ -211,13 +206,13 @@ export const brandOptionsMap = {
   google: "Google",
   // Toys
   lego: "LEGO",
+  Mahalaxmi:"Shri Mahalaxmi",
   nerf: "NERF",
-  hasbro: "Hasbro",
-  barbie: "Barbie",
   hotwheels: "Hot Wheels",
   //Farming
-   kraftseeds: "KraftSeeds",          
-  crompton: "Crompton",              
+  kraftseeds: "KraftSeeds",          
+  crompton: "Crompton", 
+  Mahalaxmi:"Shri Mahalaxmi",             
   kisankraft: "KisanKraft",          
   mahindraagri: "Mahindra Agri",
 };
@@ -233,16 +228,15 @@ export const filterOptions = {
     fashion: [
       { id: "nike", label: "Nike" },
       { id: "adidas", label: "Adidas" },
+      {id:"KittuFashion",label:"Kittu Fashion"},
       { id: "puma", label: "Puma" },
-      { id: "levi", label: "Levi's" },
-      { id: "zara", label: "Zara" },
-      { id: "h&m", label: "H&M" },
     ],
     electronics: [
       { id: "samsung", label: "Samsung" },
       { id: "sony", label: "Sony" },
       { id: "apple", label: "Apple" },
       { id: "lg", label: "LG" },
+      {id:"iqoo",label:"IQOO"},
       { id: "panasonic", label: "Panasonic" },
       { id: "xiaomi", label: "Xiaomi" },
       { id: "oneplus", label: "OnePlus" },
@@ -253,6 +247,7 @@ export const filterOptions = {
     toys: [
       { id: "lego", label: "LEGO" },
       { id: "nerf", label: "NERF" },
+      {id:"Mahalaxmi", label:"Shree Mahalaxmi"},
       { id: "hasbro", label: "Hasbro" },
       { id: "barbie", label: "Barbie" },
       { id: "hotwheels", label: "Hot Wheels" },
@@ -260,7 +255,8 @@ export const filterOptions = {
      farming: [
       { id: "kraftseeds", label: "KraftSeeds" },     // ✅ Added
       { id: "crompton", label: "Crompton" },         // ✅ Added
-      { id: "kisankraft", label: "KisanKraft" },     // ✅ Added
+      { id: "kisankraft", label: "KisanKraft" }, 
+      {id:"Mahalaxmi", label:"Shree Mahalaxmi"},    // ✅ Added
       { id: "mahindraagri", label: "Mahindra Agri" } // ✅ Added
     ],
   },

@@ -27,7 +27,7 @@ import { Label } from "../ui/label";
 // Language Switcher Import
 import LanguageSwitcher from "../common/LanguageSwitcher";
 
-function MenuItems() {
+function MenuItems({ closeSheet }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,18 +38,17 @@ function MenuItems() {
       getCurrentMenuItem.id !== "home" &&
       getCurrentMenuItem.id !== "products" &&
       getCurrentMenuItem.id !== "search"
-        ? {
-            category: [getCurrentMenuItem.id],
-          }
+        ? { category: [getCurrentMenuItem.id] }
         : null;
 
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
 
     location.pathname.includes("listing") && currentFilter !== null
-      ? setSearchParams(
-          new URLSearchParams(`?category=${getCurrentMenuItem.id}`)
-        )
+      ? setSearchParams(new URLSearchParams(`?category=${getCurrentMenuItem.id}`))
       : navigate(getCurrentMenuItem.path);
+
+    // Close hamburger on mobile
+    if (closeSheet) closeSheet();
   }
 
   return (
@@ -67,7 +66,7 @@ function MenuItems() {
   );
 }
 
-function HeaderRightContent() {
+function HeaderRightContent({ closeSheet }) {
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const [openCartSheet, setOpenCartSheet] = useState(false);
@@ -76,6 +75,7 @@ function HeaderRightContent() {
 
   function handleLogout() {
     dispatch(logoutUser());
+    if (closeSheet) closeSheet(); // close hamburger on logout
   }
 
   useEffect(() => {
@@ -126,7 +126,12 @@ function HeaderRightContent() {
           <DropdownMenuSeparator />
           {user && (
             <>
-              <DropdownMenuItem onClick={() => navigate("/shop/account")}>
+              <DropdownMenuItem
+                onClick={() => {
+                  navigate("/shop/account");
+                  if (closeSheet) closeSheet(); // close hamburger on mobile
+                }}
+              >
                 <UserCog className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
@@ -144,6 +149,8 @@ function HeaderRightContent() {
 }
 
 function ShoppingHeader() {
+  const [openMenuSheet, setOpenMenuSheet] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
@@ -155,20 +162,22 @@ function ShoppingHeader() {
 
         {/* Mobile: Language Switcher + Hamburger */}
         <div className="flex items-center gap-3 lg:hidden">
-          {/* Language Switcher outside hamburger */}
           <LanguageSwitcher />
 
-          {/* Hamburger Menu */}
-          <Sheet>
+          <Sheet open={openMenuSheet} onOpenChange={setOpenMenuSheet}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setOpenMenuSheet(true)}
+              >
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Toggle header menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-full max-w-xs">
-              <MenuItems />
-              <HeaderRightContent />
+              <MenuItems closeSheet={() => setOpenMenuSheet(false)} />
+              <HeaderRightContent closeSheet={() => setOpenMenuSheet(false)} />
             </SheetContent>
           </Sheet>
         </div>
@@ -180,7 +189,6 @@ function ShoppingHeader() {
 
         {/* Right Content (Desktop only) */}
         <div className="hidden lg:block">
-          {/* Include LanguageSwitcher here for desktop */}
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <HeaderRightContent />

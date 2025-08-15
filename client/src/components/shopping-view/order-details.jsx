@@ -26,7 +26,7 @@ function ShoppingOrderDetailsView({ orderDetails }) {
           </div>
           <div className="flex mt-2 items-center justify-between">
             <p className="font-medium">Order Price</p>
-            <Label>${orderDetails?.totalAmount}</Label>
+            <Label>₹{orderDetails?.totalAmount}</Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
             <p className="font-medium">Payment method</p>
@@ -66,7 +66,7 @@ function ShoppingOrderDetailsView({ orderDetails }) {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{item.title}</span>
-                        <span className="text-green-600 font-semibold">${item.price}</span>
+                        <span className="text-green-600 font-semibold">₹{item.price}</span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span>Quantity: {item.quantity}</span>

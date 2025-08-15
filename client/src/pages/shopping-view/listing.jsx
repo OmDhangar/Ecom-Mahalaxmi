@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
-import { sortOptions } from "@/config";
+import { sortOptions, filterOptions } from "../../config/index"; // Import filterOptions from config
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import {
   fetchAllFilteredProducts,
@@ -35,30 +35,6 @@ function createSearchParamsHelper(filterParams) {
   console.log(queryParams, "queryParams");
   return queryParams.join("&");
 }
-
-// Mock filter options (replace with your actual filter config)
-const filterOptions = {
-  category: [
-    { id: "electronics", label: "Electronics" },
-    { id: "fashion", label: "Fashion" },
-    { id: "toys", label: "Toys" },
-    { id: "farming", label: "Farming" },
-    { id: "home", label: "Home & Garden" },
-  ],
-  brand: [
-    { id: "apple", label: "Apple" },
-    { id: "samsung", label: "Samsung" },
-    { id: "oneplus", label: "OnePlus" },
-    { id: "xiaomi", label: "Xiaomi" },
-    { id: "realme", label: "Realme" },
-  ],
-  price: [
-    { id: "0-10000", label: "Under ₹10,000" },
-    { id: "10000-25000", label: "₹10,000 - ₹25,000" },
-    { id: "25000-50000", label: "₹25,000 - ₹50,000" },
-    { id: "50000-above", label: "Above ₹50,000" },
-  ]
-};
 
 function ShoppingListing() {
   const dispatch = useDispatch();
@@ -181,23 +157,32 @@ function ShoppingListing() {
   }, [productDetails]);
 
   // Get active filters for display
-  const getActiveFilters = () => {
-    const activeFilters = [];
-    Object.keys(filters).forEach(filterKey => {
-      filters[filterKey].forEach(filterValue => {
-        const filterSection = filterOptions[filterKey];
-        const filterOption = filterSection?.find(option => option.id === filterValue);
-        if (filterOption) {
-          activeFilters.push({
-            sectionId: filterKey,
-            optionId: filterValue,
-            label: filterOption.label
-          });
-        }
-      });
+ const getActiveFilters = () => {
+  const activeFilters = [];
+  Object.keys(filters).forEach(filterKey => {
+    filters[filterKey].forEach(filterValue => {
+      let filterOption;
+      
+      if (filterKey === 'brand') {
+        // Find brand with matching ID in any category
+        filterOption = Object.values(filterOptions.brand)
+          .flat()
+          .find(option => option.id === filterValue);
+      } else {
+        filterOption = filterOptions[filterKey]?.find(option => option.id === filterValue);
+      }
+
+      if (filterOption) {
+        activeFilters.push({
+          sectionId: filterKey,
+          optionId: filterValue,
+          label: filterOption.label
+        });
+      }
     });
-    return activeFilters;
-  };
+  });
+  return activeFilters;
+};
 
   console.log(productList, "productListproductListproductList");
 
@@ -249,52 +234,99 @@ function ShoppingListing() {
       {/* Horizontal Scrollable Filters */}
       <div className="bg-white border-b px-4 py-3">
         <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
-          {/* Filter Sections */}
-          {Object.keys(filterOptions).map((filterKey) => (
-            <div key={filterKey} className="flex-shrink-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`flex items-center gap-1 text-sm whitespace-nowrap ${
-                      filters[filterKey]?.length > 0 
-                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                        : 'bg-white'
-                    }`}
-                  >
-                    <FilterIcon className="h-3 w-3" />
-                    <span className="capitalize">{filterKey}</span>
-                    {filters[filterKey]?.length > 0 && (
-                      <span className="bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 text-xs">
-                        {filters[filterKey].length}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[200px] max-h-[300px] overflow-y-auto">
-                  {filterOptions[filterKey].map((option) => (
-                    <div
-                      key={option.id}
-                      className={`flex items-center space-x-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                        filters[filterKey]?.includes(option.id) ? 'bg-blue-50' : ''
-                      }`}
-                      onClick={() => handleFilter(filterKey, option.id)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={filters[filterKey]?.includes(option.id) || false}
-                        onChange={() => {}}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="text-sm">{option.label}</span>
-                    </div>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
-        </div>
+  {/* Category Filter */}
+      <div className="flex-shrink-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`flex items-center gap-1 text-sm whitespace-nowrap ${
+                filters['category']?.length > 0 
+                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                  : 'bg-white'
+              }`}
+            >
+              <FilterIcon className="h-3 w-3" />
+              <span>Category</span>
+              {filters['category']?.length > 0 && (
+                <span className="bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 text-xs">
+                  {filters['category'].length}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-[200px] max-h-[300px] overflow-y-auto">
+            {filterOptions.category.map((option) => (
+              <div
+                key={option.id}
+                className={`flex items-center space-x-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                  filters['category']?.includes(option.id) ? 'bg-blue-50' : ''
+                }`}
+                onClick={() => handleFilter('category', option.id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={filters['category']?.includes(option.id) || false}
+                  onChange={() => {}}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">{option.label}</span>
+              </div>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+  {/* Brand Filter - Dynamic based on selected category */}
+  {filters['category']?.length > 0 && (
+    <div className="flex-shrink-0">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`flex items-center gap-1 text-sm whitespace-nowrap ${
+              filters['brand']?.length > 0 
+                ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                : 'bg-white'
+            }`}
+          >
+            <FilterIcon className="h-3 w-3" />
+            <span>Brand</span>
+            {filters['brand']?.length > 0 && (
+              <span className="bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 text-xs">
+                {filters['brand'].length}
+              </span>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-[200px] max-h-[300px] overflow-y-auto">
+          {filters['category']?.map(categoryId => {
+            const brandsForCategory = filterOptions.brand[categoryId] || [];
+            return brandsForCategory.map((option) => (
+              <div
+                key={option.id}
+                className={`flex items-center space-x-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                  filters['brand']?.includes(option.id) ? 'bg-blue-50' : ''
+                }`}
+                onClick={() => handleFilter('brand', option.id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={filters['brand']?.includes(option.id) || false}
+                  onChange={() => {}}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">{option.label}</span>
+              </div>
+            ));
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )}
+</div>
       </div>
 
       {/* Active Filters Display */}
@@ -322,106 +354,103 @@ function ShoppingListing() {
         </div>
       )}
 
-    <div className="p-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-        {productList && productList.length > 0 ? (
-          productList.map((productItem) => {
-            const discount =
-              productItem?.salePrice > 0
-                ? Math.round(((productItem.price - productItem.salePrice) / productItem.price) * 100)
-                : 0;
+      <div className="p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+          {productList && productList.length > 0 ? (
+            productList.map((productItem) => {
+              const discount =
+                productItem?.salePrice > 0
+                  ? Math.round(((productItem.price - productItem.salePrice) / productItem.price) * 100)
+                  : 0;
 
-            return (
-              <div key={productItem._id} className="w-full">
-                <div className="bg-white rounded-lg border hover:shadow-md transition-all duration-300">
-                  
-                  {/* Image */}
-                  <div
-                    className="relative w-full aspect-square overflow-hidden bg-gray-100 cursor-pointer"
-                    onClick={() => handleGetProductDetails(productItem?._id)}
-                  >
-                    <img
-                      src={productItem?.image}
-                      alt={productItem?.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-
-                    {/* Sale / Bestseller Badge */}
-                    {productItem?.salePrice > 0 && (
-                      <div className="absolute top-1.5 left-1.5 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
-                        Sale
-                      </div>
-                    )}
-                    {productItem?.isBestseller && (
-                      <div className="absolute top-1.5 right-1.5 bg-gray-900 text-white text-[10px] px-2 py-0.5 rounded">
-                        BESTSELLER
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="p-2 sm:p-3">
-                    
-                    {/* Rating */}
-                    {productItem?.rating && (
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                          {productItem?.rating} ★
-                        </span>
-                        <span className="text-gray-500 text-xs">
-                          | {productItem?.reviews} Reviews
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Title */}
-                    <h3
-                      className="font-semibold text-xs sm:text-sm text-gray-900 leading-snug cursor-pointer hover:text-blue-600 line-clamp-2"
+              return (
+                <div key={productItem._id} className="w-full">
+                  <div className="bg-white rounded-lg border hover:shadow-md transition-all duration-300">
+                    {/* Image */}
+                    <div
+                      className="relative w-full aspect-square overflow-hidden bg-gray-100 cursor-pointer"
                       onClick={() => handleGetProductDetails(productItem?._id)}
                     >
-                      {productItem?.brand} - {productItem?.title}
-                    </h3>
+                      <img
+                        src={productItem?.image}
+                        alt={productItem?.title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
 
-                    {/* Price */}
-                    <div className="flex items-center gap-1 mt-1">
+                      {/* Sale / Bestseller Badge */}
                       {productItem?.salePrice > 0 && (
-                        <span className="text-sm sm:text-base font-bold text-gray-900">
-                          ₹{productItem?.salePrice}
-                        </span>
+                        <div className="absolute top-1.5 left-1.5 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                          Sale
+                        </div>
                       )}
-                      <span
-                        className={`text-xs sm:text-sm ${
-                          productItem?.salePrice > 0 ? "line-through text-gray-500" : "font-bold text-gray-900"
-                        }`}
-                      >
-                        ₹{productItem?.price}
-                      </span>
-                      {discount > 0 && (
-                        <span className="text-green-600 text-xs font-medium">
-                          ({discount}% off)
-                        </span>
+                      {productItem?.isBestseller && (
+                        <div className="absolute top-1.5 right-1.5 bg-gray-900 text-white text-[10px] px-2 py-0.5 rounded">
+                          BESTSELLER
+                        </div>
                       )}
                     </div>
 
-                    {/* Offer Price */}
-                    {productItem?.offerPrice && (
-                      <div className="text-green-600 text-xs sm:text-sm font-semibold mt-0.5">
-                        Offer Price: ₹{productItem?.offerPrice}
+                    {/* Details */}
+                    <div className="p-2 sm:p-3">
+                      {/* Rating */}
+                      {productItem?.rating && (
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                            {productItem?.rating} ★
+                          </span>
+                          <span className="text-gray-500 text-xs">
+                            | {productItem?.reviews} Reviews
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Title */}
+                      <h3
+                        className="font-semibold text-xs sm:text-sm text-gray-900 leading-snug cursor-pointer hover:text-blue-600 line-clamp-2"
+                        onClick={() => handleGetProductDetails(productItem?._id)}
+                      >
+                        {productItem?.brand} - {productItem?.title}
+                      </h3>
+
+                      {/* Price */}
+                      <div className="flex items-center gap-1 mt-1">
+                        {productItem?.salePrice > 0 && (
+                          <span className="text-sm sm:text-base font-bold text-gray-900">
+                            ₹{productItem?.salePrice}
+                          </span>
+                        )}
+                        <span
+                          className={`text-xs sm:text-sm ${
+                            productItem?.salePrice > 0 ? "line-through text-gray-500" : "font-bold text-gray-900"
+                          }`}
+                        >
+                          ₹{productItem?.price}
+                        </span>
+                        {discount > 0 && (
+                          <span className="text-green-600 text-xs font-medium">
+                            ({discount}% off)
+                          </span>
+                        )}
                       </div>
-                    )}
+
+                      {/* Offer Price */}
+                      {productItem?.offerPrice && (
+                        <div className="text-green-600 text-xs sm:text-sm font-semibold mt-0.5">
+                          Offer Price: ₹{productItem?.offerPrice}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-500">No products found matching your filters.</p>
-          </div>
-        )}
+              );
+            })
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-500">No products found matching your filters.</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-
 
       <ProductDetailsDialog
         open={openDetailsDialog}

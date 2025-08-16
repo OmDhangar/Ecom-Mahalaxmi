@@ -4,18 +4,25 @@ import { loginFormControls } from "@/config";
 import { loginUser } from "@/store/auth-slice";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
 const initialState = {
-  emailOrPhone: "", // Changed from email to emailOrPhone
+  emailOrPhone: "", 
   password: "",
 };
 
 function AuthLogin() {
   const [formData, setFormData] = useState(initialState);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleLoginSuccess = () => {
+    const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/home';
+    sessionStorage.removeItem('redirectAfterLogin');
+    navigate(redirectPath);
+  };
 
   function onSubmit(event) {
     event.preventDefault();
@@ -25,6 +32,7 @@ function AuthLogin() {
         toast({
           title: data?.payload?.message,
         });
+        handleLoginSuccess();
       } else {
         toast({
           title: data?.payload?.message,
@@ -43,7 +51,6 @@ function AuthLogin() {
       
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center">
-          {/* Centered Logo with proper sizing and spacing */}
           <div className="mb-6 flex justify-center">
             <img 
               src="/fav.png" 
@@ -75,6 +82,16 @@ function AuthLogin() {
             setFormData={setFormData}
             onSubmit={onSubmit}
           />
+          
+          {/* Forgot Password Link */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/auth/forgot-password"
+              className="text-sm text-primary hover:underline"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -15,16 +15,27 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  phone:{
+  phone: {
     type: String,
     required: true,
-    unique:true
+    unique: true
   },
   role: {
     type: String,
-    enum:["user","admin"],
+    enum: ["user", "admin"],
     default: "user",
   },
+  // OTP fields for password reset
+  resetPasswordOTP: {
+    type: String,
+    default: null,
+  },
+  resetPasswordOTPExpires: {
+    type: Date,
+    default: null,
+  },
+}, {
+  timestamps: true, // Adds createdAt and updatedAt
 });
 
 const User = mongoose.model("User", UserSchema);

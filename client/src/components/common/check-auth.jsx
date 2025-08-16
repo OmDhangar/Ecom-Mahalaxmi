@@ -12,7 +12,7 @@ function CheckAuth({ isAuthenticated, user, children }) {
       if (user?.role === "admin") {
         return <Navigate to="/admin/dashboard" />;
       } else {
-        return <Navigate to="/shop/home" />;
+        return <Navigate to="/home" />;
       }
     }
   }
@@ -24,6 +24,7 @@ function CheckAuth({ isAuthenticated, user, children }) {
       location.pathname.includes("/register")
     )
   ) {
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
     return <Navigate to="/auth/login" />;
   }
 

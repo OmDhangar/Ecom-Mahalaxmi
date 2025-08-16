@@ -10,6 +10,12 @@ const initialState = {
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
   async ({ userId, productId, quantity, size }) => {
+    if (!userId) {
+      return rejectWithValue({
+        success: false,
+        message: "Authentication required"
+      });
+    }
     const response = await axios.post(
       "/api/shop/cart/add",
       {

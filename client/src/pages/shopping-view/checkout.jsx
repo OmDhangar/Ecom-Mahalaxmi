@@ -10,12 +10,14 @@ import { loadScript } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Truck, CheckCircle } from "lucide-react";
+import { CreditCard, Truck } from "lucide-react";
 import { Helmet } from "react-helmet";
+import { useNavigate } from "react-router-dom";   // ✅ added
 
 function ShoppingCheckout() {
   const dispatch = useDispatch();
   const { toast } = useToast();
+  const navigate = useNavigate();   // ✅ added
 
   const { cartItems } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
@@ -27,8 +29,6 @@ function ShoppingCheckout() {
   const [isPaymentStart, setIsPaymentStart] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [successOrderDetails, setSuccessOrderDetails] = useState(null);
 
   const [backendShippingCharges, setBackendShippingCharges] = useState(0);
   const [backendSubTotal, setBackendSubTotal] = useState(0);
@@ -59,7 +59,12 @@ function ShoppingCheckout() {
         quantity: item.quantity,
       }));
 
-      dispatch(calculateShippingCharge({ cartItems: formattedCartItems, deliveryPincode: currentSelectedAddress.pincode }));
+      dispatch(
+        calculateShippingCharge({
+          cartItems: formattedCartItems,
+          deliveryPincode: currentSelectedAddress.pincode,
+        })
+      );
     }
   }, [dispatch, cartItems?.items, currentSelectedAddress?.pincode]);
 
@@ -112,14 +117,14 @@ function ShoppingCheckout() {
               description: "Your order has been confirmed and will be shipped soon!",
             });
 
-            setOrderSuccess(true);
-            setSuccessOrderDetails(orderDetails.order);
-
             setBackendShippingCharges(orderDetails.order.shippingCharges || 0);
             setBackendSubTotal(orderDetails.order.subTotal || 0);
             setBackendTotalAmount(orderDetails.order.totalAmount || 0);
 
             setIsPaymentStart(false);
+
+            // ✅ Redirect to success page
+            navigate("/order-success", { state: { order: orderDetails.order } });
           } catch (error) {
             toast({
               title: "Payment Verification Failed",
@@ -145,15 +150,21 @@ function ShoppingCheckout() {
 
       new window.Razorpay(options).open();
     },
-    [dispatch, toast]
+    [dispatch, toast, navigate]
   );
 
   const handleInitiatePayment = useCallback(() => {
     if (!cartItems?.items?.length) {
-      return toast({ title: "Your cart is empty. Please add items to proceed.", variant: "destructive" });
+      return toast({
+        title: "Your cart is empty. Please add items to proceed.",
+        variant: "destructive",
+      });
     }
     if (!currentSelectedAddress) {
-      return toast({ title: "Please select an address to proceed.", variant: "destructive" });
+      return toast({
+        title: "Please select an address to proceed.",
+        variant: "destructive",
+      });
     }
 
     setIsPaymentStart(true);
@@ -202,27 +213,54 @@ function ShoppingCheckout() {
           setBackendTotalAmount(backendOrder.totalAmount);
 
           if (paymentMethod === "cod") {
-            toast({ title: "Order Placed Successfully!", description: "Your COD order will be processed soon." });
-            setOrderSuccess(true);
-            setSuccessOrderDetails(backendOrder);
+            toast({
+              title: "Order Placed Successfully!",
+              description: "Your COD order will be processed soon.",
+            });
+
             setIsPaymentStart(false);
+
+            // ✅ Redirect to success page for COD also
+            navigate("/order-success", { state: { order: backendOrder } });
           }
         } else {
           setIsPaymentStart(false);
-          toast({ title: "Order Creation Failed", description: data.message || "Something went wrong", variant: "destructive" });
+          toast({
+            title: "Order Creation Failed",
+            description: data.message || "Something went wrong",
+            variant: "destructive",
+          });
         }
       })
       .catch((error) => {
         setIsPaymentStart(false);
-        toast({ title: "Order Creation Failed", description: error.message || "Please try again.", variant: "destructive" });
+        toast({
+          title: "Order Creation Failed",
+          description: error.message || "Please try again.",
+          variant: "destructive",
+        });
       });
-  }, [cartItems, currentSelectedAddress, dispatch, paymentMethod, displayTotalAmount, displayShippingCharges, displaySubTotal, toast, user]);
+  }, [
+    cartItems,
+    currentSelectedAddress,
+    dispatch,
+    paymentMethod,
+    displayTotalAmount,
+    displayShippingCharges,
+    displaySubTotal,
+    toast,
+    user,
+    navigate,
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Helmet>
         <title>Checkout - Shri Mahalaxmi Mobile</title>
-        <meta name="description" content="Complete your secure checkout for Shri Mahalaxmi Mobile purchases. Choose COD or online payment." />
+        <meta
+          name="description"
+          content="Complete your secure checkout for Shri Mahalaxmi Mobile purchases. Choose COD or online payment."
+        />
         <link rel="preload" as="image" href={img} />
       </Helmet>
 
@@ -251,7 +289,9 @@ function ShoppingCheckout() {
           {/* Cart items */}
           <div className="space-y-3 max-h-[300px] overflow-y-auto border rounded-md p-4 bg-gray-50">
             {cartItems?.items?.length > 0 ? (
-              cartItems.items.map((item, i) => <UserCartItemsContent key={i} cartItem={item} />)
+              cartItems.items.map((item, i) => (
+                <UserCartItemsContent key={i} cartItem={item} />
+              ))
             ) : (
               <p className="text-center text-gray-500">Your cart is empty.</p>
             )}
@@ -279,8 +319,12 @@ function ShoppingCheckout() {
                   <Label htmlFor="cod" className="flex items-center gap-2 flex-1">
                     <Truck className="w-5 h-5 text-blue-600" />
                     <div>
-                      <div className="font-semibold text-blue-700">Cash on Delivery (COD)</div>
-                      <div className="text-sm text-blue-600">Pay when your order arrives (+ ₹50 COD charges)</div>
+                      <div className="font-semibold text-blue-700">
+                        Cash on Delivery (COD)
+                      </div>
+                      <div className="text-sm text-blue-600">
+                        Pay when your order arrives (+ ₹50 COD charges)
+                      </div>
                     </div>
                   </Label>
                 </div>
@@ -295,8 +339,12 @@ function ShoppingCheckout() {
                   <Label htmlFor="razorpay" className="flex items-center gap-2 flex-1">
                     <CreditCard className="w-5 h-5 text-green-600" />
                     <div>
-                      <div className="font-semibold text-green-700">Online Payment</div>
-                      <div className="text-sm text-green-600">Credit/Debit Card, UPI, Net Banking</div>
+                      <div className="font-semibold text-green-700">
+                        Online Payment
+                      </div>
+                      <div className="text-sm text-green-600">
+                        Credit/Debit Card, UPI, Net Banking
+                      </div>
                     </div>
                   </Label>
                 </div>
@@ -323,13 +371,11 @@ function ShoppingCheckout() {
                 )}
               </span>
             </div>
-            {/* Show error message for shipping calculation */}
             {shippingChargeError && (
               <div className="text-red-600 text-xs mt-2 p-2 bg-red-50 rounded">
                 {shippingChargeError}. Using fallback charges.
               </div>
             )}
-            {/* Show info when no address is selected */}
             {!currentSelectedAddress && (
               <div className="text-amber-600 text-xs mt-2 p-2 bg-amber-50 rounded">
                 Please select an address to calculate accurate delivery charges.
@@ -342,37 +388,17 @@ function ShoppingCheckout() {
           </div>
 
           {/* Place order button */}
-          <Button onClick={handleInitiatePayment} disabled={isPaymentStart} className="w-full py-3 text-lg">
-            {isPaymentStart ? "Processing..." : paymentMethod === "cod" ? "Place COD Order" : "Proceed to Payment"}
-          </Button>
-
-          {/* Payment method benefits */}
-          <div
-            className={`p-4 rounded-md ${
-              paymentMethod === "cod" ? "bg-blue-50 text-blue-800" : "bg-green-50 text-green-800"
-            }`}
+          <Button
+            onClick={handleInitiatePayment}
+            disabled={isPaymentStart}
+            className="w-full py-3 text-lg"
           >
-            <h4 className="font-semibold mb-2">
-              {paymentMethod === "cod" ? "COD Benefits" : "Online Payment Benefits"}
-            </h4>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              {paymentMethod === "cod" ? (
-                <>
-                  <li>Pay only when you receive your order</li>
-                  <li>No need for online payment</li>
-                  <li>Cash payment accepted</li>
-                  <li>Extra security for your purchase</li>
-                </>
-              ) : (
-                <>
-                  <li>Instant order confirmation</li>
-                  <li>No additional COD charges</li>
-                  <li>Faster processing and delivery</li>
-                  <li>Multiple payment options available</li>
-                </>
-              )}
-            </ul>
-          </div>
+            {isPaymentStart
+              ? "Processing..."
+              : paymentMethod === "cod"
+              ? "Place COD Order"
+              : "Proceed to Payment"}
+          </Button>
         </div>
       </div>
     </div>

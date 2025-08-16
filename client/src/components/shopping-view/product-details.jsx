@@ -377,24 +377,31 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 </p>
               </div>
 
-              {/* Premium Rating Section */}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-6 p-4 bg-white rounded-xl border border-yellow-100/50">
-                <div className="flex justify-center items-center gap-1 sm:gap-2 flex-1 min-w-[120px]">
+             {/* Premium Rating Section */}
+              <div className="flex items-center justify-between gap-4 mb-6 p-4 bg-white rounded-xl border border-yellow-100/50">
+                {/* Rating */}
+                <div className="flex items-center gap-1 sm:gap-2">
                   <StarRatingComponent rating={averageReview} />
-                  <span className="text-lg font-bold text-amber-800">
+                  <span className="text-base sm:text-lg font-bold text-amber-800">
                     {averageReview.toFixed(1)}
                   </span>
                 </div>
+
+                {/* Divider */}
                 <div className="hidden sm:block h-4 w-px bg-amber-200"></div>
-                <div className="flex flex-col flex-1 min-w-[100px]">
-                  <span className="text-sm font-medium text-amber-700">
+
+                {/* Reviews */}
+                <div className="flex flex-col items-end">
+                  <span className="text-xs sm:text-sm font-medium text-amber-700">
                     {reviews?.length || 0} Reviews
                   </span>
-                  <span className="text-xs text-amber-600">
+                  <span className="text-[10px] sm:text-xs text-amber-600">
                     Verified Customers
                   </span>
                 </div>
               </div>
+
+
 
 
               {/* Category-specific Fields */}
@@ -454,18 +461,16 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                       </button>
                     ))}
                   </div>
+
+                  {/* Selected size display */}
                   {selectedSize && (
                     <div className="mt-2">
                       <p className="text-sm text-pink-600">Selected: {selectedSize}</p>
-                      {productDetails.sizes.find(s => s.size === selectedSize)?.stock && (
-                        <p className="text-xs text-gray-500">
-                          {productDetails.sizes.find(s => s.size === selectedSize).stock} in stock
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>
               )}
+
 
               {/* Price Section */}
               <div className="mb-4 sm:mb-6">
@@ -500,9 +505,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 {productDetails?.totalStock > 0 ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-green-600 font-medium">
-                      In Stock ({productDetails?.totalStock} available)
-                    </span>
+                    <span className="text-sm text-green-600 font-medium">In Stock</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -511,6 +514,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                   </div>
                 )}
               </div>
+
                 
               {/* Add to Cart Button */}
               <div className="mb-4 sm:mb-6 sticky bottom-4 sm:static bg-white sm:bg-transparent p-0 sm:p-0 z-10">

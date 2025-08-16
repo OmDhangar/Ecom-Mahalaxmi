@@ -302,6 +302,7 @@ function ShoppingHome() {
                 <div key={productItem._id} className="flex-shrink-0">
                   {/* Custom Square Product Card */}
                   <div className="w-36 sm:w-44 lg:w-52 bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-300">
+                    
                     {/* Square Image Container */}
                     <div className="relative w-full aspect-square overflow-hidden rounded-t-lg bg-gray-100">
                       <img
@@ -310,7 +311,6 @@ function ShoppingHome() {
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         onClick={() => handleGetProductDetails(productItem?._id)}
                       />
-                      {/* Sale Badge */}
                       {productItem?.salePrice && (
                         <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                           Sale
@@ -319,7 +319,7 @@ function ShoppingHome() {
                     </div>
                     
                     {/* Product Info */}
-                    <div className="p-3">
+                    <div className="p-3 flex flex-col h-full">
                       <h3 
                         className="font-medium text-sm sm:text-base text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
                         onClick={() => handleGetProductDetails(productItem?._id)}
@@ -348,13 +348,15 @@ function ShoppingHome() {
                           </span>
                         )}
                       </div>
-                      
-                      {/* Add to Cart Button */}
+
+                      {/* View Similar Products Button */}
                       <Button
-                        className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs py-2 rounded-md transition-colors duration-300"
-                        onClick={() => handleAddtoCart(productItem?._id)}
+                        onClick={() => handleNavigateToListingPage(
+                          { id: productItem?.category }, "category"
+                        )}
+                        className="w-full mt-auto bg-blue-500 text-white hover:bg-blue-600 text-xs sm:text-sm"
                       >
-                        Add to Cart
+                        View Similar Products
                       </Button>
                     </div>
                   </div>

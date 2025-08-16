@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { addReview, getReviews } from "@/store/shop/review-slice";
 import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
+import { WithAuth } from "@/components/common/with-auth";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");
@@ -518,14 +519,13 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                     Out of Stock
                   </Button>
                 ) : (
+                  <WithAuth
+                    onAction={() => handleAddToCart(productDetails?._id, productDetails?.totalStock)}
+                  >
+                    {(handleAuthAction) => (
                   <Button
                     className="w-full py-3 text-base bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg sm:shadow-none"
-                    onClick={() =>
-                      handleAddToCart(
-                        productDetails?._id,
-                        productDetails?.totalStock
-                      )
-                    }
+                    onClick={handleAuthAction}
                     disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
                   >
                     <ShoppingCart className="w-5 h-5 mr-2" />
@@ -534,6 +534,8 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                       : 'Add to Cart'
                     }
                   </Button>
+                  )}
+                  </WithAuth>
                 )}
               </div>
 

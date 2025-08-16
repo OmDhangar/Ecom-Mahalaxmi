@@ -12,10 +12,12 @@ import shopReviewSlice from "./shop/review-slice";
 import commonFeatureSlice from "./common-slice";
 import adminCarouselSlice from "./admin/carousel-slice";
 import shopCarouselSlice from "./shop/carousel-slice";
+import forgotPasswordSlice from "./forget-password/index";
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
+    forgotPassword: forgotPasswordSlice,
 
     adminProducts: adminProductsSlice,
     adminOrder: adminOrderSlice,

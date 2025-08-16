@@ -24,6 +24,7 @@ import PaymentSuccessPage from "./pages/shopping-view/payment-success";
 import SearchProducts from "./pages/shopping-view/search";
 import CarouselAdmin from "./pages/admin-view/carousel";
 import { Helmet } from "react-helmet";
+import ForgetPassword from "@/pages/auth/forgetPassword";
 
 const seoMap = {
   "/": {
@@ -147,6 +148,8 @@ function App() {
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="login" element={<AuthLogin />} />
           <Route path="register" element={<AuthRegister />} />
+          <Route path="forgot-password" element={<ForgetPassword />} />
+
         </Route>
 
         {/* Protected admin routes */}

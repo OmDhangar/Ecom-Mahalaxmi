@@ -1,0 +1,17 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /unauth-page
+Disallow: /shop/checkout
+Disallow: /shop/account
+Disallow: /shop/paypal-return
+Disallow: /shop/payment-success
+
+Allow: /
+Allow: /home
+Allow: /listing
+Allow: /search
+Allow: /shop/listing
+Allow: /shop/search
+
+Sitemap: https://shrimahalaxmimobile.in/sitemap.xml

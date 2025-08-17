@@ -15,6 +15,8 @@ const shopReviewRouter = require("./routes/shop/review-routes");
 const adminCarouselRouter = require('./routes/admin/carousel-routes');
 const shopCarouselRouter = require('./routes/shop/carousel-routes');
 const commonFeatureRouter = require("./routes/common/feature-routes");
+const sitemapRouter = require('./routes/Google/sitemap-routes');
+
 
 //create a database connection -> u can also
 //create a separate file for this and then import/use that file here
@@ -28,18 +30,19 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "DELETE", "PUT","PATCH"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cache-Control",
-      "Expires",
-      "Pragma",
-    ],
-    credentials: true,
-  })
+cors({
+  origin: "https://shrimahalaxmimobile.in",   
+  methods: ["GET", "POST", "DELETE", "PUT", "PATCH","OPTIONS","HEAD"], 
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Cache-Control",
+    "Expires",
+    "Pragma",
+  ],
+  credentials: true,  
+})
 );
 
 app.use(cookieParser());
@@ -59,5 +62,7 @@ app.use('/api/shop/carousel', shopCarouselRouter);
 app.use('/api',shippingCalculation);
 
 app.use("/api/common/feature", commonFeatureRouter);
+
+app.use('/', sitemapRouter);
 
 app.listen(PORT, () => console.log(`Server is now running on port ${PORT}`));

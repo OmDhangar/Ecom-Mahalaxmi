@@ -15,6 +15,7 @@ import { addReview, getReviews } from "@/store/shop/review-slice";
 import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
 import { WithAuth } from "@/components/common/with-auth";
+import SEO from "@/components/common/SEO";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");

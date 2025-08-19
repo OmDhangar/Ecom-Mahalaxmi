@@ -12,7 +12,6 @@ export const fetchAllFilteredProducts = createAsyncThunk(
   "/products/fetchAllProducts",
   async ({ filterParams = {}, sortParams } = {}) => {
     const query = new URLSearchParams();
-    console.log("Filter Params:", filterParams);
 
     // Safe check for category
     if (filterParams.category) {
@@ -35,7 +34,6 @@ export const fetchAllFilteredProducts = createAsyncThunk(
     // Build the URL with optional query
     const queryString = query.toString();
     const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
-    console.log("Final URL:", url);
 
     const result = await axios.get(url);
     return result?.data.data;
@@ -47,7 +45,6 @@ export const fetchFeaturedProducts = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get("/api/shop/products/featured");
-      console.log("Featured:",res);
       return res.data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch featured products");
@@ -57,12 +54,11 @@ export const fetchFeaturedProducts = createAsyncThunk(
 
 
 export const markAsFeatured = createAsyncThunk("products/markAsFeatured", async ( {id, isFeatured, featuredDescription} ) => {
-  console.log(isFeatured,featuredDescription);
+
   const response = await axios.post(`/api/shop/products/${id}/feature`, { 
     isFeatured,
     featuredDescription,
    });
-   console.log(response.data.data);
   return response.data.data;
 });
 

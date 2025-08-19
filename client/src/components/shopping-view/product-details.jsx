@@ -16,6 +16,8 @@ import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
 import { WithAuth } from "@/components/common/with-auth";
 import SEO from "@/components/common/SEO";
+import OptimizedImage from "@/components/common/OptimizedImage";
+
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");
@@ -38,11 +40,9 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const { toast } = useToast();
 
   function handleRatingChange(getRating) {
-    console.log(getRating, "getRating");
     setRating(getRating);
   }
 
-  console.log("product details", productDetails);
 
   function handleAddToCart(getCurrentProductId, getTotalStock) {
     let getCartItems = cartItems?.items || [];
@@ -200,7 +200,6 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     if (productDetails !== null) dispatch(getReviews(productDetails?._id));
   }, [productDetails]);
 
-  console.log(productDetails, "reviews");
 
   const averageReview =
     reviews && reviews.length > 0
@@ -282,10 +281,13 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               {/* Main Image */}
               <div className="relative aspect-square w-full bg-gray-50 sm:aspect-square">
                 {allProductImages.length > 0 ? (
-                  <img
+                  <OptimizedImage
                     src={allProductImages[currentImageIndex]}
                     alt={`${productDetails?.title} - Image ${currentImageIndex + 1}`}
-                    className="aspect-square w-full object-cover"
+                    className="aspect-square w-full"
+                    width={600}
+                    height={600}
+                    loading="eager" // Load the main product image immediately
                   />
                 ) : (
                   <div className="aspect-square w-full bg-gray-100 flex items-center justify-center">

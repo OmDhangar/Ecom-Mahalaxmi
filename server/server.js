@@ -16,6 +16,10 @@ const adminCarouselRouter = require('./routes/admin/carousel-routes');
 const shopCarouselRouter = require('./routes/shop/carousel-routes');
 const commonFeatureRouter = require("./routes/common/feature-routes");
 const sitemapRouter = require('./routes/Google/sitemap-routes');
+const compression = require('compression');
+const helmet = require('helmet');
+const path = require('path');
+
 
 
 //create a database connection -> u can also
@@ -66,3 +70,23 @@ app.use("/api/common/feature", commonFeatureRouter);
 app.use('/', sitemapRouter);
 
 app.listen(PORT, () => console.log(`Server is now running on port ${PORT}`));
+
+
+// Add these middleware before your routes
+app.use(compression()); // Enable gzip compression
+app.use(helmet()); // Security headers
+
+// Add cache control for static assets
+app.use('/static', express.static(path.join(__dirname, '../client/dist'), {
+  maxAge: '1y',
+  etag: true,
+}));
+
+// For API responses
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    // Short cache for API responses
+    res.set('Cache-Control', 'public, max-age=300'); // 5 minutes
+  }
+  next();
+});

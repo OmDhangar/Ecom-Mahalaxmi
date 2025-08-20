@@ -32,7 +32,6 @@ function createSearchParamsHelper(filterParams) {
     }
   }
 
-  console.log(queryParams, "queryParams");
   return queryParams.join("&");
 }
 
@@ -93,7 +92,6 @@ function ShoppingListing() {
   }
 
   function handleGetProductDetails(getCurrentProductId) {
-    console.log(getCurrentProductId);
     dispatch(fetchProductDetails(getCurrentProductId));
   }
 
@@ -184,7 +182,6 @@ function ShoppingListing() {
   return activeFilters;
 };
 
-  console.log(productList, "productListproductListproductList");
 
   return (
     <div className="min-h-screen bg-gray-50">

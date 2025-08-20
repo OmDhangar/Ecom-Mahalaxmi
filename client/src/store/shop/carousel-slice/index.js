@@ -12,7 +12,7 @@ export const fetchActiveCarouselSlides = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get('/api/shop/carousel/active');
-      console.log(response);
+
 
       if (response.status !== 200) {
         throw new Error(response.data?.message || 'Failed to fetch carousel slides');

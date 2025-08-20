@@ -42,7 +42,6 @@ export const verifyPayment = createAsyncThunk(
         "/api/shop/order/verify",
         paymentData
       );
-      console.log(response);
       return response.data;
     } catch (error) {
       return rejectWithValue(

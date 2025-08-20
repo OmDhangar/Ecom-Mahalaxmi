@@ -38,11 +38,9 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const { toast } = useToast();
 
   function handleRatingChange(getRating) {
-    console.log(getRating, "getRating");
     setRating(getRating);
   }
 
-  console.log("product details", productDetails);
 
   function handleAddToCart(getCurrentProductId, getTotalStock) {
     let getCartItems = cartItems?.items || [];
@@ -200,7 +198,6 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     if (productDetails !== null) dispatch(getReviews(productDetails?._id));
   }, [productDetails]);
 
-  console.log(productDetails, "reviews");
 
   const averageReview =
     reviews && reviews.length > 0

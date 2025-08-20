@@ -9,7 +9,6 @@ const initialState = {
 export const addNewProduct = createAsyncThunk(
   "/products/addnewproduct",
   async (formData) => {
-    console.log(formData);
     const result = await axios.post(
       "/api/admin/products/add",
       formData,

@@ -26,19 +26,20 @@ import CarouselAdmin from "./pages/admin-view/carousel";
 import { Helmet } from "react-helmet";
 import ForgetPassword from "@/pages/auth/forgetPassword";
 import OrderSuccess from "./pages/shopping-view/orderSuccess";
+import ScrollToTop from "./components/common/scrollToTop";
 
 const seoMap = {
   "/": {
-    title: "Shri Mahalaxmi Mobile - Home",
-    description: "Welcome to Shri Mahalaxmi Mobile. Discover the latest smartphones, accessories, and exclusive offers.",
+    title: "Shri Mahalaxmi Mobile - Premium Mobiles & Accessories in Shirpur, Maharashtra",
+    description: "Shop the latest smartphones, premium mobile accessories, and exclusive deals at Shri Mahalaxmi Mobile in Shirpur, Maharashtra. Trusted by influencer Bhushan Rajput and 240k+ Instagram followers (@bhushan_rajput_307).",
   },
   "/auth/login": {
-    title: "Login - Shri Mahalaxmi Mobile",
-    description: "Login to your account to track orders and manage your profile.",
+    title: "Login - Shri Mahalaxmi Mobile | Shirpur, Maharashtra",
+    description: "Login to your Shri Mahalaxmi Mobile account to track your orders, manage your profile, and access exclusive mobile deals recommended by influencer Bhushan Rajput.",
   },
   "/auth/register": {
-    title: "Register - Shri Mahalaxmi Mobile",
-    description: "Create a new account and start shopping for the latest mobiles and accessories.",
+    title: "Register - Shri Mahalaxmi Mobile | Shirpur",
+    description: "Create a new account at Shri Mahalaxmi Mobile in Shirpur, Maharashtra. Get the latest mobiles, accessories, and special offers curated by influencer Bhushan Rajput.",
   },
   "/admin/dashboard": {
     title: "Admin Dashboard - Shri Mahalaxmi Mobile",
@@ -66,39 +67,40 @@ const seoMap = {
     robots: "noindex, nofollow",
   },
   "/shop/home": {
-    title: "Shop Home - Shri Mahalaxmi Mobile",
-    description: "Browse featured mobiles and best deals at Shri Mahalaxmi Mobile.",
+    title: "Shop Mobiles Online in Shirpur | Shri Mahalaxmi Mobile",
+    description: "Browse premium smartphones, mobile accessories, and best deals at Shri Mahalaxmi Mobile, Shirpur. Trusted by influencer Bhushan Rajput (@bhushan_rajput_307). Fast delivery and genuine products.",
   },
   "/shop/listing": {
-    title: "Mobile Listing - Shri Mahalaxmi Mobile",
-    description: "Find your next smartphone from our wide selection of mobiles.",
+    title: "Mobile & Accessories Listing - Shri Mahalaxmi Mobile Shirpur",
+    description: "Find your next smartphone or mobile accessory at Shri Mahalaxmi Mobile in Shirpur, Maharashtra. Exclusive deals recommended by influencer Bhushan Rajput.",
   },
   "/shop/checkout": {
-    title: "Checkout - Shri Mahalaxmi Mobile",
-    description: "Complete your purchase securely at Shri Mahalaxmi Mobile.",
+    title: "Secure Checkout - Shri Mahalaxmi Mobile",
+    description: "Complete your mobile purchase securely at Shri Mahalaxmi Mobile in Shirpur, Maharashtra. Enjoy seamless shopping with influencer Bhushan Rajput's trusted recommendations.",
   },
   "/shop/account": {
     title: "My Account - Shri Mahalaxmi Mobile",
-    description: "View and manage your orders, addresses, and account details.",
+    description: "View and manage your orders, addresses, and account details at Shri Mahalaxmi Mobile, Shirpur. Recommended by influencer Bhushan Rajput.",
   },
   "/shop/paypal-return": {
-    title: "PayPal Return - Shri Mahalaxmi Mobile",
-    description: "Return from PayPal payment. Check your order status.",
+    title: "PayPal Payment Return - Shri Mahalaxmi Mobile",
+    description: "Return from PayPal payment and check your order status at Shri Mahalaxmi Mobile, Shirpur. Trusted by influencer Bhushan Rajput.",
   },
   "/shop/payment-success": {
-    title: "Payment Success - Shri Mahalaxmi Mobile",
-    description: "Your payment was successful. Thank you for shopping with us!",
+    title: "Payment Successful - Shri Mahalaxmi Mobile",
+    description: "Thank you for shopping at Shri Mahalaxmi Mobile, Shirpur. Your payment was successful. Follow influencer Bhushan Rajput for exclusive mobile deals.",
   },
   "/shop/search": {
-    title: "Search Products - Shri Mahalaxmi Mobile",
-    description: "Search for mobiles, accessories, and more at Shri Mahalaxmi Mobile.",
+    title: "Search Mobiles & Accessories - Shri Mahalaxmi Mobile",
+    description: "Search for the latest smartphones, accessories, and deals at Shri Mahalaxmi Mobile in Shirpur, Maharashtra. Featured by influencer Bhushan Rajput (@bhushan_rajput_307).",
   },
   "/unauth-page": {
     title: "Unauthorized - Shri Mahalaxmi Mobile",
-    description: "You are not authorized to view this page.",
+    description: "You are not authorized to view this page at Shri Mahalaxmi Mobile, Shirpur.",
     robots: "noindex, nofollow",
   },
 };
+
 
 function getSeo(pathname) {
   return seoMap[pathname] || {
@@ -130,6 +132,7 @@ function App() {
         <meta name="description" content={seo.description} />
         {seo.robots && <meta name="robots" content={seo.robots} />}
       </Helmet>
+      <ScrollToTop />
       <Routes>
         {/* Public routes - no authentication needed */}
         <Route path="/" element={<ShoppingLayout />}>

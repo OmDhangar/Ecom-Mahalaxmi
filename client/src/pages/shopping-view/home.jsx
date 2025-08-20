@@ -5,14 +5,7 @@ import {
   Smartphone,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CloudLightning,
-  Heater,
-  Images,
   Crop,
-  Shirt,
-  WashingMachine,
-  ShoppingBasket,
-  Airplay,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -29,7 +22,7 @@ import { useToast } from "@/components/ui/use-toast";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getFeatureImages } from "@/store/common-slice";
 
-// Imported custom components
+// Custom components
 import SocialUpdates from "@/components/ui/SocialUpdates";
 import CustomerTestimonials from "@/components/ui/CustomerTestimonials";
 import OfferCarousel from "@/components/ui/OfferCarousel";
@@ -42,21 +35,11 @@ const categoriesWithIcon = [
   { id: "electronics", label: "Electronics", icon: Smartphone },
   { id: "fashion", label: "Fashion", icon: ShirtIcon },
   { id: "toys", label: "Toys", icon: BabyIcon },
-  {id:"farming",label:"Farming", icon:Crop}
-];
-
-const brandsWithIcon = [
-  { id: "nike", label: "Nike", icon: Shirt },
-  { id: "adidas", label: "Adidas", icon: WashingMachine },
-  { id: "puma", label: "Puma", icon: ShoppingBasket },
-  { id: "levi", label: "Levi's", icon: Airplay },
-  { id: "zara", label: "Zara", icon: Images },
-  { id: "h&m", label: "H&M", icon: Heater },
+  { id: "farming", label: "Farming", icon: Crop },
 ];
 
 function ShoppingHome() {
   const { t } = useTranslation();
-
   const [currentSlide, setCurrentSlide] = useState(0);
   const { productDetails } = useSelector((state) => state.shopProducts);
   const { featureImageList } = useSelector((state) => state.commonFeature);
@@ -72,7 +55,6 @@ function ShoppingHome() {
     const currentFilter = {
       [section]: [getCurrentItem.id],
     };
-
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
     navigate(`/shop/listing`);
   }
@@ -82,22 +64,26 @@ function ShoppingHome() {
   }
 
   function handleAddtoCart(getCurrentProductId, currentProduct = null) {
-    // Check if it's a fashion product that requires size selection
-    if (currentProduct && currentProduct.category === 'fashion' && currentProduct.sizes && currentProduct.sizes.length > 0) {
+    if (
+      currentProduct &&
+      currentProduct.category === "fashion" &&
+      currentProduct.sizes &&
+      currentProduct.sizes.length > 0
+    ) {
       toast({
         title: "Size Selection Required",
-        description: "Please select a size for fashion items from the product details page.",
+        description:
+          "Please select a size for fashion items from the product details page.",
         variant: "destructive",
       });
       return;
     }
-    
+
     dispatch(
       addToCart({
         userId: user?.id,
         productId: getCurrentProductId,
         quantity: 1,
-        // No size needed for non-fashion products or fashion products without sizes
       })
     ).then((data) => {
       if (data?.payload?.success) {
@@ -112,13 +98,13 @@ function ShoppingHome() {
   useEffect(() => {
     if (productDetails !== null) setOpenDetailsDialog(true);
   }, [productDetails]);
-  
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prevSlide) => (prevSlide + 1) % featureImageList.length);
+      setCurrentSlide(
+        (prevSlide) => (prevSlide + 1) % featureImageList.length
+      );
     }, 15000);
-
     return () => clearInterval(timer);
   }, [featureImageList]);
 
@@ -130,12 +116,12 @@ function ShoppingHome() {
       })
     );
   }, [dispatch]);
-  
+
   useEffect(() => {
     dispatch(fetchFeaturedProducts());
   }, [dispatch]);
 
-  const { featuredList, isLoading } = useSelector((state) => state.shopProducts);
+  const { featuredList } = useSelector((state) => state.shopProducts);
 
   useEffect(() => {
     dispatch(getFeatureImages());
@@ -143,60 +129,87 @@ function ShoppingHome() {
 
   return (
     <div className="flex flex-col min-h-screen">
-
       <Helmet>
-        <title>Shri Mahalaxmi Mobile - Best Mobile Shop Online</title>
-        <meta name="description" content="Buy the latest mobiles, accessories, and gadgets at Shri Mahalaxmi Mobile. Great offers and fast delivery!" />
-        <meta name="keywords" content="mobile, smartphones, buy online, Mahalaxmi Mobile, accessories" />
+        <title>
+          Shri Mahalaxmi Mobile | Premium Mobiles & Accessories by Bhushan
+          Rajput
+        </title>
+        <meta
+          name="description"
+          content="Shop the latest mobiles, premium smartphones, and accessories online at Shri Mahalaxmi Mobile. Trusted by 240k+ Instagram followers of Bhushan Rajput. Exclusive deals, fast delivery & genuine products."
+        />
+        <meta
+          name="keywords"
+          content="buy mobiles online, smartphones India, iPhone deals Shirpur, Samsung Galaxy sale India, premium mobile shop Shirpur, mobile accessories India, Bhushan Rajput, Instagram exclusive offers, trusted mobile store Shirpur,Maharashtra"
+        />
+        <meta
+          property="og:title"
+          content="Shri Mahalaxmi Mobile - Trusted by 240k+ Followers"
+        />
+        <meta
+          property="og:description"
+          content="Exclusive mobile deals & genuine products. Shop premium mobiles trusted by Bhushan Rajput’s 240k Instagram followers."
+        />
+        <meta
+          property="og:image"
+          content="/src/OfferCarousel_Image/Iphone.png"
+        />
+        <meta
+          property="og:url"
+          content="https://www.shrimahalaxmimobile.in"
+        />
+        <meta property="og:type" content="website" />
       </Helmet>
+
       {/* OFFER CAROUSEL */}
       <OfferCarousel />
 
-      {/* HERO SECTION - Mobile Optimized */}
-      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 py-4 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-16">
+      {/* HERO SECTION */}
+      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 py-8 lg:py-12 px-4 sm:px-6 lg:px-16">
         <div className="flex flex-col lg:flex-row items-center justify-between max-w-7xl mx-auto">
-          {/* Left Content - Mobile First */}
           <div className="text-center lg:text-left w-full lg:max-w-xl">
-            {/* Mobile: Smaller, punchier heading */}
-            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 sm:mb-4 leading-tight">
+            <h1 className="text-3xl lg:text-5xl font-extrabold mb-4 leading-tight text-gray-900">
               {t("home.hero.title")}
             </h1>
-            <p className="text-sm sm:text-lg text-blue-600 font-medium mb-1 sm:mb-2">
+            <p className="text-lg text-gray-700 font-medium mb-2">
               {t("home.hero.subtitle")}
             </p>
-            <p className="text-xs sm:text-sm lg:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+            <p className="text-base text-gray-600 mb-6 leading-relaxed">
               {t("home.hero.description")}
             </p>
-            
-            {/* Mobile: Stacked buttons, smaller size */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center lg:justify-start">
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <Button
-              onClick={() => {
-                  const productsSection = document.getElementById("featured-products-scroll");
+                onClick={() => {
+                  const productsSection =
+                    document.getElementById("featured-products-scroll");
                   if (productsSection) {
                     productsSection.scrollIntoView({ behavior: "smooth" });
                   }
                 }}
-               className="bg-gradient-to-r from-blue-500 to-teal-400 text-white font-semibold px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base">
+                className="bg-gradient-to-r from-gray-900 to-gray-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-3 text-sm sm:text-base rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 transition-all duration-300"
+              >
                 {t("home.hero.shopDeals")}
               </Button>
-              <Button variant="outline" 
-              onClick={() => {
+
+              <Button
+                variant="outline"
+                onClick={() => {
                   window.open(
-                    "https://www.instagram.com/bhushan_rajput_307?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+                    "https://www.instagram.com/bhushan_rajput_307",
                     "_blank"
                   );
                 }}
-              className="px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base">
+                className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-semibold px-6 py-3 sm:px-8 sm:py-3 text-sm sm:text-base rounded-xl transition-all duration-300"
+              >
                 {t("home.hero.followInstagram")}
               </Button>
             </div>
           </div>
 
-          {/* Right Image - Hidden on mobile, visible on lg+ */}
           <div className="hidden lg:flex mt-8 lg:mt-0 justify-center">
             <img
-              src="/src/OfferCarousel_Image/Iphone.png"
+              src="/Iphone.png"
               alt="Latest Mobiles"
               className="w-64 xl:w-80 rounded-xl shadow-lg"
             />
@@ -204,7 +217,7 @@ function ShoppingHome() {
         </div>
       </div>
 
-      {/* CATEGORY SECTION - Mobile Optimized */}
+       {/* CATEGORY SECTION - Mobile Optimized */}
       <section className="py-6 sm:py-8 lg:py-12 bg-white">
         <div className="container mx-auto px-4">
           {/* Mobile: Smaller heading with better spacing */}
@@ -354,7 +367,7 @@ function ShoppingHome() {
                         onClick={() => handleNavigateToListingPage(
                           { id: productItem?.category }, "category"
                         )}
-                        className="w-full mt-auto bg-blue-500 text-white hover:bg-blue-600 text-xs sm:text-sm"
+                        className="w-full mt-auto bg-gradient-to-r from-gray-900 to-gray-700 text-white hover:from-gray-800 hover:to-gray-600 text-xs sm:text-sm"
                       >
                         View Similar Products
                       </Button>
@@ -375,186 +388,24 @@ function ShoppingHome() {
         </div>
       </section>
 
-      {/* SOCIAL UPDATES - Emphasizing Influencer's Presence */}
-      <section className="py-6 sm:py-8 lg:py-12 bg-gradient-to-br from-blue-50 to-cyan-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2">
-              Join Our Community of 240k+ Followers
-            </h2>
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto">
-              Follow our Instagram for exclusive updates, styling tips, product launches, and farming advice from your favorite influencer.
-            </p>
-          </div>
+      {/* SOCIAL UPDATES */}
+      <section className="py-8 lg:py-12 bg-gradient-to-br from-blue-50 to-cyan-50">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">
+            Trusted by 240k+ Instagram Followers
+          </h2>
+          <p className="text-sm text-gray-700 max-w-2xl mx-auto">
+            Shri Mahalaxmi Mobile is powered by{" "}
+            <strong>Bhushan Rajput’s 240k Instagram community</strong>. Get
+            exclusive <strong>mobile offers Better than market </strong>{" "}
+            updates directly from one of India’s most trusted influencers.
+          </p>
           <SocialUpdates />
         </div>
       </section>
 
-      {/* TESTIMONIALS - Horizontal Scrollable Carousel */}
-      <section className="py-6 sm:py-8 lg:py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div>
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1">
-                What Our Family Says
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-600">
-                Real feedback from valued customers
-              </p>
-            </div>
-            <div className="hidden sm:flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="p-2"
-                onClick={() => {
-                  const container = document.getElementById('testimonials-scroll');
-                  container.scrollBy({ left: -320, behavior: 'smooth' });
-                }}
-              >
-                <ChevronLeftIcon className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="p-2"
-                onClick={() => {
-                  const container = document.getElementById('testimonials-scroll');
-                  container.scrollBy({ left: 320, behavior: 'smooth' });
-                }}
-              >
-                <ChevronRightIcon className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {/* Horizontal Scrollable Container */}
-          <div 
-            id="testimonials-scroll"
-            className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 scroll-smooth"
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitScrollbar: { display: 'none' }
-            }}
-          >
-            {/* Review 1 */}
-            <div className="flex-shrink-0 w-72 sm:w-80 bg-white rounded-lg p-4 sm:p-6 shadow-sm border">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-blue-600 font-semibold text-sm sm:text-base">R</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm sm:text-base">Rahul Sharma</h4>
-                  <p className="text-xs sm:text-sm text-gray-500">iPhone 15 Pro</p>
-                </div>
-              </div>
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 text-sm">⭐</span>
-                ))}
-              </div>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                "Amazing service! Got my iPhone at the best price with genuine warranty. The delivery was super fast and the phone came in perfect condition. Highly recommended for anyone looking for authentic products!"
-              </p>
-            </div>
-
-            {/* Review 2 */}
-            <div className="flex-shrink-0 w-72 sm:w-80 bg-white rounded-lg p-4 sm:p-6 shadow-sm border">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-pink-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-pink-600 font-semibold text-sm sm:text-base">P</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm sm:text-base">Priya Patel</h4>
-                  <p className="text-xs sm:text-sm text-gray-500">Samsung Galaxy S24</p>
-                </div>
-              </div>
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 text-sm">⭐</span>
-                ))}
-              </div>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                "Transparent pricing and excellent customer service. The team helped me choose the perfect phone according to my budget and needs. Great experience overall and will definitely shop again!"
-              </p>
-            </div>
-
-            {/* Review 3 */}
-            <div className="flex-shrink-0 w-72 sm:w-80 bg-white rounded-lg p-4 sm:p-6 shadow-sm border">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-green-600 font-semibold text-sm sm:text-base">A</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm sm:text-base">Amit Kumar</h4>
-                  <p className="text-xs sm:text-sm text-gray-500">OnePlus 12</p>
-                </div>
-              </div>
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 text-sm">⭐</span>
-                ))}
-              </div>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                "Fast delivery and authentic products. I was initially skeptical about buying online but they exceeded my expectations. The phone works perfectly and customer support is responsive!"
-              </p>
-            </div>
-
-            {/* Review 4 */}
-            <div className="flex-shrink-0 w-72 sm:w-80 bg-white rounded-lg p-4 sm:p-6 shadow-sm border">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-purple-600 font-semibold text-sm sm:text-base">S</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm sm:text-base">Sneha Modi</h4>
-                  <p className="text-xs sm:text-sm text-gray-500">iPhone 14</p>
-                </div>
-              </div>
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 text-sm">⭐</span>
-                ))}
-              </div>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                "Best place to buy mobiles in Mumbai! They have competitive prices and genuine products. The staff is knowledgeable and helped me get the best deal. Absolutely satisfied with my purchase!"
-              </p>
-            </div>
-
-            {/* Review 5 */}
-            <div className="flex-shrink-0 w-72 sm:w-80 bg-white rounded-lg p-4 sm:p-6 shadow-sm border">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-orange-600 font-semibold text-sm sm:text-base">V</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm sm:text-base">Vikram Singh</h4>
-                  <p className="text-xs sm:text-sm text-gray-500">Xiaomi 14</p>
-                </div>
-              </div>
-              <div className="flex mb-3">
-                {[...Array(4)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 text-sm">⭐</span>
-                ))}
-                <span className="text-gray-300 text-sm">⭐</span>
-              </div>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                "Good service and reasonable prices. The phone I ordered arrived on time and was exactly as described. Only minor issue was with the packaging but the product itself was perfect. Would recommend!"
-              </p>
-            </div>
-          </div>
-          
-          {/* Mobile scroll indicator */}
-          <div className="flex justify-center mt-4 sm:hidden">
-            <p className="text-xs text-gray-500 flex items-center">
-              <span className="mr-2">👈</span>
-              Swipe to read more reviews
-              <span className="ml-2">👉</span>
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* TESTIMONIALS */}
+      <CustomerTestimonials />
 
       <ProductDetailsDialog
         open={openDetailsDialog}
@@ -566,3 +417,4 @@ function ShoppingHome() {
 }
 
 export default ShoppingHome;
+

@@ -1,5 +1,4 @@
 import Address from "@/components/shopping-view/address";
-import img from "../../assets/account.jpg";
 import { useDispatch, useSelector } from "react-redux";
 import UserCartItemsContent from "@/components/shopping-view/cart-items-content";
 import { Button } from "@/components/ui/button";
@@ -261,12 +260,12 @@ function ShoppingCheckout() {
           name="description"
           content="Complete your secure checkout for Shri Mahalaxmi Mobile purchases. Choose COD or online payment."
         />
-        <link rel="preload" as="image" href={img} />
+        <link rel="preload" as="image" href="/account.jpg" />
       </Helmet>
 
       <div className="relative h-48 sm:h-64 w-full overflow-hidden">
         <img
-          src={img}
+          src="/account.jpg"
           alt="Secure mobile checkout page header"
           className="h-full w-full object-cover object-center"
           width="1920"

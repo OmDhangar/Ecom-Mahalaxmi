@@ -94,26 +94,26 @@
       {
         "name": "Rahul Sharma",
         "product": "iPhone 15 Pro",
-        "avatar": "/assets/avatar1.png",
+        "avatar": "/avatar1.jpg",
         "feedback": "Amazing service! Got my iPhone at the best price with genuine warranty. Highly recommended!"
       },
       {
         "name": "Priya Patel",
         "product": "Samsung Galaxy S24",
-        "avatar": "/assets/avatar2.png",
+        "avatar": "/avatar2.jpg",
         "feedback": "Transparent pricing and excellent customer service. The team helped me choose the perfect phone."
       },
       {
         "name": "Arjun Kumar",
         "product": "OnePlus 12",
-        "avatar": "/assets/avatar3.png",
+        "avatar": "/avatar3.jpg",
         "feedback": "Fast delivery and authentic product. The phone came exactly as described. Very satisfied!"
       },
       {
         "name": "Sneha Gupta",
-        "product": "Accessories Bundle",
-        "avatar": "/assets/avatar4.png",
-        "feedback": "Great quality accessories at reasonable prices. The wireless earbuds are fantastic!"
+        "product": "clothing",
+        "avatar": "/avatar4.jpg",
+        "feedback": "Great quality clothes at reasonable prices. The fabric is soft and the designs are beautiful!"
       }
     ]
   }

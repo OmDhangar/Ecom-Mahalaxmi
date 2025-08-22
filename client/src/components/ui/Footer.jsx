@@ -109,6 +109,7 @@ export default function Footer() {
                   </a>
                 </li>
               </ul>
+
             </nav>
           </div>
 
@@ -169,13 +170,16 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-6 pt-4 text-center text-xs sm:text-sm text-gray-400">
-          © {new Date().getFullYear()} Shri Mahalaxmi Mobile, Shirpur. All Rights Reserved.
+        <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs sm:text-sm text-gray-400">
+          © {new Date().getFullYear()} Shri Mahalaxmi Mobile, Shirpur. All Rights Reserved.<br />
           <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs">
             <span>Secure Payments</span> •{" "}
             <span>100% Genuine Products</span> •{" "}
             <span>Fast Delivery</span>
           </div>
+          <p className="text-xs text sm:text-sm text-gray-300 leading-relaxed mb-3 sm:mb-4">
+                Website created by Om Dhangar and Kulvansh Rajput
+              </p>
         </div>
       </div>
     </footer>

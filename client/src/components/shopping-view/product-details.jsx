@@ -435,7 +435,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && (
                 <div className="mb-4 p-4 bg-white rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                    <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
                     Available Sizes
                   </h3>
                   <div className="flex gap-2 flex-wrap">
@@ -446,10 +446,10 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                         disabled={sizeObj.stock === 0}
                         className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors relative ${
                           selectedSize === sizeObj.size
-                            ? 'bg-pink-500 text-white border-pink-500'
+                            ? 'bg-gray-500 text-white border-gray-500'
                             : sizeObj.stock === 0
                             ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-pink-300'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-gray-300'
                         }`}
                       >
                         {sizeObj.size}
@@ -463,7 +463,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                   {/* Selected size display */}
                   {selectedSize && (
                     <div className="mt-2">
-                      <p className="text-sm text-pink-600">Selected: {selectedSize}</p>
+                      <p className="text-sm text-green-600">Selected: {selectedSize}</p>
                     </div>
                   )}
                 </div>
@@ -526,7 +526,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                   >
                     {(handleAuthAction) => (
                   <Button
-                    className="w-full py-3 text-base bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg sm:shadow-none"
+                    className="w-full py-3 text-base  bg-gradient-to-r from-gray-900 to-gray-700 text-white hover:from-gray-800 hover:to-gray-600 font-semibold shadow-lg sm:shadow-none"
                     onClick={handleAuthAction}
                     disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
                   >

@@ -63,7 +63,7 @@ function MenuItems({ closeSheet }) {
   );
 }
 
-function HeaderRightContent({ closeSheet }) {
+function HeaderRightContent({ closeSheet, showCartButton = true }) {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const [openCartSheet, setOpenCartSheet] = useState(false);
@@ -116,28 +116,30 @@ function HeaderRightContent({ closeSheet }) {
       {isAuthenticated && (
         <>
           {/* Cart Button */}
-          <Sheet open={openCartSheet} onOpenChange={() => setOpenCartSheet(false)}>
-            <Button
-              onClick={() => setOpenCartSheet(true)}
-              variant="outline"
-              size="icon"
-              className="relative"
-            >
-              <ShoppingCart className="w-6 h-6" />
-              <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
-                {cartItems?.items?.length || 0}
-              </span>
-              <span className="sr-only">User cart</span>
-            </Button>
-            <UserCartWrapper
-              setOpenCartSheet={setOpenCartSheet}
-              cartItems={
-                cartItems?.items && cartItems.items.length > 0
-                  ? cartItems.items
-                  : []
-              }
-            />
-          </Sheet>
+          {showCartButton && (
+            <Sheet open={openCartSheet} onOpenChange={() => setOpenCartSheet(false)}>
+              <Button
+                onClick={() => setOpenCartSheet(true)}
+                variant="outline"
+                size="icon"
+                className="relative"
+              >
+                <ShoppingCart className="w-6 h-6" />
+                <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
+                  {cartItems?.items?.length || 0}
+                </span>
+                <span className="sr-only">User cart</span>
+              </Button>
+              <UserCartWrapper
+                setOpenCartSheet={setOpenCartSheet}
+                cartItems={
+                  cartItems?.items && cartItems.items.length > 0
+                    ? cartItems.items
+                    : []
+                }
+              />
+            </Sheet>
+          )}
 
           {/* User Dropdown */}
           <DropdownMenu>
@@ -177,19 +179,48 @@ function HeaderRightContent({ closeSheet }) {
 
 function ShoppingHeader() {
   const [openMenuSheet, setOpenMenuSheet] = useState(false);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.shopCart);
+  const [openCartSheet, setOpenCartSheet] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
-        {/* Logo */}
-        <Link to="/home" className="flex items-center gap-2">
+      <div className="flex h-16 items-center justify-between px-2 md:px-6">
+        {/* Logo with smaller font size for mobile */}
+        <Link to="/home" className="flex items-center ">
           <img src="/fav.png" className="h-10 w-14" alt="" />
-          <span className="font-bold">Shri MahaLaxmi Mobile</span>
+          <span className="font-bold text-sm sm:text-base md:text-lg">Shri MahaLaxmi Mobile</span>
         </Link>
 
-        {/* Mobile: Language Switcher + Hamburger */}
+        {/* Mobile: Language Switcher + Cart + Hamburger */}
         <div className="flex items-center gap-3 lg:hidden">
           <LanguageSwitcher />
+          
+          {/* Cart Button for Mobile - Outside Hamburger Menu */}
+          {isAuthenticated && (
+            <Sheet open={openCartSheet} onOpenChange={() => setOpenCartSheet(false)}>
+              <Button
+                onClick={() => setOpenCartSheet(true)}
+                variant="outline"
+                size="icon"
+                className="relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                <span className="absolute top-[-5px] right-[2px] font-bold text-xs">
+                  {cartItems?.items?.length || 0}
+                </span>
+                <span className="sr-only">User cart</span>
+              </Button>
+              <UserCartWrapper
+                setOpenCartSheet={setOpenCartSheet}
+                cartItems={
+                  cartItems?.items && cartItems.items.length > 0
+                    ? cartItems.items
+                    : []
+                }
+              />
+            </Sheet>
+          )}
 
           <Sheet open={openMenuSheet} onOpenChange={setOpenMenuSheet}>
             <SheetTrigger asChild>
@@ -204,7 +235,10 @@ function ShoppingHeader() {
             </SheetTrigger>
             <SheetContent side="left" className="w-full max-w-xs">
               <MenuItems closeSheet={() => setOpenMenuSheet(false)} />
-              <HeaderRightContent closeSheet={() => setOpenMenuSheet(false)} />
+              <HeaderRightContent 
+                closeSheet={() => setOpenMenuSheet(false)} 
+                showCartButton={false} 
+              />
             </SheetContent>
           </Sheet>
         </div>

@@ -16,6 +16,7 @@ import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
 import { WithAuth } from "@/components/common/with-auth";
 import SEO from "@/components/common/SEO";
+import { useNavigate } from "react-router-dom";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");
@@ -26,10 +27,12 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [similarProducts, setSimilarProducts] = useState([]);
   
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);
   const { productList } = useSelector((state) => state.shopProducts);
+
   
   // Combine main image with additional images for the carousel
   const allProductImages = productDetails ? 
@@ -41,6 +44,13 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     setRating(getRating);
   }
 
+  // Function to handle Buy Now action
+  function handleBuyNow(getCurrentProductId, getTotalStock) {
+    // First add to cart
+    handleAddToCart(getCurrentProductId, getTotalStock);
+    // Then navigate to checkout
+    navigate('/shop/checkout');
+  }
 
   function handleAddToCart(getCurrentProductId, getTotalStock) {
     let getCartItems = cartItems?.items || [];
@@ -514,30 +524,49 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               </div>
 
                 
-              {/* Add to Cart Button */}
+              {/* Add to Cart and Buy Now Buttons */}
               <div className="mb-4 sm:mb-6 sticky bottom-4 sm:static bg-white sm:bg-transparent p-0 sm:p-0 z-10">
                 {productDetails?.totalStock === 0 ? (
                   <Button className="w-full py-3 text-base bg-gray-400 cursor-not-allowed" disabled>
                     Out of Stock
                   </Button>
                 ) : (
-                  <WithAuth
-                    onAction={() => handleAddToCart(productDetails?._id, productDetails?.totalStock)}
-                  >
-                    {(handleAuthAction) => (
-                  <Button
-                    className="w-full py-3 text-base  bg-gradient-to-r from-gray-900 to-gray-700 text-white hover:from-gray-800 hover:to-gray-600 font-semibold shadow-lg sm:shadow-none"
-                    onClick={handleAuthAction}
-                    disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
-                  >
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize
-                      ? 'Select Size First'
-                      : 'Add to Cart'
-                    }
-                  </Button>
-                  )}
-                  </WithAuth>
+                  <div className="space-y-2">
+                    <WithAuth
+                      onAction={() => handleAddToCart(productDetails?._id, productDetails?.totalStock)}
+                    >
+                      {(handleAuthAction) => (
+                        <Button
+                          className="w-full py-3 text-base bg-gradient-to-r from-gray-900 to-gray-700 text-white hover:from-gray-800 hover:to-gray-600 font-semibold shadow-lg sm:shadow-none"
+                          onClick={handleAuthAction}
+                          disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
+                        >
+                          <ShoppingCart className="w-5 h-5 mr-2" />
+                          {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize
+                            ? 'Select Size First'
+                            : 'Add to Cart'
+                          }
+                        </Button>
+                      )}
+                    </WithAuth>
+                    
+                    <WithAuth
+                      onAction={() => handleBuyNow(productDetails?._id, productDetails?.totalStock)}
+                    >
+                      {(handleAuthAction) => (
+                        <Button
+                          className="w-full py-3 text-base bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 font-semibold shadow-lg sm:shadow-none"
+                          onClick={handleAuthAction}
+                          disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
+                        >
+                          {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize
+                            ? 'Select Size First'
+                            : 'Buy Now'
+                          }
+                        </Button>
+                      )}
+                    </WithAuth>
+                  </div>
                 )}
               </div>
 

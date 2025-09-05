@@ -15,7 +15,7 @@ export default function Contact() {
       <div className="max-w-4xl w-full text-center">
         <h1 className="text-3xl font-bold mb-6">Contact Us</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mx-auto max-w-2xl">
           <div className="space-y-6">
             <div className="flex items-start gap-4">
               <MapPin className="w-6 h-6 text-pink-600 mt-1" />
@@ -41,7 +41,9 @@ export default function Contact() {
                 </p>
               </div>
             </div>
-
+          </div>
+          
+          <div className="space-y-6">
             <div className="flex items-start gap-4">
               <Mail className="w-6 h-6 text-pink-600 mt-1" />
               <div>

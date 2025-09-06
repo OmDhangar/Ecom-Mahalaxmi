@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const compression = require("compression");
 const authRouter = require("./routes/auth/auth-routes");
 const adminProductsRouter = require("./routes/admin/products-routes");
 const adminOrderRouter = require("./routes/admin/order-routes");
@@ -29,6 +30,20 @@ mongoose
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Enable GZIP compression for all text-based responses
+app.use(compression({
+  level: 6, // Compression level (1-9)
+  threshold: 1024, // Only compress files larger than 1KB
+  filter: (req, res) => {
+    // Don't compress if the request includes a no-transform cache header
+    if (req.headers['cache-control'] && req.headers['cache-control'].includes('no-transform')) {
+      return false;
+    }
+    // Use the default filter function to determine if compression should be used
+    return compression.filter(req, res);
+  }
+}));
+
 app.use(
 cors({
   origin: "https://shrimahalaxmimobile.in",   
@@ -47,6 +62,29 @@ cors({
 
 app.use(cookieParser());
 app.use(express.json());
+
+// Serve static files with long-term caching
+app.use(express.static('public', {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // Different cache strategies for different file types
+    if (path.endsWith('.html')) {
+      // HTML files - short cache to ensure updates are picked up
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+    } else if (path.match(/\.(js|css)$/)) {
+      // JS/CSS files - long cache with versioning
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+    } else if (path.match(/\.(png|jpg|jpeg|gif|ico|svg|webp)$/)) {
+      // Image files - long cache
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
+    } else if (path.match(/\.(woff|woff2|ttf|eot)$/)) {
+      // Font files - very long cache
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+    }
+  }
+}));
 app.use("/api/auth", authRouter);
 app.use("/api/admin/products", adminProductsRouter);
 app.use("/api/admin/orders", adminOrderRouter);

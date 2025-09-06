@@ -1,9 +1,24 @@
 const Product = require("../../models/Product");
+const cacheService = require("../../services/cacheService");
 
 
 const getFilteredProducts = async (req, res) => {
   try {
     const { category = [], brand = [], sortBy = "price-lowtohigh" } = req.query;
+    
+    // Generate cache key based on filters and sort
+    const cacheKey = cacheService.generateKey('products', {
+      category: category.toString(),
+      brand: brand.toString(),
+      sortBy
+    });
+    
+    // Check cache first
+    const cachedData = cacheService.get('products', cacheKey);
+    if (cachedData) {
+      console.log(`Cache HIT: Filtered products - ${cacheKey}`);
+      return res.status(200).json(cachedData);
+    }
 
     let filters = {};
 
@@ -20,35 +35,35 @@ const getFilteredProducts = async (req, res) => {
     switch (sortBy) {
       case "price-lowtohigh":
         sort.price = 1;
-
         break;
       case "price-hightolow":
         sort.price = -1;
-
         break;
       case "title-atoz":
         sort.title = 1;
-
         break;
-
       case "title-ztoa":
         sort.title = -1;
-
         break;
-
       default:
         sort.price = 1;
         break;
     }
 
     const products = await Product.find(filters).sort(sort);
-
-    res.status(200).json({
+    
+    const responseData = {
       success: true,
       data: products,
-    });
+    };
+    
+    // Cache the response
+    cacheService.set('products', cacheKey, responseData);
+    console.log(`Cache SET: Filtered products - ${cacheKey}`);
+
+    res.status(200).json(responseData);
   } catch (e) {
-    console.log(error);
+    console.log(e);
     res.status(500).json({
       success: false,
       message: "Some error occured",
@@ -58,12 +73,27 @@ const getFilteredProducts = async (req, res) => {
 
 const getFeaturedProducts = async (req, res) => {
   try {
+    const cacheKey = 'featured-products';
+    
+    // Check cache first
+    const cachedData = cacheService.get('featured', cacheKey);
+    if (cachedData) {
+      console.log(`Cache HIT: Featured products`);
+      return res.status(200).json(cachedData);
+    }
+    
     const featuredProducts = await Product.find({ isFeatured: true });
-
-    res.status(200).json({
+    
+    const responseData = {
       success: true,
       data: featuredProducts,
-    });
+    };
+    
+    // Cache the response
+    cacheService.set('featured', cacheKey, responseData);
+    console.log(`Cache SET: Featured products`);
+
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("Error fetching featured products:", error);
     res.status(500).json({
@@ -76,6 +106,15 @@ const getFeaturedProducts = async (req, res) => {
 const getProductDetails = async (req, res) => {
   try {
     const { id } = req.params;
+    const cacheKey = `product-details:${id}`;
+    
+    // Check cache first
+    const cachedData = cacheService.get('products', cacheKey);
+    if (cachedData) {
+      console.log(`Cache HIT: Product details - ${id}`);
+      return res.status(200).json(cachedData);
+    }
+    
     const product = await Product.findById(id);
 
     if (!product)
@@ -84,12 +123,18 @@ const getProductDetails = async (req, res) => {
         message: "Product not found!",
       });
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: product,
-    });
+    };
+    
+    // Cache the response
+    cacheService.set('products', cacheKey, responseData);
+    console.log(`Cache SET: Product details - ${id}`);
+
+    res.status(200).json(responseData);
   } catch (e) {
-    console.log(error);
+    console.log(e);
     res.status(500).json({
       success: false,
       message: "Some error occured",
@@ -115,6 +160,12 @@ const updateAsFeatured = async (req, res) => {
       },
       { new: true }
     );
+    
+    // Invalidate caches when product featured status changes
+    cacheService.invalidateRelated('featured');
+    cacheService.invalidateRelated('product');
+    console.log('Cache invalidated after featured status update');
+    
     res.status(200).json({ success: true, data: updated });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

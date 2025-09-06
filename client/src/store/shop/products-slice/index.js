@@ -1,16 +1,52 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { isCacheFresh, generateCacheKey, localCache } from "@/utils/cacheUtils";
 
 const initialState = {
   isLoading: false,
   productList: [],
   productDetails: null,
-  featuredList:[],
+  featuredList: [],
+  // Cache management
+  lastFetched: {
+    products: null,
+    featured: null,
+    details: {}
+  },
+  cacheKeys: {
+    products: null,
+    featured: 'featured-products'
+  },
+  isStale: {
+    products: false,
+    featured: false
+  }
 };
 
 export const fetchAllFilteredProducts = createAsyncThunk(
   "/products/fetchAllProducts",
-  async ({ filterParams = {}, sortParams } = {}) => {
+  async ({ filterParams = {}, sortParams } = {}, { getState }) => {
+    const state = getState();
+    const currentCacheKey = generateCacheKey(filterParams, sortParams);
+    
+    // Check if we have fresh cached data for this specific query
+    const lastFetched = state.shopProducts.lastFetched.products;
+    const cachedKey = state.shopProducts.cacheKeys.products;
+    
+    if (lastFetched && 
+        cachedKey === currentCacheKey && 
+        isCacheFresh(lastFetched, 'PRODUCTS')) {
+      console.log('Using cached products data');
+      return { data: state.shopProducts.productList, fromCache: true };
+    }
+    
+    // Check localStorage cache as backup
+    const localCached = localCache.get(`products_${currentCacheKey}`, 'PRODUCTS');
+    if (localCached && !localCached.isStale) {
+      console.log('Using localStorage cached products');
+      return { data: localCached.data, fromCache: true, fromLocalStorage: true };
+    }
+    
     const query = new URLSearchParams();
 
     // Safe check for category
@@ -36,16 +72,42 @@ export const fetchAllFilteredProducts = createAsyncThunk(
     const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
 
     const result = await axios.get(url);
-    return result?.data.data;
+    const products = result?.data.data;
+    
+    // Save to localStorage
+    localCache.set(`products_${currentCacheKey}`, products, 'PRODUCTS');
+    
+    return { data: products, cacheKey: currentCacheKey, fromCache: false };
   }
 );
 
 export const fetchFeaturedProducts = createAsyncThunk(
   "products/fetchFeaturedProducts",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      const state = getState();
+      const lastFetched = state.shopProducts.lastFetched.featured;
+      
+      // Check if we have fresh cached data
+      if (lastFetched && isCacheFresh(lastFetched, 'FEATURED')) {
+        console.log('Using cached featured products data');
+        return { data: state.shopProducts.featuredList, fromCache: true };
+      }
+      
+      // Check localStorage cache
+      const localCached = localCache.get('featured-products', 'FEATURED');
+      if (localCached && !localCached.isStale) {
+        console.log('Using localStorage cached featured products');
+        return { data: localCached.data, fromCache: true, fromLocalStorage: true };
+      }
+      
       const res = await axios.get("/api/shop/products/featured");
-      return res.data.data;
+      const featuredProducts = res.data.data;
+      
+      // Save to localStorage
+      localCache.set('featured-products', featuredProducts, 'FEATURED');
+      
+      return { data: featuredProducts, fromCache: false };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch featured products");
     }
@@ -79,6 +141,32 @@ const shoppingProductSlice = createSlice({
     setProductDetails: (state) => {
       state.productDetails = null;
     },
+    invalidateProductsCache: (state) => {
+      state.lastFetched.products = null;
+      state.cacheKeys.products = null;
+      state.isStale.products = true;
+      localCache.remove(`products_${state.cacheKeys.products}`);
+    },
+    invalidateFeaturedCache: (state) => {
+      state.lastFetched.featured = null;
+      state.isStale.featured = true;
+      localCache.remove('featured-products');
+    },
+    invalidateAllCache: (state) => {
+      state.lastFetched = { products: null, featured: null, details: {} };
+      state.cacheKeys.products = null;
+      state.isStale = { products: true, featured: true };
+      localCache.clear();
+    },
+    markStale: (state, action) => {
+      const { type } = action.payload;
+      if (type === 'products' || type === 'all') {
+        state.isStale.products = true;
+      }
+      if (type === 'featured' || type === 'all') {
+        state.isStale.featured = true;
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -87,7 +175,14 @@ const shoppingProductSlice = createSlice({
       })
       .addCase(fetchAllFilteredProducts.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.productList = action.payload;
+        const { data, cacheKey, fromCache } = action.payload;
+        state.productList = data;
+        
+        if (!fromCache) {
+          state.lastFetched.products = Date.now();
+          state.cacheKeys.products = cacheKey;
+          state.isStale.products = false;
+        }
       })
       .addCase(fetchAllFilteredProducts.rejected, (state, action) => {
         state.isLoading = false;
@@ -109,7 +204,13 @@ const shoppingProductSlice = createSlice({
       })
       .addCase(fetchFeaturedProducts.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.featuredList = action.payload;
+        const { data, fromCache } = action.payload;
+        state.featuredList = data;
+        
+        if (!fromCache) {
+          state.lastFetched.featured = Date.now();
+          state.isStale.featured = false;
+        }
       })
       .addCase(fetchFeaturedProducts.rejected, (state) => {
         state.isLoading = false;
@@ -119,6 +220,12 @@ const shoppingProductSlice = createSlice({
   },
 });
 
-export const { setProductDetails  } = shoppingProductSlice.actions;
+export const { 
+  setProductDetails, 
+  invalidateProductsCache, 
+  invalidateFeaturedCache, 
+  invalidateAllCache, 
+  markStale 
+} = shoppingProductSlice.actions;
 
 export default shoppingProductSlice.reducer;

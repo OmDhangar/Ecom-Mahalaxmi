@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { fetchActiveCarouselSlides } from "@/store/shop/carousel-slice";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 export default function OfferCarousel() {
   const { t } = useTranslation();
@@ -130,11 +131,16 @@ export default function OfferCarousel() {
 
             {/* Image Section */}
             <div className="flex-1 flex justify-center items-center px-6 sm:px-12 md:px-16">
-              <img
+              <OptimizedImage
                 src={slide.image}
-                alt={slide.title}
-                className="w-full max-w-[180px] sm:max-w-[250px] md:max-w-[380px] h-auto rounded-lg shadow-lg object-contain"
-                loading="lazy"
+                alt={`${slide.title} - Exclusive mobile offers at Shri Mahalaxmi Mobile`}
+                className="w-full max-w-[180px] sm:max-w-[250px] md:max-w-[380px] h-auto max-h-[420px] rounded-lg shadow-lg object-contain"
+                width={180}
+                height={100}
+                priority={index === 0}
+                context="carousel"
+                quality={index === 0 ? 'high' : 'medium'}
+                sizes="(max-width: 640px) 180px, (max-width: 768px) 250px, 380px"
               />
             </div>
           </div>

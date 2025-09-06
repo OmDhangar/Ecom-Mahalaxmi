@@ -1,37 +1,47 @@
 import { Route, Routes, useLocation } from "react-router-dom";
-import AuthLayout from "./components/auth/layout";
-import AuthLogin from "./pages/auth/login";
-import AuthRegister from "./pages/auth/register";
-import AdminLayout from "./components/admin-view/layout";
-import AdminDashboard from "./pages/admin-view/dashboard";
-import AdminProducts from "./pages/admin-view/products";
-import AdminOrders from "./pages/admin-view/orders";
-import AdminFeatures from "./pages/admin-view/features";
-import ShoppingLayout from "./components/shopping-view/layout";
-import NotFound from "./pages/not-found";
-import ShoppingHome from "./pages/shopping-view/home";
-import ShoppingListing from "./pages/shopping-view/listing";
-import ShoppingCheckout from "./pages/shopping-view/checkout";
-import ShoppingAccount from "./pages/shopping-view/account";
-import CheckAuth from "./components/common/check-auth";
-import UnauthPage from "./pages/unauth-page";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { checkAuth } from "./store/auth-slice";
 import { Skeleton } from "@/components/ui/skeleton";
-import PaypalReturnPage from "./pages/shopping-view/paypal-return";
-import PaymentSuccessPage from "./pages/shopping-view/payment-success";
-import SearchProducts from "./pages/shopping-view/search";
-import CarouselAdmin from "./pages/admin-view/carousel";
 import { Helmet } from "react-helmet";
-import ForgetPassword from "@/pages/auth/forgetPassword";
-import OrderSuccess from "./pages/shopping-view/orderSuccess";
+
+// Layout components (not lazy loaded as they're critical)
+import AuthLayout from "./components/auth/layout";
+import AdminLayout from "./components/admin-view/layout";
+import ShoppingLayout from "./components/shopping-view/layout";
+import CheckAuth from "./components/common/check-auth";
 import ScrollToTop from "./components/common/scrollToTop";
-import AboutUs from "./pages/static/AboutUs";
-import PrivacyPolicy from "./pages/static/PrivacyPolicy";
-import ReturnPolicy from "./pages/static/ReturnPolicy";
-import Terms from "./pages/static/Terms";
-import Contact from "./pages/static/Contact";
+
+// Lazy loaded components for better performance
+const AuthLogin = lazy(() => import("./pages/auth/login"));
+const AuthRegister = lazy(() => import("./pages/auth/register"));
+const ForgetPassword = lazy(() => import("@/pages/auth/forgetPassword"));
+
+const AdminDashboard = lazy(() => import("./pages/admin-view/dashboard"));
+const AdminProducts = lazy(() => import("./pages/admin-view/products"));
+const AdminOrders = lazy(() => import("./pages/admin-view/orders"));
+const AdminFeatures = lazy(() => import("./pages/admin-view/features"));
+const CarouselAdmin = lazy(() => import("./pages/admin-view/carousel"));
+
+const NotFound = lazy(() => import("./pages/not-found"));
+const UnauthPage = lazy(() => import("./pages/unauth-page"));
+
+// Shopping pages - Home is critical, others can be lazy loaded
+import ShoppingHome from "./pages/shopping-view/home";
+const ShoppingListing = lazy(() => import("./pages/shopping-view/listing"));
+const ShoppingCheckout = lazy(() => import("./pages/shopping-view/checkout"));
+const ShoppingAccount = lazy(() => import("./pages/shopping-view/account"));
+const PaypalReturnPage = lazy(() => import("./pages/shopping-view/paypal-return"));
+const PaymentSuccessPage = lazy(() => import("./pages/shopping-view/payment-success"));
+const SearchProducts = lazy(() => import("./pages/shopping-view/search"));
+const OrderSuccess = lazy(() => import("./pages/shopping-view/orderSuccess"));
+
+// Static pages
+const AboutUs = lazy(() => import("./pages/static/AboutUs"));
+const PrivacyPolicy = lazy(() => import("./pages/static/PrivacyPolicy"));
+const ReturnPolicy = lazy(() => import("./pages/static/ReturnPolicy"));
+const Terms = lazy(() => import("./pages/static/Terms"));
+const Contact = lazy(() => import("./pages/static/Contact"));
 
 // ================= SEO CONFIG =================
 // ================= SEO CONFIG =================
@@ -174,6 +184,16 @@ function getSeo(pathname) {
   };
 }
 
+// ================= LOADING COMPONENT =================
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <p className="text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
+
 // ================= MAIN APP =================
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -220,68 +240,70 @@ function App() {
       </Helmet>
 
       <ScrollToTop />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<ShoppingLayout />}>
-          <Route index element={<ShoppingHome />} />
-          <Route path="home" element={<ShoppingHome />} />
-          <Route path="listing" element={<ShoppingListing />} />
-          <Route path="search" element={<SearchProducts />} />
-          <Route path="order-success" element={<OrderSuccess />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/return-policy" element={<ReturnPolicy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/contact" element={<Contact />} />
-        </Route>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<ShoppingLayout />}>
+            <Route index element={<ShoppingHome />} />
+            <Route path="home" element={<ShoppingHome />} />
+            <Route path="listing" element={<ShoppingListing />} />
+            <Route path="search" element={<SearchProducts />} />
+            <Route path="order-success" element={<OrderSuccess />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/return-policy" element={<ReturnPolicy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/contact" element={<Contact />} />
+          </Route>
 
-        <Route path="/shop" element={<ShoppingLayout />}>
-          <Route path="listing" element={<ShoppingListing />} />
-          <Route path="search" element={<SearchProducts />} />
-        </Route>
+          <Route path="/shop" element={<ShoppingLayout />}>
+            <Route path="listing" element={<ShoppingListing />} />
+            <Route path="search" element={<SearchProducts />} />
+          </Route>
 
-        {/* Auth routes */}
-        <Route path="/auth" element={<AuthLayout />}>
-          <Route path="login" element={<AuthLogin />} />
-          <Route path="register" element={<AuthRegister />} />
-          <Route path="forgot-password" element={<ForgetPassword />} />
-        </Route>
+          {/* Auth routes */}
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route path="login" element={<AuthLogin />} />
+            <Route path="register" element={<AuthRegister />} />
+            <Route path="forgot-password" element={<ForgetPassword />} />
+          </Route>
 
-        {/* Admin routes */}
-        <Route
-          path="/admin"
-          element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user} requiredRole="admin">
-              <AdminLayout />
-            </CheckAuth>
-          }
-        >
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="features" element={<AdminFeatures />} />
-          <Route path="carousel" element={<CarouselAdmin />} />
-        </Route>
+          {/* Admin routes */}
+          <Route
+            path="/admin"
+            element={
+              <CheckAuth isAuthenticated={isAuthenticated} user={user} requiredRole="admin">
+                <AdminLayout />
+              </CheckAuth>
+            }
+          >
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="features" element={<AdminFeatures />} />
+            <Route path="carousel" element={<CarouselAdmin />} />
+          </Route>
 
-        {/* Shopping protected routes */}
-        <Route
-          path="/shop"
-          element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
-              <ShoppingLayout />
-            </CheckAuth>
-          }
-        >
-          <Route path="checkout" element={<ShoppingCheckout />} />
-          <Route path="account" element={<ShoppingAccount />} />
-          <Route path="paypal-return" element={<PaypalReturnPage />} />
-          <Route path="payment-success" element={<PaymentSuccessPage />} />
-        </Route>
+          {/* Shopping protected routes */}
+          <Route
+            path="/shop"
+            element={
+              <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+                <ShoppingLayout />
+              </CheckAuth>
+            }
+          >
+            <Route path="checkout" element={<ShoppingCheckout />} />
+            <Route path="account" element={<ShoppingAccount />} />
+            <Route path="paypal-return" element={<PaypalReturnPage />} />
+            <Route path="payment-success" element={<PaymentSuccessPage />} />
+          </Route>
 
-        {/* Other routes */}
-        <Route path="/unauth-page" element={<UnauthPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Other routes */}
+          <Route path="/unauth-page" element={<UnauthPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }

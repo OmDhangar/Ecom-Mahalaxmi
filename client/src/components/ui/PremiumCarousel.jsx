@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import OptimizedImage from './OptimizedImage';
 
 const PremiumCarousel = ({ products }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -20,22 +21,24 @@ const PremiumCarousel = ({ products }) => {
 
   return (
     <div className="relative">
-      <div className="overflow-hidden">
+      {products.map((product, index) => (
         <div
-          className="flex transition-transform duration-500"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          key={product.id}
+          className={`transition-opacity duration-500 ${
+            index === currentSlide ? 'opacity-100' : 'opacity-0'
+          }`}
         >
-          {products.map((product) => (
-            <div key={product.id} className="min-w-full flex-shrink-0">
-              <img src={product.image} alt={product.title} className="w-full h-auto" />
-              <div className="p-4">
-                <h3 className="text-lg font-semibold">{product.title}</h3>
-                <p className="text-gray-600">₹{product.price}</p>
-              </div>
-            </div>
-          ))}
+          <OptimizedImage
+            src={product.image}
+            alt={product.title}
+            priority={index === 0} // Only prioritize first slide
+            width={1200}
+            height={600}
+            quality={index === currentSlide ? 'high' : 'low'}
+            className="w-full h-[60vh] object-cover"
+          />
         </div>
-      </div>
+      ))}
       <Button onClick={prevSlide} className="absolute left-0 top-1/2 transform -translate-y-1/2">
         <ChevronLeftIcon className="w-6 h-6" />
       </Button>

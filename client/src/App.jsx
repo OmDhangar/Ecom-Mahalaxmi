@@ -11,6 +11,7 @@ import AdminLayout from "./components/admin-view/layout";
 import ShoppingLayout from "./components/shopping-view/layout";
 import CheckAuth from "./components/common/check-auth";
 import ScrollToTop from "./components/common/scrollToTop";
+import NavigationHandler from "./components/common/NavigationHandler";
 
 // Lazy loaded components for better performance
 const AuthLogin = lazy(() => import("./pages/auth/login"));
@@ -240,8 +241,9 @@ function App() {
       </Helmet>
 
       <ScrollToTop />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+      <NavigationHandler>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           {/* Public routes */}
           <Route path="/" element={<ShoppingLayout />}>
             <Route index element={<ShoppingHome />} />
@@ -249,11 +251,11 @@ function App() {
             <Route path="listing" element={<ShoppingListing />} />
             <Route path="search" element={<SearchProducts />} />
             <Route path="order-success" element={<OrderSuccess />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/return-policy" element={<ReturnPolicy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="about" element={<AboutUs />} />
+            <Route path="privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="return-policy" element={<ReturnPolicy />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="contact" element={<Contact />} />
           </Route>
 
           <Route path="/shop" element={<ShoppingLayout />}>
@@ -302,8 +304,9 @@ function App() {
           {/* Other routes */}
           <Route path="/unauth-page" element={<UnauthPage />} />
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </NavigationHandler>
     </div>
   );
 }

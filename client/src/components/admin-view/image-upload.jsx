@@ -102,21 +102,33 @@ async function deleteImageFromCloudinary(imageUrl) {
     data.append("my_file", file);
 
     try {
+      // Fast main image upload - minimal processing
       const response = await axios.post(
         "/api/admin/products/upload-image",
-        data
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       );
 
       if (response?.data?.success) {
         console.log(response.data.result.url);
         setUploadedImageUrl(response.data.result.url);
+        
+        // Success feedback
+        toast({
+          title: "Main image uploaded successfully",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error("Error uploading main image:", error);
       toast({
-        title:"Error Uploading image",
-        variant:"destructive"
-      })
+        title: "Error uploading main image",
+        variant: "destructive"
+      });
     } finally {
       setImageLoadingState(false);
     }
@@ -171,18 +183,34 @@ async function deleteImageFromCloudinary(imageUrl) {
     data.append("my_file", file);
 
     try {
+      // Simple, fast upload - no extra processing
       const response = await axios.post(
         "/api/admin/products/upload-image",
-        data
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       );
 
       if (response?.data?.success) {
         const newUrls = [...(uploadedImageUrls || [])];
         newUrls[index] = response.data.result.url;
         setUploadedImageUrls(newUrls);
+        
+        // Success toast
+        toast({
+          title: "Image uploaded successfully",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error("Error uploading image:", error);
+      toast({
+        title: "Error uploading image",
+        variant: "destructive"
+      });
     } finally {
       const updatedLoadingStates = [...(imageLoadingStates || [])];
       updatedLoadingStates[index] = false;

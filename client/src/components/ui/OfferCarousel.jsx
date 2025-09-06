@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { fetchActiveCarouselSlides } from "@/store/shop/carousel-slice";
+import { fetchActiveCarouselSlides, forceFreshFetch } from "@/store/shop/carousel-slice";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 
 export default function OfferCarousel() {
@@ -34,32 +34,46 @@ export default function OfferCarousel() {
   };
 
   useEffect(() => {
+    console.log('OfferCarousel: Dispatching fetchActiveCarouselSlides');
     dispatch(fetchActiveCarouselSlides());
   }, [dispatch]);
 
+  // Add debugging to see the state changes
   useEffect(() => {
-    if (activeSlides.length > 0) {
+    console.log('OfferCarousel state update:', {
+      activeSlides: activeSlides ? activeSlides.length : 'undefined',
+      isLoading,
+      error
+    });
+  }, [activeSlides, isLoading, error]);
+
+  useEffect(() => {
+    if (activeSlides && activeSlides.length > 0) {
       const interval = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [activeSlides.length]);
+  }, [activeSlides]);
 
   useEffect(() => {
-    if (currentSlide >= activeSlides.length && activeSlides.length > 0) {
+    if (activeSlides && currentSlide >= activeSlides.length && activeSlides.length > 0) {
       setCurrentSlide(0);
     }
-  }, [activeSlides.length, currentSlide]);
+  }, [activeSlides, currentSlide]);
 
   const prevSlide = () => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + activeSlides.length) % activeSlides.length
-    );
+    if (activeSlides && activeSlides.length > 0) {
+      setCurrentSlide(
+        (prev) => (prev - 1 + activeSlides.length) % activeSlides.length
+      );
+    }
   };
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
+    if (activeSlides && activeSlides.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
+    }
   };
 
   if (isLoading) {
@@ -72,21 +86,33 @@ export default function OfferCarousel() {
 
   if (error) {
     return (
-      <div className="relative w-full h-[400px] sm:h-[450px] md:h-[500px] bg-red-100 rounded-lg flex items-center justify-center">
-        <div className="text-red-600 text-center">
-          <p className="text-lg font-semibold mb-2">Failed to load carousel</p>
-          <p className="text-sm">{error}</p>
+      <div className="relative w-full h-[400px] sm:h-[450px] md:h-[500px] bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+        <div className="text-white text-center px-8">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">Welcome to Shri Mahalaxmi Mobile</h1>
+          <p className="text-lg mb-6">Your trusted mobile store with exclusive deals</p>
+          <p className="text-sm opacity-75">Carousel temporarily unavailable</p>
         </div>
       </div>
     );
   }
 
-  if (!activeSlides || activeSlides.length === 0) {
+  if (!isLoading && (!activeSlides || activeSlides.length === 0)) {
     return (
-      <div className="relative w-full h-[400px] sm:h-[450px] md:h-[500px] bg-gray-100 rounded-lg flex items-center justify-center">
-        <div className="text-gray-500 text-center">
-          <p className="text-lg font-semibold mb-2">No offers available</p>
-          <p className="text-sm">Check back later for exciting deals!</p>
+      <div className="relative w-full h-[400px] sm:h-[450px] md:h-[500px] bg-gradient-to-r from-gray-800 to-gray-600 rounded-lg flex items-center justify-center">
+        <div className="text-white text-center px-8">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">Shri Mahalaxmi Mobile</h1>
+          <p className="text-lg mb-2">Premium mobiles and accessories</p>
+          <p className="text-sm opacity-75 mb-4">No offers available right now</p>
+          <Button
+            onClick={() => {
+              console.log('Forcing fresh carousel fetch');
+              dispatch(forceFreshFetch());
+              setTimeout(() => dispatch(fetchActiveCarouselSlides()), 100);
+            }}
+            className="bg-white text-gray-800 hover:bg-gray-200 font-semibold px-4 py-2"
+          >
+            Refresh Offers
+          </Button>
         </div>
       </div>
     );
@@ -94,7 +120,7 @@ export default function OfferCarousel() {
 
   return (
     <div className="relative w-full h-[400px] sm:h-[450px] md:h-[500px] overflow-hidden rounded-lg">
-      {activeSlides.map((slide, index) => {
+      {activeSlides && activeSlides.map((slide, index) => {
         const textColor = textColorMap[slide.bg] || "white";
         const textColorClass = textColor === "white" ? "text-white" : "text-black";
         const buttonClass =
@@ -148,7 +174,7 @@ export default function OfferCarousel() {
       })}
 
       {/* Controls */}
-      {activeSlides.length > 1 && (
+      {activeSlides && activeSlides.length > 1 && (
         <>
           <button
             onClick={prevSlide}

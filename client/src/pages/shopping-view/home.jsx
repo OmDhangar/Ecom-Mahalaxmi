@@ -21,6 +21,7 @@ import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/components/ui/use-toast";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getFeatureImages } from "@/store/common-slice";
+import imageOptimizationService from '@/services/imageOptimizationService';
 
 // Custom components
 import SocialUpdates from "@/components/ui/SocialUpdates";
@@ -28,6 +29,7 @@ import CustomerTestimonials from "@/components/ui/CustomerTestimonials";
 import OfferCarousel from "@/components/ui/OfferCarousel";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { Helmet } from "react-helmet";
+import { useBackNavigation, useBrowserBackButton } from "@/hooks/useBackNavigation";
 
 // i18n
 import { useTranslation } from "react-i18next";
@@ -50,6 +52,12 @@ function ShoppingHome() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Initialize back navigation for home page
+  const { clearNavigationHistory } = useBackNavigation('/');
+  
+  // Handle browser/phone back button for home page
+  useBrowserBackButton('/');
 
   function handleNavigateToListingPage(getCurrentItem, section) {
     sessionStorage.removeItem("filters");
@@ -57,7 +65,7 @@ function ShoppingHome() {
       [section]: [getCurrentItem.id],
     };
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
-    navigate(`/shop/listing`);
+    navigate(`/listing`);
   }
 
   function handleGetProductDetails(getCurrentProductId) {
@@ -127,6 +135,16 @@ function ShoppingHome() {
   useEffect(() => {
     dispatch(getFeatureImages());
   }, [dispatch]);
+
+  useEffect(() => {
+    // Preload critical images
+    imageOptimizationService.preloadCriticalImages([
+      // Add your hero/carousel first slide
+      featureImageList[0]?.image,
+      // Add first 4 product images
+      ...featuredList.slice(0, 4).map(p => p.image)
+    ]);
+  }, [featureImageList, featuredList]);
 
   return (
     <div className="flex flex-col min-h-screen">

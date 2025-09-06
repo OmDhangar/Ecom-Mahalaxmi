@@ -60,26 +60,17 @@ const getAllCarouselSlides = async (req, res) => {
 // Get active slides for frontend
 const getActiveCarouselSlides = async (req, res) => {
   try {
-    const cacheKey = 'active-carousel-slides';
-    
-    // Check cache first
-    const cachedData = cacheService.get('carousel', cacheKey);
-    if (cachedData) {
-      console.log(`Cache HIT: Active carousel slides`);
-      return res.status(200).json(cachedData);
-    }
+    console.log('Fetching active carousel slides from database');
     
     const slides = await Carousel.find({ isActive: true }).sort({ order: 1 });
     
-    const responseData = { success: true, data: slides };
+    console.log(`Found ${slides.length} active carousel slides in database`);
     
-    // Cache the response
-    cacheService.set('carousel', cacheKey, responseData);
-    console.log(`Cache SET: Active carousel slides`);
+    const responseData = { success: true, data: slides };
     
     res.status(200).json(responseData);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching carousel slides:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch active carousel slides', error: error.message });
   }
 };

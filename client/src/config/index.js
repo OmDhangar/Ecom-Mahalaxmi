@@ -174,7 +174,7 @@ export const addProductFormElements = [
 ];
 
 export const shoppingViewHeaderMenuItems = [
-  { id: "home", label: "Home", path: "/home" },
+  { id: "home", label: "Home", path: "/" },
   { id: "products", label: "Products", path: "/shop/listing" },
   { id: "electronics", label: "Electronics", path: "/shop/listing?category=electronics" },
   { id: "fashion", label: "Fashion", path: "/shop/listing?category=fashion" },

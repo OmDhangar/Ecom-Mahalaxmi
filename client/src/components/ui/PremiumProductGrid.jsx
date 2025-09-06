@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import OptimizedImage from './OptimizedImage';
 
 const PremiumProductGrid = () => {
   const { featuredList } = useSelector((state) => state.shopProducts);
@@ -14,12 +15,16 @@ const PremiumProductGrid = () => {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {featuredList.length > 0 ? (
-            featuredList.map((productItem) => (
+            featuredList.map((productItem, index) => (
               <Card key={productItem._id} className="hover:shadow-lg transition-shadow duration-300">
                 <div className="relative w-full aspect-square overflow-hidden rounded-t-lg bg-gray-100">
-                  <img
+                  <OptimizedImage
                     src={productItem.image}
                     alt={productItem.title}
+                    width={400}
+                    height={400}
+                    priority={index < 4} // Prioritize first row of products
+                    quality={index < 4 ? 'high' : 'auto'}
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   />
                 </div>

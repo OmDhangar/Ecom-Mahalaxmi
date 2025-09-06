@@ -1,142 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import imageOptimizationService from '@/services/imageOptimizationService';
+import React, { useState } from "react";
+import { cn } from "@/lib/utils";
+import { useInView } from "react-intersection-observer";
 
-/**
- * OptimizedImage component that provides:
- * - WebP format support with fallback
- * - Proper loading attributes for performance
- * - Error handling and lazy loading
- * - Responsive image sizing
- */
 const OptimizedImage = ({
   src,
   alt,
+  className,
+  priority = false,
   width,
   height,
-  className,
-  loading = 'lazy',
-  priority = false,
+  quality = "auto",
+  loading = "lazy",
+  context = "default",
   sizes,
-  context = 'general', // 'thumbnail', 'card', 'hero', 'carousel', 'detail', 'general'
-  quality = 'medium', // 'low', 'medium', 'high', 'original'
-  ...props
+  onClick
 }) => {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [optimizedSrc, setOptimizedSrc] = useState('');
-  const [srcSet, setSrcSet] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false);
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    rootMargin: '50px 0px',
+    skip: priority // Skip intersection observer if priority is true
+  });
 
-  useEffect(() => {
-    if (!src) return;
-
-    // Use the image optimization service
-    const optimized = imageOptimizationService.getOptimizedUrl(src, {
-      width,
-      height,
-      quality,
-      priority,
-      context
-    });
+  const getOptimizedSrc = () => {
+    if (!src) return "";
     
-    setOptimizedSrc(optimized);
-
-    // Generate srcSet for responsive images
-    if (src.includes('cloudinary.com')) {
-      const responsiveSrcSet = imageOptimizationService.generateSrcSet(src);
-      setSrcSet(responsiveSrcSet);
+    // Handle full URLs (e.g., Cloudinary)
+    if (src.startsWith("http")) {
+      return src;
     }
-
-    // Preload if priority
-    if (priority) {
-      imageOptimizationService.preloadImage(src, {
-        width,
-        height,
-        quality,
-        context
-      });
-    }
-  }, [src, width, height, quality, priority, context]);
-
-  const handleImageError = () => {
-    setImageError(true);
+    
+    // Handle local images from public folder
+    return `/${src}`;
   };
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
-
-  const loadingAttr = priority ? 'eager' : loading;
-  const fetchPriorityAttr = priority ? 'high' : 'low';
-
-  if (imageError) {
-    return (
-      <div 
-        className={cn(
-          'flex items-center justify-center bg-gray-100 text-gray-400',
-          className
-        )}
-        style={{ width, height }}
-      >
-        <svg 
-          className="w-8 h-8" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-          />
-        </svg>
-      </div>
-    );
-  }
 
   return (
-    <div className="relative">
-      {/* Loading placeholder */}
-      {!imageLoaded && (
-        <div 
-          className={cn(
-            'absolute inset-0 bg-gray-200 animate-pulse',
-            className
-          )}
-          style={{ width, height }}
-        />
+    <div 
+      ref={!priority ? ref : undefined}
+      className={cn(
+        "relative overflow-hidden",
+        className
       )}
-      
-      {/* Main image with WebP support */}
-      <picture>
-        {/* WebP source for modern browsers */}
-        {srcSet && (
-          <source
-            srcSet={srcSet}
-            sizes={sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
-            type="image/webp"
-          />
-        )}
-        
+      onClick={onClick}
+    >
+      {(priority || inView) && (
         <img
-          src={optimizedSrc || src}
+          src={getOptimizedSrc()}
           alt={alt}
           width={width}
           height={height}
+          loading={priority ? "eager" : loading}
+          onLoad={() => setIsLoaded(true)}
+          sizes={sizes}
           className={cn(
-            'transition-opacity duration-300',
-            imageLoaded ? 'opacity-100' : 'opacity-0',
-            className
+            "transition-opacity duration-300",
+            isLoaded ? "opacity-100" : "opacity-0"
           )}
-          loading={loadingAttr}
-          decoding="async"
-          fetchPriority={fetchPriorityAttr}
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-          {...props}
         />
-      </picture>
+      )}
+      
+      {/* Placeholder/Loading state */}
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+      )}
     </div>
   );
 };

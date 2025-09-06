@@ -1,183 +1,108 @@
 const NodeCache = require("node-cache");
 
 /**
- * Centralized Cache Service for API responses
- * Uses in-memory caching with configurable TTL
+ * Simplified Cache Service for API responses
+ * Uses single in-memory cache with different TTL by data type
  */
 class CacheService {
   constructor() {
-    // Initialize cache instances with different TTL for different data types
-    this.productCache = new NodeCache({ 
-      stdTTL: 900, // 15 minutes for products
+    // Single cache instance with 10 minute default TTL
+    this.cache = new NodeCache({ 
+      stdTTL: 600, // 10 minutes default
       checkperiod: 120 // Check for expired keys every 2 minutes
     });
-    
-    this.carouselCache = new NodeCache({ 
-      stdTTL: 3600, // 1 hour for carousel (changes less frequently)
-      checkperiod: 300 // Check every 5 minutes
-    });
-    
-    this.featuredCache = new NodeCache({ 
-      stdTTL: 1800, // 30 minutes for featured products
-      checkperiod: 180 // Check every 3 minutes
-    });
-    
-    this.generalCache = new NodeCache({ 
-      stdTTL: 1800, // 30 minutes for general data
-      checkperiod: 180
-    });
 
-    // Track cache hits and misses for analytics
-    this.stats = {
-      hits: 0,
-      misses: 0,
-      sets: 0
+    // Simple TTL configuration
+    this.ttlConfig = {
+      products: 300,    // 5 minutes - frequently changing
+      featured: 600,    // 10 minutes 
+      carousel: 1800,   // 30 minutes - rarely changes
+      general: 600      // 10 minutes default
     };
+
+    // Basic stats tracking
+    this.stats = { hits: 0, misses: 0, sets: 0 };
   }
 
   /**
-   * Generate cache key based on endpoint and parameters
+   * Generate simple cache key
    */
   generateKey(prefix, params = {}) {
-    const sortedParams = Object.keys(params)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = params[key];
-        return result;
-      }, {});
-    
-    const paramsString = Object.keys(sortedParams).length > 0 
-      ? JSON.stringify(sortedParams) 
-      : '';
-    
+    if (Object.keys(params).length === 0) return prefix;
+    const paramsString = JSON.stringify(params);
     return `${prefix}:${Buffer.from(paramsString).toString('base64')}`;
   }
 
   /**
    * Get cached data
    */
-  get(cacheType, key) {
-    const cache = this.getCacheInstance(cacheType);
-    const data = cache.get(key);
-    
+  get(key) {
+    const data = this.cache.get(key);
     if (data !== undefined) {
       this.stats.hits++;
       return data;
     }
-    
     this.stats.misses++;
     return null;
   }
 
   /**
-   * Set cached data
+   * Set cached data with appropriate TTL
    */
-  set(cacheType, key, data, ttl = null) {
-    const cache = this.getCacheInstance(cacheType);
+  set(key, data, cacheType = 'general') {
+    const ttl = this.ttlConfig[cacheType] || this.ttlConfig.general;
     this.stats.sets++;
-    
-    if (ttl) {
-      return cache.set(key, data, ttl);
-    }
-    return cache.set(key, data);
+    return this.cache.set(key, data, ttl);
   }
 
   /**
    * Delete specific cache entry
    */
-  delete(cacheType, key) {
-    const cache = this.getCacheInstance(cacheType);
-    return cache.del(key);
+  delete(key) {
+    return this.cache.del(key);
   }
 
   /**
-   * Clear entire cache type
+   * Clear all cache
    */
-  clear(cacheType) {
-    const cache = this.getCacheInstance(cacheType);
-    return cache.flushAll();
-  }
-
-  /**
-   * Clear all caches
-   */
-  clearAll() {
-    this.productCache.flushAll();
-    this.carouselCache.flushAll();
-    this.featuredCache.flushAll();
-    this.generalCache.flushAll();
-  }
-
-  /**
-   * Get cache instance by type
-   */
-  getCacheInstance(cacheType) {
-    switch (cacheType) {
-      case 'products':
-        return this.productCache;
-      case 'carousel':
-        return this.carouselCache;
-      case 'featured':
-        return this.featuredCache;
-      case 'general':
-      default:
-        return this.generalCache;
-    }
+  clear() {
+    return this.cache.flushAll();
   }
 
   /**
    * Get cache statistics
    */
   getStats() {
+    const totalRequests = this.stats.hits + this.stats.misses;
     return {
       ...this.stats,
-      hitRate: this.stats.hits / (this.stats.hits + this.stats.misses) * 100,
-      productCacheKeys: this.productCache.keys().length,
-      carouselCacheKeys: this.carouselCache.keys().length,
-      featuredCacheKeys: this.featuredCache.keys().length,
-      generalCacheKeys: this.generalCache.keys().length
+      hitRate: totalRequests > 0 ? (this.stats.hits / totalRequests * 100).toFixed(2) + '%' : '0%',
+      totalKeys: this.cache.keys().length
     };
   }
 
   /**
-   * Smart cache invalidation for related data
+   * Simple cache invalidation - just clear patterns
    */
-  invalidateRelated(dataType, operation = 'update') {
-    switch (dataType) {
-      case 'product':
-        // When a product is updated, clear product and featured caches
-        this.clear('products');
-        this.clear('featured');
-        console.log(`Cache invalidated: products and featured (${operation})`);
-        break;
-        
-      case 'carousel':
-        // When carousel is updated, clear carousel cache
-        this.clear('carousel');
-        console.log(`Cache invalidated: carousel (${operation})`);
-        break;
-        
-      case 'featured':
-        // When featured status changes, clear featured cache
-        this.clear('featured');
-        console.log(`Cache invalidated: featured (${operation})`);
-        break;
-        
-      default:
-        console.log(`Cache invalidation not configured for: ${dataType}`);
+  invalidatePattern(pattern) {
+    const keys = this.cache.keys();
+    const matchingKeys = keys.filter(key => key.includes(pattern));
+    matchingKeys.forEach(key => this.cache.del(key));
+    if (matchingKeys.length > 0) {
+      console.log(`Cache invalidated: ${matchingKeys.length} keys matching '${pattern}'`);
     }
   }
 
   /**
-   * Middleware for automatic caching
+   * Simple middleware for automatic caching
    */
-  middleware(cacheType, keyGenerator) {
+  middleware(cacheType = 'general', keyGenerator = null) {
     return (req, res, next) => {
-      const key = typeof keyGenerator === 'function' 
+      const key = keyGenerator 
         ? keyGenerator(req) 
-        : this.generateKey(req.route.path, req.query);
+        : this.generateKey(req.originalUrl, req.query);
       
-      const cachedData = this.get(cacheType, key);
+      const cachedData = this.get(key);
       
       if (cachedData) {
         console.log(`Cache HIT: ${key}`);
@@ -186,11 +111,11 @@ class CacheService {
       
       console.log(`Cache MISS: ${key}`);
       
-      // Override res.json to cache the response
+      // Cache successful responses
       const originalJson = res.json;
       res.json = (data) => {
         if (res.statusCode === 200 && data.success) {
-          this.set(cacheType, key, data);
+          this.set(key, data, cacheType);
           console.log(`Cache SET: ${key}`);
         }
         return originalJson.call(res, data);

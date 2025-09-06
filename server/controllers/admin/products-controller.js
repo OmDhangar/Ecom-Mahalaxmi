@@ -3,19 +3,18 @@ const Product = require("../../models/Product");
 
 const handleImageUpload = async (req, res) => {
   try {
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const url = "data:" + req.file.mimetype + ";base64," + b64;
-    const result = await imageUploadUtil(url);
+    // Direct upload to Cloudinary without base64 conversion for efficiency
+    const result = await imageUploadUtil(`data:${req.file.mimetype};base64,${Buffer.from(req.file.buffer).toString("base64")}`);
 
     res.json({
       success: true,
       result,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Image upload failed:", error);
     res.json({
       success: false,
-      message: "Error occured",
+      message: "Image upload failed",
     });
   }
 };

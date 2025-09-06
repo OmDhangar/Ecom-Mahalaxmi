@@ -19,8 +19,9 @@ import {
 import { ArrowUpDownIcon, FilterIcon, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet";
+import { useBackNavigation, useBrowserBackButton } from "@/hooks/useBackNavigation";
 
 function createSearchParamsHelper(filterParams) {
   const queryParams = [];
@@ -37,6 +38,7 @@ function createSearchParamsHelper(filterParams) {
 
 function ShoppingListing() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { productList, productDetails } = useSelector(
     (state) => state.shopProducts
   );
@@ -47,6 +49,12 @@ function ShoppingListing() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const { toast } = useToast();
+  
+  // Add back navigation functionality
+  const { handleBackNavigation, getPreviousPage } = useBackNavigation('/');
+  
+  // Handle browser/phone back button
+  useBrowserBackButton('/');
 
   const categorySearchParam = searchParams.get("category");
 
@@ -193,9 +201,26 @@ function ShoppingListing() {
       {/* Header with Sort */}
       <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900">
-            All Products
-          </h1>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                // Clear filters and use proper back navigation
+                sessionStorage.removeItem("filters");
+                handleBackNavigation();
+              }}
+              className="flex items-center gap-1 hover:bg-gray-100"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="hidden sm:inline">Back</span>
+            </Button>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+              All Products
+            </h1>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">
               {productList?.length || 0} items

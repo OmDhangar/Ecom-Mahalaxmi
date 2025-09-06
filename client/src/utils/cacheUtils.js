@@ -1,51 +1,50 @@
 /**
- * Cache utilities for Redux slices
- * Provides caching logic, timestamps, and conditional fetching
+ * Simplified Cache utilities for Redux slices
  */
 
+// Simple cache durations
 const CACHE_DURATION = {
-  PRODUCTS: 15 * 60 * 1000, // 15 minutes
-  FEATURED: 30 * 60 * 1000, // 30 minutes  
-  CAROUSEL: 60 * 60 * 1000, // 1 hour
-  PRODUCT_DETAILS: 10 * 60 * 1000, // 10 minutes
-  GENERAL: 15 * 60 * 1000, // 15 minutes
+  PRODUCTS: 5 * 60 * 1000,  // 5 minutes
+  FEATURED: 10 * 60 * 1000, // 10 minutes 
+  CAROUSEL: 30 * 60 * 1000, // 30 minutes
+  GENERAL: 10 * 60 * 1000,  // 10 minutes
 };
+
+// Stock-sensitive fields that should not be cached heavily
+const STOCK_SENSITIVE_FIELDS = [
+  'totalStock',
+  'stock',
+  'sizes',
+  'variants',
+  'inStock',
+  'isLowStock',
+  'lowStockAlert',
+  'totalSold'
+];
 
 /**
  * Check if cached data is still fresh
  */
 export const isCacheFresh = (timestamp, cacheType = 'GENERAL') => {
   if (!timestamp) return false;
-  
   const now = Date.now();
   const duration = CACHE_DURATION[cacheType] || CACHE_DURATION.GENERAL;
-  
   return (now - timestamp) < duration;
 };
 
 /**
- * Check if cache is stale but can be used while revalidating
+ * Check if cached data is stale (opposite of isCacheFresh)
  */
 export const isCacheStale = (timestamp, cacheType = 'GENERAL') => {
-  if (!timestamp) return true;
-  
-  const now = Date.now();
-  const duration = CACHE_DURATION[cacheType] || CACHE_DURATION.GENERAL;
-  const staleDuration = duration * 2; // Allow stale data for 2x the cache duration
-  
-  return (now - timestamp) > staleDuration;
+  return !isCacheFresh(timestamp, cacheType);
 };
 
 /**
- * Generate cache key for filtered/sorted data
+ * Generate simple cache key for filters
  */
 export const generateCacheKey = (filters = {}, sort = '') => {
-  const filterStr = Object.keys(filters)
-    .sort()
-    .map(key => `${key}:${JSON.stringify(filters[key])}`)
-    .join('|');
-  
-  return `${filterStr}_${sort}`.trim();
+  const filterStr = JSON.stringify(filters);
+  return `${filterStr}_${sort}`;
 };
 
 /**
@@ -189,11 +188,68 @@ export const localCache = {
 };
 
 /**
+ * Check if data contains stock-sensitive fields
+ */
+export const isDataStockSensitive = (data) => {
+  if (!data || typeof data !== 'object') return false;
+  
+  return STOCK_SENSITIVE_FIELDS.some(field => 
+    data.hasOwnProperty(field) || 
+    (Array.isArray(data) && data.some(item => item && item.hasOwnProperty(field)))
+  );
+};
+
+/**
+ * Separate stock-sensitive data from static data
+ */
+export const separateStockData = (productData) => {
+  if (!productData) return { staticData: null, stockData: null };
+  
+  const staticData = {};
+  const stockData = {};
+  
+  Object.keys(productData).forEach(key => {
+    if (STOCK_SENSITIVE_FIELDS.includes(key)) {
+      stockData[key] = productData[key];
+    } else {
+      staticData[key] = productData[key];
+    }
+  });
+  
+  return { staticData, stockData };
+};
+
+/**
+ * Get appropriate cache duration based on data type and content
+ */
+export const getStockAwareCacheDuration = (data, defaultType = 'GENERAL') => {
+  if (isDataStockSensitive(data)) {
+    console.log('Stock-sensitive data detected - using shorter cache duration');
+    return CACHE_DURATION.PRODUCTS; // Short cache for stock data
+  }
+  
+  return CACHE_DURATION[defaultType] || CACHE_DURATION.GENERAL;
+};
+
+/**
+ * Check if product details should be cached (they shouldn't - too risky)
+ */
+export const shouldCacheProductDetails = () => {
+  return false; // NEVER cache full product details with stock
+};
+
+/**
  * Conditional fetch hook - can be used in components
  */
 export const useConditionalFetch = () => {
   return {
-    shouldFetch: (lastFetched, cacheType = 'GENERAL') => {
+    shouldFetch: (lastFetched, cacheType = 'GENERAL', data = null) => {
+      // Never rely on cache for stock-sensitive data
+      if (data && isDataStockSensitive(data)) {
+        console.log('Stock-sensitive data - forcing fresh fetch');
+        return true;
+      }
+      
       return !lastFetched || !isCacheFresh(lastFetched, cacheType);
     },
     

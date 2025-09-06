@@ -113,33 +113,43 @@ const createCarouselSlide = async (req, res) => {
 const updateCarouselSlide = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, subtitle, cta, link, bg, isActive } = req.body;
+    const updateData = req.body;
 
-    const slide = await Carousel.findById(id);
-    if (!slide) return res.status(404).json({ success: false, message: 'Carousel slide not found' });
+    const updatedSlide = await Carousel.findByIdAndUpdate(
+      id, 
+      updateData,
+      { new: true }
+    );
 
-    slide.title = title || slide.title;
-    slide.subtitle = subtitle || slide.subtitle;
-    slide.cta = cta || slide.cta;
-    slide.link = link || slide.link;
-    slide.bg = bg || slide.bg;
-    slide.isActive = isActive !== undefined ? (isActive === 'true' || isActive === true) : slide.isActive;
-
-    if (req.file) {
-      // Delete old image from Cloudinary
-      if (slide.image) await deleteFromCloudinary(slide.image);
-      slide.image = req.file.path; // New Cloudinary URL
+    if (!updatedSlide) {
+      return res.status(404).json({
+        success: false,
+        message: 'Carousel slide not found'
+      });
     }
 
-    const updatedSlide = await slide.save();
-    
-    // Invalidate carousel cache after update
-    cacheService.invalidateRelated('carousel', 'update');
-    
-    res.status(200).json({ success: true, message: 'Carousel slide updated successfully', data: updatedSlide });
+    // Invalidate both carousel and feature related caches
+    try {
+      cacheService.invalidatePattern('carousel');
+      cacheService.invalidatePattern('feature');
+    } catch (cacheError) {
+      console.warn('Cache invalidation warning:', cacheError);
+      // Continue execution even if cache invalidation fails
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Carousel slide updated successfully',
+      data: updatedSlide
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Failed to update carousel slide', error: error.message });
+    console.error('Error updating carousel slide:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating carousel slide',
+      error: error.message
+    });
   }
 };
 

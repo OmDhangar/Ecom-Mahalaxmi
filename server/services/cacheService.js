@@ -15,7 +15,6 @@ class CacheService {
     // Simple TTL configuration
     this.ttlConfig = {
       products: 300,    // 5 minutes - frequently changing
-      featured: 600,    // 10 minutes 
       carousel: 1800,   // 30 minutes - rarely changes
       general: 600      // 10 minutes default
     };
@@ -82,6 +81,13 @@ class CacheService {
   }
 
   /**
+   * Invalidate related caches (alias for invalidatePattern)
+   */
+  invalidateRelated(pattern) {
+    return this.invalidatePattern(pattern);
+  }
+
+  /**
    * Simple cache invalidation - just clear patterns
    */
   invalidatePattern(pattern) {
@@ -91,6 +97,7 @@ class CacheService {
     if (matchingKeys.length > 0) {
       console.log(`Cache invalidated: ${matchingKeys.length} keys matching '${pattern}'`);
     }
+    return matchingKeys.length;
   }
 
   /**

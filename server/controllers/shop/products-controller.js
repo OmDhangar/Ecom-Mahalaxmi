@@ -78,45 +78,22 @@ const getFilteredProducts = async (req, res) => {
 
 const getFeaturedProducts = async (req, res) => {
   try {
-    const cacheKey = 'featured-products-listing';
-    
-    // Check short-term cache for featured products (15 minutes)
-    const strategy = stockAwareCacheService.getCachingStrategy('featured-products');
-    console.log(`Featured products cache strategy: ${strategy.description} (${strategy.ttl/60}min)`);
-    
-    // For featured products, we can use slightly longer cache (15 min) but still with stock indicators
-    const cachedListing = stockAwareCacheService.getProductListing(cacheKey);
-    if (cachedListing && !stockAwareCacheService.isListingCacheStale(cacheKey)) {
-      console.log(`Stock-aware cache HIT: Featured products`);
-      return res.status(200).json({
-        success: true,
-        data: cachedListing,
-        cached: true,
-        cacheType: 'featured-with-stock-indicators'
-      });
-    }
-    
-    // Fetch fresh data with current stock information
-    const featuredProducts = await Product.find({ isFeatured: true, isActive: true });
-    console.log(`Fetched ${featuredProducts.length} featured products with live stock data`);
-    
-    const responseData = {
-      success: true,
-      data: featuredProducts,
-      cached: false,
-      cacheType: 'fresh-featured-with-live-stock'
-    };
-    
-    // Cache the listing with stock indicators
-    stockAwareCacheService.getProductListing(cacheKey, featuredProducts);
-    console.log(`Stock-aware cache SET: Featured products (15min TTL)`);
+    // Direct database query without caching
+    const featuredProducts = await Product.find({ isFeatured: true })
+      .select('name price images description featuredDescription brand category isFeatured stock')
+      .sort({ updatedAt: -1 });
 
-    res.status(200).json(responseData);
+    res.status(200).json({
+      success: true,
+      message: "Featured products fetched successfully",
+      data: featuredProducts
+    });
   } catch (error) {
-    console.error("Error fetching featured products:", error);
+    console.error('Error fetching featured products:', error);
     res.status(500).json({
       success: false,
-      message: "Server Error: Unable to fetch featured products",
+      message: "Failed to fetch featured products",
+      error: error.message
     });
   }
 };
@@ -170,36 +147,51 @@ const getProductDetails = async (req, res) => {
 };
 
 const updateAsFeatured = async (req, res) => {
-  //this controller is not getting hit fix it 
   if (!req.body || !req.params.id) {
     return res.status(400).json({ success: false, message: "Invalid request" });
   }
   const { isFeatured, featuredDescription } = req.body;
   const productId = req.params.id;
-  console.log("controller hit",isFeatured,featuredDescription);
+  console.log("updateAsFeatured controller hit - ProductID:", productId, "isFeatured:", isFeatured, "Description:", featuredDescription);
 
   try {
     const updated = await Product.findByIdAndUpdate(
       productId,
       {
         isFeatured,
-        featuredDescription,
+        featuredDescription: featuredDescription || undefined,
+        updatedAt: new Date() // Update timestamp
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
     
-    // Smart cache invalidation for stock-aware system
-    stockAwareCacheService.invalidateProduct(productId, 'featured-status-update');
-    
-    // If stock might have changed, invalidate stock-related caches
-    if (updated.totalStock !== undefined) {
-      stockAwareCacheService.invalidateOnStockChange(productId, 'stock-update-with-featured');
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
     
-    console.log('Stock-aware caches invalidated after featured status update');
+    // Clear ALL caches related to featured products
+    try {
+      stockAwareCacheService.invalidateProduct(productId, 'admin-featured-status-update');
+      stockAwareCacheService.invalidateOnStockChange(productId, 'admin-featured-update');
+      
+      // Clear any featured product listing caches
+      const featuredCacheKey = 'featured-products-listing';
+      stockAwareCacheService.invalidateProductListing(featuredCacheKey);
+      
+      console.log('✅ All featured product caches cleared after admin update');
+    } catch (cacheError) {
+      console.warn('⚠️ Cache invalidation error (non-critical):', cacheError.message);
+    }
     
-    res.status(200).json({ success: true, data: updated });
+    console.log(`✅ Product ${productId} featured status updated to: ${isFeatured}`);
+    
+    res.status(200).json({ 
+      success: true, 
+      data: updated,
+      message: `Product ${isFeatured ? 'marked as featured' : 'removed from featured'} successfully`
+    });
   } catch (err) {
+    console.error('❌ Error updating featured status:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };

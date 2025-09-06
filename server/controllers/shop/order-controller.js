@@ -8,20 +8,25 @@ const axios = require("axios");
 
 dotenv.config();
 
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  throw new Error('Razorpay credentials are not set in environment variables');
+let razorpay = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+  });
+} else {
+  console.warn('⚠️ Razorpay credentials not found. Razorpay payments will be disabled.');
 }
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
 
 const SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external';
 let shiprocketToken = null;
 let tokenExpiry = null;
 
 const authenticateShiprocket = async () => {
+  if (!process.env.SHIPROCKET_EMAIL || !process.env.SHIPROCKET_PASSWORD) {
+    throw new Error('Shiprocket credentials not configured');
+  }
+  
   if (shiprocketToken && tokenExpiry && new Date() < tokenExpiry) {
     return shiprocketToken;
   }
@@ -279,6 +284,44 @@ const createOrder = async (req, res) => {
 
     // COD flow: process shipping immediately, no payment required upfront
     if (paymentMethod === "cod") {
+      // Check if Shiprocket is configured
+      if (!process.env.SHIPROCKET_EMAIL || !process.env.SHIPROCKET_PASSWORD) {
+        console.warn('⚠️ Shiprocket not configured. COD order created without shipping integration.');
+        
+        // Clear cart and deduct stock manually for COD orders without Shiprocket
+        if (cartId) await Cart.findByIdAndDelete(cartId);
+        
+        // Deduct stock
+        for (let item of order.cartItems) {
+          let product = await Product.findById(item.productId);
+          if (!product) throw new Error(`Product not found: ${item.productId}`);
+          
+          // Handle size-specific stock deduction for fashion products
+          if (product.category === 'fashion' && item.size) {
+            if (!product.isSizeAvailable(item.size, item.quantity)) {
+              const availableStock = product.getStockForSize(item.size);
+              throw new Error(`Insufficient stock for ${product.title} size ${item.size}. Available: ${availableStock}`);
+            }
+            await product.updateStock(item.quantity, 'subtract', item.size);
+          } else {
+            if (product.totalStock < item.quantity) {
+              throw new Error(`Insufficient stock for ${product.title}. Available: ${product.totalStock}`);
+            }
+            await product.updateStock(item.quantity, 'subtract');
+          }
+        }
+        
+        order.orderStatus = "confirmed";
+        order.shippingStatus = "manual";
+        await order.save();
+        
+        return res.status(201).json({
+          success: true,
+          message: "COD order created successfully. Shipping will be handled manually.",
+          order: order
+        });
+      }
+      
       const result = await processShiprocketForOrder(order, productsWithShipping, cartId);
 
       if (!result.success) {
@@ -297,6 +340,13 @@ const createOrder = async (req, res) => {
     }
 
     // Razorpay flow: create order with amount including shipping
+    if (!razorpay) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay is not configured. Please use COD or contact administrator."
+      });
+    }
+
     const razorpayOrder = await razorpay.orders.create({
       amount: Math.round(totalAmount * 100), // in paise
       currency: "INR",

@@ -7,10 +7,8 @@ const initialState = {
   error: null
 };
 
-// Axios instance (auto-sets token for every request)
-const api = axios.create({
-  baseURL: '/', // same-domain root
-});
+// Create axios instance that works with Vite proxy
+const api = axios.create();
 
 // Add Authorization header for all requests
 api.interceptors.request.use((config) => {

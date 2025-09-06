@@ -11,6 +11,9 @@ const {
 
 const router = express.Router();
 
+router.get("/test", (req, res) => {
+  res.status(200).json({ success: true, message: "Order API is working!" });
+});
 router.post("/create", createOrder);
 router.post("/verify", verifyPayment);
 router.get("/list/:userId", getAllOrdersByUser);

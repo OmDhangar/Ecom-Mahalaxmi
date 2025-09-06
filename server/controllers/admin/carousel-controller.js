@@ -99,8 +99,6 @@ const createCarouselSlide = async (req, res) => {
 
     const savedSlide = await newSlide.save();
     
-    // Invalidate carousel cache after creation
-    cacheService.invalidateRelated('carousel', 'create');
     
     res.status(201).json({ success: true, message: 'Carousel slide created successfully', data: savedSlide });
   } catch (error) {
@@ -128,14 +126,7 @@ const updateCarouselSlide = async (req, res) => {
       });
     }
 
-    // Invalidate both carousel and feature related caches
-    try {
-      cacheService.invalidatePattern('carousel');
-      cacheService.invalidatePattern('feature');
-    } catch (cacheError) {
-      console.warn('Cache invalidation warning:', cacheError);
-      // Continue execution even if cache invalidation fails
-    }
+
 
     res.status(200).json({
       success: true,
@@ -170,8 +161,6 @@ const deleteCarouselSlide = async (req, res) => {
       await remainingSlides[i].save();
     }
     
-    // Invalidate carousel cache after deletion
-    cacheService.invalidateRelated('carousel', 'delete');
 
     res.status(200).json({ success: true, message: 'Carousel slide deleted successfully' });
   } catch (error) {

@@ -7,6 +7,21 @@ module.exports = {
     './app/**/*.{js,jsx}',
     './src/**/*.{js,jsx}',
   ],
+  // Remove unused CSS in production
+  purge: {
+    enabled: process.env.NODE_ENV === 'production',
+    content: [
+      './src/**/*.{js,jsx,ts,tsx}',
+      './public/index.html',
+    ],
+    options: {
+      safelist: {
+        standard: ['html', 'body', 'root'],
+        deep: [/^animate-/, /^transition-/],
+        greedy: [/^bg-gradient-/, /^text-/]
+      }
+    }
+  },
   prefix: "",
   theme: {
     container: {
@@ -17,6 +32,29 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont', 
+          '"Segoe UI"',
+          'Roboto',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+          '"Apple Color Emoji"',
+          '"Segoe UI Emoji"',
+          '"Segoe UI Symbol"'
+        ],
+        mono: [
+          'ui-monospace',
+          'SFMono-Regular',
+          '"SF Mono"',
+          'Consolas',
+          '"Liberation Mono"',
+          'Menlo',
+          'monospace'
+        ]
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

@@ -174,7 +174,7 @@ export const addProductFormElements = [
 ];
 
 export const shoppingViewHeaderMenuItems = [
-  { id: "home", label: "Home", path: "/home" },
+  { id: "home", label: "Home", path: "/" },
   { id: "products", label: "Products", path: "/shop/listing" },
   { id: "electronics", label: "Electronics", path: "/shop/listing?category=electronics" },
   { id: "fashion", label: "Fashion", path: "/shop/listing?category=fashion" },
@@ -199,6 +199,12 @@ export const brandOptionsMap = {
   lg: "LG",
   panasonic: "Panasonic",
   iqoo:"IQOO",
+  oppo:"OPPO",
+  vivo:"VIVO",
+  hp:"HP",
+  dell:"DELL",
+  asus:"ASUS",
+  acer:"ACER",
   xiaomi: "Xiaomi",
   oneplus: "OnePlus",
   nokia: "Nokia",
@@ -238,6 +244,12 @@ export const filterOptions = {
       { id: "lg", label: "LG" },
       {id:"iqoo",label:"IQOO"},
       { id: "panasonic", label: "Panasonic" },
+      {id:"oppo",label:"OPPO"},
+      {id:"vivo",label:"VIVO"},
+      {id:"dell",label:"DELL"},
+      {id:"hp",label:"HP"},
+      {id:"asus",label:"ASUS"},
+      {id:"acer",label:"ACER"},
       { id: "xiaomi", label: "Xiaomi" },
       { id: "oneplus", label: "OnePlus" },
       { id: "nokia", label: "Nokia" },
@@ -245,11 +257,7 @@ export const filterOptions = {
       { id: "google", label: "Google" },
     ],
     toys: [
-      { id: "lego", label: "LEGO" },
-      { id: "nerf", label: "NERF" },
       {id:"Mahalaxmi", label:"Shree Mahalaxmi"},
-      { id: "hasbro", label: "Hasbro" },
-      { id: "barbie", label: "Barbie" },
       { id: "hotwheels", label: "Hot Wheels" },
     ],
      farming: [

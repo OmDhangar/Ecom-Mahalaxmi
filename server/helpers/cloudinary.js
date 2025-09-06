@@ -14,8 +14,11 @@ cloudinary.config({
 const storage = new multer.memoryStorage();
 
 async function imageUploadUtil(file) {
+  // Fastest upload - no transformations, just save to Cloudinary
   const result = await cloudinary.uploader.upload(file, {
     resource_type: "auto",
+    // Remove quality and format transformations for speed
+    // Just upload and save - fastest possible method
   });
 
   return result;

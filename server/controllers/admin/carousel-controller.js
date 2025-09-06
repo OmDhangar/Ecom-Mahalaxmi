@@ -2,6 +2,7 @@ const Carousel = require('../../models/Carousel');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cacheService = require('../../services/cacheService');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -59,10 +60,17 @@ const getAllCarouselSlides = async (req, res) => {
 // Get active slides for frontend
 const getActiveCarouselSlides = async (req, res) => {
   try {
+    console.log('Fetching active carousel slides from database');
+    
     const slides = await Carousel.find({ isActive: true }).sort({ order: 1 });
-    res.status(200).json({ success: true, data: slides });
+    
+    console.log(`Found ${slides.length} active carousel slides in database`);
+    
+    const responseData = { success: true, data: slides };
+    
+    res.status(200).json(responseData);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching carousel slides:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch active carousel slides', error: error.message });
   }
 };
@@ -90,6 +98,10 @@ const createCarouselSlide = async (req, res) => {
     });
 
     const savedSlide = await newSlide.save();
+    
+    // Invalidate carousel cache after creation
+    cacheService.invalidateRelated('carousel', 'create');
+    
     res.status(201).json({ success: true, message: 'Carousel slide created successfully', data: savedSlide });
   } catch (error) {
     console.error(error);
@@ -120,6 +132,10 @@ const updateCarouselSlide = async (req, res) => {
     }
 
     const updatedSlide = await slide.save();
+    
+    // Invalidate carousel cache after update
+    cacheService.invalidateRelated('carousel', 'update');
+    
     res.status(200).json({ success: true, message: 'Carousel slide updated successfully', data: updatedSlide });
   } catch (error) {
     console.error(error);
@@ -143,6 +159,9 @@ const deleteCarouselSlide = async (req, res) => {
       remainingSlides[i].order = i + 1;
       await remainingSlides[i].save();
     }
+    
+    // Invalidate carousel cache after deletion
+    cacheService.invalidateRelated('carousel', 'delete');
 
     res.status(200).json({ success: true, message: 'Carousel slide deleted successfully' });
   } catch (error) {

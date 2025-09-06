@@ -187,7 +187,7 @@ function ShoppingHeader() {
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="flex h-16 items-center justify-between px-2 md:px-6">
         {/* Logo with smaller font size for mobile */}
-        <Link to="/home" className="flex items-center ">
+        <Link to="/" className="flex items-center ">
           <img src="/fav.png" className="h-10 w-14" alt="" />
           <span className="font-bold text-sm sm:text-base md:text-lg">Shri MahaLaxmi Mobile</span>
         </Link>

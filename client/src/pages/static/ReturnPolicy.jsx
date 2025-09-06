@@ -5,7 +5,10 @@ export default function ReturnPolicy() {
     <div className="container mx-auto px-4 py-8 text-center">
       <Helmet>
         <title>Return Policy - Shri Mahalaxmi Mobile</title>
-        <meta name="description" content="Our return policy for mobile phones and accessories. Learn about our warranty, returns, and refund process." />
+        <meta
+          name="description"
+          content="Our return policy for mobile phones and accessories. Learn about our warranty, returns, and refund process."
+        />
       </Helmet>
 
       <h1 className="text-3xl font-bold mb-6">Return Policy</h1>
@@ -38,6 +41,17 @@ export default function ReturnPolicy() {
             <li>Personalized/custom items</li>
             <li>Personal accessories (earphones, cases)</li>
           </ul>
+        </section>
+
+        {/* New Refund Timelines Section */}
+        <section className="mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Refund Timelines</h2>
+          <p className="text-left inline-block">
+            Once a return is approved, refunds will be initiated within{" "}
+            <strong>3 business days</strong>. The amount may take up to{" "}
+            <strong>7–10 business days</strong> to reflect in your account,
+            depending on your bank or payment provider.
+          </p>
         </section>
       </div>
     </div>

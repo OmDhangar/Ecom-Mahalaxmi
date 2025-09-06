@@ -21,12 +21,15 @@ import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/components/ui/use-toast";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getFeatureImages } from "@/store/common-slice";
+import imageOptimizationService from '@/services/imageOptimizationService';
 
 // Custom components
 import SocialUpdates from "@/components/ui/SocialUpdates";
 import CustomerTestimonials from "@/components/ui/CustomerTestimonials";
 import OfferCarousel from "@/components/ui/OfferCarousel";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { Helmet } from "react-helmet";
+import { useBackNavigation, useBrowserBackButton } from "@/hooks/useBackNavigation";
 
 // i18n
 import { useTranslation } from "react-i18next";
@@ -49,6 +52,12 @@ function ShoppingHome() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Initialize back navigation for home page
+  const { clearNavigationHistory } = useBackNavigation('/');
+  
+  // Handle browser/phone back button for home page
+  useBrowserBackButton('/');
 
   function handleNavigateToListingPage(getCurrentItem, section) {
     sessionStorage.removeItem("filters");
@@ -56,7 +65,7 @@ function ShoppingHome() {
       [section]: [getCurrentItem.id],
     };
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
-    navigate(`/shop/listing`);
+    navigate(`/listing`);
   }
 
   function handleGetProductDetails(getCurrentProductId) {
@@ -126,6 +135,16 @@ function ShoppingHome() {
   useEffect(() => {
     dispatch(getFeatureImages());
   }, [dispatch]);
+
+  useEffect(() => {
+    // Preload critical images
+    imageOptimizationService.preloadCriticalImages([
+      // Add your hero/carousel first slide
+      featureImageList[0]?.image,
+      // Add first 4 product images
+      ...featuredList.slice(0, 4).map(p => p.image)
+    ]);
+  }, [featureImageList, featuredList]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -208,10 +227,16 @@ function ShoppingHome() {
           </div>
 
           <div className="hidden lg:flex mt-8 lg:mt-0 justify-center">
-            <img
-              src="/Iphone.png"
-              alt="Latest Mobiles"
-              className="w-64 xl:w-80 rounded-xl shadow-lg"
+            <OptimizedImage
+              src="Iphone.png"
+              alt="Latest Mobiles - Shri Mahalaxmi Mobile premium smartphones"
+              className="w-64 h-88 xl:w-80 rounded-xl shadow-lg"
+              width={320}
+              height={400}
+              priority={true}
+              context="hero"
+              quality="high"
+              sizes="(min-width: 1280px) 320px, 256px"
             />
           </div>
         </div>
@@ -318,10 +343,16 @@ function ShoppingHome() {
                     
                     {/* Square Image Container */}
                     <div className="relative w-full aspect-square overflow-hidden rounded-t-lg bg-gray-100">
-                      <img
+                      <OptimizedImage
                         src={productItem?.image}
-                        alt={productItem?.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        alt={`${productItem?.title} - Buy online at Shri Mahalaxmi Mobile`}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+                        width={208}
+                        height={208}
+                        loading="lazy"
+                        context="card"
+                        quality="medium"
+                        sizes="(max-width: 640px) 144px, (max-width: 1024px) 176px, 208px"
                         onClick={() => handleGetProductDetails(productItem?._id)}
                       />
                       {productItem?.salePrice && (
@@ -389,7 +420,7 @@ function ShoppingHome() {
       </section>
 
       {/* SOCIAL UPDATES */}
-      <section className="py-8 lg:py-12 bg-gradient-to-br from-blue-50 to-cyan-50">
+      <section className="py-8 lg:py-4 bg-gradient-to-br from-blue-50 to-cyan-50">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">
             Trusted by 240k+ Instagram Followers

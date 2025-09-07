@@ -44,6 +44,7 @@ export const fetchFeaturedProducts = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get("/api/shop/products/featured");
+
       return res.data.data;
     } catch (err) {
       return rejectWithValue(

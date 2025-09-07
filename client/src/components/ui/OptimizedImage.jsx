@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useInView } from "react-intersection-observer";
+import imageOptimizationService from '@/services/imageOptimizationService';
 
 const OptimizedImage = ({
   src,
@@ -16,22 +17,36 @@ const OptimizedImage = ({
   onClick
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [optimizedSrc, setOptimizedSrc] = useState("");
   const { ref, inView } = useInView({
     triggerOnce: true,
     rootMargin: '50px 0px',
     skip: priority // Skip intersection observer if priority is true
   });
 
-  const getOptimizedSrc = () => {
-    if (!src) return "";
+  useEffect(() => {
+    if (!src) return;
+    
+    // For featured products, try to get cached version
+    if (context === 'featured') {
+      const cached = imageOptimizationService.getOptimizedImageUrl(src, 'featured');
+      setOptimizedSrc(cached);
+    } else {
+      // For other images, use the original source
+      setOptimizedSrc(getOptimizedSrc(src));
+    }
+  }, [src, context]);
+
+  const getOptimizedSrc = (url) => {
+    if (!url) return "";
     
     // Handle full URLs (e.g., Cloudinary)
-    if (src.startsWith("http")) {
-      return src;
+    if (url.startsWith("http")) {
+      return url;
     }
     
     // Handle local images from public folder
-    return `/${src}`;
+    return `/${url}`;
   };
 
   return (
@@ -45,7 +60,7 @@ const OptimizedImage = ({
     >
       {(priority || inView) && (
         <img
-          src={getOptimizedSrc()}
+          src={optimizedSrc || getOptimizedSrc(src)}
           alt={alt}
           width={width}
           height={height}

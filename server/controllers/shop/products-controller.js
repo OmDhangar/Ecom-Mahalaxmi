@@ -12,7 +12,6 @@ const getFilteredProducts = async (req, res) => {
     // Check short-term listing cache (5 minutes, stock indicators only)
     const cachedListing = stockAwareCacheService.getProductListing(cacheKey);
     if (cachedListing && !stockAwareCacheService.isListingCacheStale(cacheKey)) {
-      console.log(`Stock-aware cache HIT: Product listing - ${cacheKey}`);
       return res.status(200).json({
         success: true,
         data: cachedListing,
@@ -53,7 +52,6 @@ const getFilteredProducts = async (req, res) => {
 
     const products = await Product.find(filters).sort(sort);
     
-    console.log(`Fetched ${products.length} products from DB with current stock data`);
     
     const responseData = {
       success: true,
@@ -64,11 +62,9 @@ const getFilteredProducts = async (req, res) => {
     
     // Cache the listing data (with stock indicators only, short TTL)
     stockAwareCacheService.getProductListing(cacheKey, products);
-    console.log(`Stock-aware cache SET: Product listing - ${cacheKey} (5min TTL)`);
 
     res.status(200).json(responseData);
   } catch (e) {
-    console.log(e);
     res.status(500).json({
       success: false,
       message: "Some error occured",
@@ -78,15 +74,35 @@ const getFilteredProducts = async (req, res) => {
 
 const getFeaturedProducts = async (req, res) => {
   try {
-    // Direct database query without caching
     const featuredProducts = await Product.find({ isFeatured: true })
-      .select('name price images description featuredDescription brand category isFeatured stock')
-      .sort({ updatedAt: -1 });
+      .select('title price image description brand category isFeatured totalStock featuredDescription reviews')
+      .populate('reviews')
+      .lean();
+
+    // Calculate average rating for each product
+    const productsWithRatings = featuredProducts.map(product => {
+      const avgRating = product.reviews?.length > 0
+        ? (product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length).toFixed(1)
+        : 0;
+
+      return {
+        ...product,
+        avgRating: Number(avgRating),
+        reviewCount: product.reviews?.length || 0,
+        // Ensure main image is always available
+        mainImage: product.image || '',
+        // Format price if needed
+        formattedPrice: new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR'
+        }).format(product.price)
+      };
+    });
 
     res.status(200).json({
       success: true,
       message: "Featured products fetched successfully",
-      data: featuredProducts
+      data: productsWithRatings
     });
   } catch (error) {
     console.error('Error fetching featured products:', error);
@@ -97,7 +113,6 @@ const getFeaturedProducts = async (req, res) => {
     });
   }
 };
-
 const getProductDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -106,7 +121,6 @@ const getProductDetails = async (req, res) => {
     // We can only cache static data separately
     stockAwareCacheService.trackStockRequest();
     
-    console.log(`Fetching product details for ${id} with LIVE STOCK DATA (never cached)`);
     
     const product = await Product.findById(id);
 
@@ -134,11 +148,10 @@ const getProductDetails = async (req, res) => {
       stockFreshness: 'live-from-database'
     };
     
-    console.log(`Product details: Static data cached, dynamic data fresh from DB`);
+
 
     res.status(200).json(responseData);
   } catch (e) {
-    console.log(e);
     res.status(500).json({
       success: false,
       message: "Some error occured",
@@ -152,7 +165,6 @@ const updateAsFeatured = async (req, res) => {
   }
   const { isFeatured, featuredDescription } = req.body;
   const productId = req.params.id;
-  console.log("updateAsFeatured controller hit - ProductID:", productId, "isFeatured:", isFeatured, "Description:", featuredDescription);
 
   try {
     const updated = await Product.findByIdAndUpdate(
@@ -178,12 +190,10 @@ const updateAsFeatured = async (req, res) => {
       const featuredCacheKey = 'featured-products-listing';
       stockAwareCacheService.invalidateProductListing(featuredCacheKey);
       
-      console.log('✅ All featured product caches cleared after admin update');
     } catch (cacheError) {
       console.warn('⚠️ Cache invalidation error (non-critical):', cacheError.message);
     }
     
-    console.log(`✅ Product ${productId} featured status updated to: ${isFeatured}`);
     
     res.status(200).json({ 
       success: true, 

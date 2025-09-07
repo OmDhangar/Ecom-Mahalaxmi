@@ -12,6 +12,7 @@ import ShoppingLayout from "./components/shopping-view/layout";
 import CheckAuth from "./components/common/check-auth";
 import ScrollToTop from "./components/common/scrollToTop";
 import NavigationHandler from "./components/common/NavigationHandler";
+import imageOptimizationService from "./services/imageOptimizationService";
 
 // Lazy loaded components for better performance
 const AuthLogin = lazy(() => import("./pages/auth/login"));
@@ -206,6 +207,13 @@ function App() {
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
+
+  // Set user role in image optimization service for caching decisions
+  useEffect(() => {
+    if (user && user.role) {
+      imageOptimizationService.setUserRole(user.role);
+    }
+  }, [user]);
 
   if (isLoading) return <Skeleton className="w-[800] bg-black h-[600px]" />;
 

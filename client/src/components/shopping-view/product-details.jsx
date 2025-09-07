@@ -27,7 +27,6 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [similarProducts, setSimilarProducts] = useState([]);
   
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);

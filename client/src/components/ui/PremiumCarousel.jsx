@@ -32,7 +32,7 @@ const PremiumCarousel = ({ products }) => {
             src={product.image}
             alt={product.title}
             priority={index === 0} // Only prioritize first slide
-            width={1200}
+            width={120}
             height={600}
             quality={index === currentSlide ? 'high' : 'low'}
             className="w-full h-[60vh] object-cover"

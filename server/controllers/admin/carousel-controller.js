@@ -2,7 +2,6 @@ const Carousel = require('../../models/Carousel');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cacheService = require('../../services/cacheService');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -60,11 +59,9 @@ const getAllCarouselSlides = async (req, res) => {
 // Get active slides for frontend
 const getActiveCarouselSlides = async (req, res) => {
   try {
-    console.log('Fetching active carousel slides from database');
     
     const slides = await Carousel.find({ isActive: true }).sort({ order: 1 });
     
-    console.log(`Found ${slides.length} active carousel slides in database`);
     
     const responseData = { success: true, data: slides };
     
@@ -161,6 +158,8 @@ const deleteCarouselSlide = async (req, res) => {
       await remainingSlides[i].save();
     }
     
+    // Remove any cache invalidation calls
+    // if (cacheService) cacheService.invalidateRelated('carousel');
 
     res.status(200).json({ success: true, message: 'Carousel slide deleted successfully' });
   } catch (error) {

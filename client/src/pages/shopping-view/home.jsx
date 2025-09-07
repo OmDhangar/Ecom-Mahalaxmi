@@ -141,8 +141,8 @@ function ShoppingHome() {
     imageOptimizationService.preloadCriticalImages([
       // Add your hero/carousel first slide
       featureImageList[0]?.image,
-      // Add first 4 product images
-      ...featuredList.slice(0, 4).map(p => p.image)
+      // Add first 4 product images (using mainImage from backend response)
+      ...featuredList.slice(0, 4).map(p => p.mainImage).filter(Boolean)
     ]);
   }, [featureImageList, featuredList]);
 
@@ -344,13 +344,13 @@ function ShoppingHome() {
                     {/* Square Image Container */}
                     <div className="relative w-full aspect-square overflow-hidden rounded-t-lg bg-gray-100">
                       <OptimizedImage
-                        src={productItem?.image}
+                        src={productItem?.mainImage || ''}
                         alt={`${productItem?.title} - Buy online at Shri Mahalaxmi Mobile`}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
                         width={208}
                         height={208}
                         loading="lazy"
-                        context="card"
+                        context="featured" 
                         quality="medium"
                         sizes="(max-width: 640px) 144px, (max-width: 1024px) 176px, 208px"
                         onClick={() => handleGetProductDetails(productItem?._id)}

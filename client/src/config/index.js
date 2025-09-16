@@ -60,6 +60,20 @@ export const clothingSizeOptions = [
 ];
 
 
+// Add color options for toys
+export const toyColorOptions = [
+  { id: "red", label: "Red" },
+  { id: "blue", label: "Blue" },
+  { id: "green", label: "Green" },
+  { id: "yellow", label: "Yellow" },
+  { id: "pink", label: "Pink" },
+  { id: "purple", label: "Purple" },
+  { id: "orange", label: "Orange" },
+  { id: "black", label: "Black" },
+  { id: "white", label: "White" },
+  { id: "multicolor", label: "Multicolor" }
+];
+
 export const addProductFormElements = [
   {
     label: "Title",
@@ -133,13 +147,22 @@ export const addProductFormElements = [
     type: "number",
     placeholder: "Enter sale price (optional)",
   },
+  // Update the color field for toys to include stock
+  {
+    label: "Colors with Stock",
+    name: "colors",
+    componentType: "toycolors",
+    options: toyColorOptions,
+    showWhen: (formData) => formData.category === "toys"
+  },
+
   {
     label: "Total Stock",
     name: "totalStock",
     componentType: "input",
     type: "number",
     placeholder: "Enter total stock",
-    showWhen: (formData) => formData.category !== "fashion"
+    showWhen: (formData) => formData.category !== "fashion" && formData.category !== "toys"
   },
   {
     name: "weight",
@@ -169,8 +192,6 @@ export const addProductFormElements = [
     placeholder: "e.g., 5",
     min: 1,
   },
-
-
 ];
 
 export const shoppingViewHeaderMenuItems = [

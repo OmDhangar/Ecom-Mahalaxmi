@@ -9,21 +9,34 @@ const initialState = {
 // Add to Cart with optional size
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
-  async ({ userId, productId, quantity, size }) => {
+  async ({ userId, productId, quantity, size, color }) => {
     if (!userId) {
       return rejectWithValue({
         success: false,
         message: "Authentication required"
       });
     }
+    
+    // Build request body conditionally
+    const requestBody = {
+      userId,
+      productId,
+      quantity,
+    };
+    
+    // Only add size if it's provided
+    if (size) {
+      requestBody.size = size;
+    }
+    
+    // Only add color if it's provided
+    if (color) {
+      requestBody.color = color;
+    }
+    
     const response = await axios.post(
       "/api/shop/cart/add",
-      {
-        userId,
-        productId,
-        quantity,
-        size, // include size for fashion products
-      }
+      requestBody
     );
 
     return response.data;
@@ -45,10 +58,14 @@ export const fetchCartItems = createAsyncThunk(
 // Delete Cart Item
 export const deleteCartItem = createAsyncThunk(
   "cart/deleteCartItem",
-  async ({ userId, productId, size }) => {
-    // Send size as query param for fashion products
-    const url = size
-      ? `/api/shop/cart/${userId}/${productId}?size=${size}`
+  async ({ userId, productId, size, color }) => {
+    // Build query params for size and color
+    const params = new URLSearchParams();
+    if (size) params.append('size', size);
+    if (color) params.append('color', color);
+    
+    const url = params.toString() 
+      ? `/api/shop/cart/${userId}/${productId}?${params.toString()}`
       : `/api/shop/cart/${userId}/${productId}`;
 
     const response = await axios.delete(url);
@@ -69,15 +86,27 @@ export const clearUserCart = createAsyncThunk(
 // Update Cart Quantity (with optional size)
 export const updateCartQuantity = createAsyncThunk(
   "cart/updateCartQuantity",
-  async ({ userId, productId, quantity, size }) => {
+  async ({ userId, productId, quantity, size, color }) => {
+    // Build request body conditionally
+    const requestBody = {
+      userId,
+      productId,
+      quantity,
+    };
+    
+    // Only add size if it's provided
+    if (size) {
+      requestBody.size = size;
+    }
+    
+    // Only add color if it's provided
+    if (color) {
+      requestBody.color = color;
+    }
+    
     const response = await axios.put(
       "/api/shop/cart/update-cart",
-      {
-        userId,
-        productId,
-        quantity,
-        size, // include size for fashion products
-      }
+      requestBody
     );
 
     return response.data;

@@ -76,28 +76,13 @@ function ShoppingHome() {
     if (
       currentProduct &&
       currentProduct.category === "fashion" &&
-      currentProduct.sizes && 
+      currentProduct.sizes &&
       currentProduct.sizes.length > 0
     ) {
       toast({
         title: "Size Selection Required",
         description:
           "Please select a size for fashion items from the product details page.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (
-      currentProduct &&
-      currentProduct.category === "toys" &&
-      currentProduct.colors && 
-      currentProduct.colors.length > 0
-    ) {
-      toast({
-        title: "Color Selection Required",
-        description:
-          "Please select a color for toy items from the product details page.",
         variant: "destructive",
       });
       return;

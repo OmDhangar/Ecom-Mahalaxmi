@@ -10,7 +10,6 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import ToyColors from "../admin-view/toy-colors";
 
 function CommonForm({
   formControls,
@@ -234,19 +233,6 @@ function CommonForm({
               </div>
             )}
           </div>
-        );
-        break;
-      case "toycolors":
-        element = (
-          <ToyColors
-            value={value || []}
-            onChange={(newColors) =>
-              setFormData({
-                ...formData,
-                [getControlItem.name]: newColors,
-              })
-            }
-          />
         );
         break;
 

@@ -35,6 +35,7 @@ const initialFormData = {
   batteryHealth: "",
   condition: "",
   sizes: [], // Will be array of objects like [{size: "S", stock: 10}] for fashion products
+  colors: [], // Array of objects like [{color: "red", stock: 10}] for toys
   weight: "",
   length: "",
   breadth: "",
@@ -82,7 +83,6 @@ function onSubmit(event) {
   // Check images only when adding new product
   if (currentEditedId === null) {
     if (!uploadedImageUrl) missingFields.push("Main Image");
-    if (uploadedImageUrls.length === 0) missingFields.push("Additional Images");
   }
 
   // Base required fields for all products
@@ -99,8 +99,8 @@ function onSubmit(event) {
     "height",
   ];
   
-  // Add totalStock requirement only for non-fashion products
-  if (formData.category !== 'fashion') {
+  // Add totalStock requirement only for non-fashion and non-toy products
+  if (formData.category !== 'fashion' && formData.category !== 'toys') {
     baseRequiredFields.push("totalStock");
   }
 
@@ -108,11 +108,10 @@ function onSubmit(event) {
   const categoryRequiredFieldsMap = {
     electronics: ["batteryHealth", "condition"],
     fashion: ["sizes"],
-    // add more categories as needed
-    // e.g. "books": ["author", "isbn"],
+    toys: ["colors"], // Update to use colors array instead of single color
   };
 
-  // Get current category
+  // get current category
   const category = formData.category;
 
   // Gather required fields: base + category-specific (if any)
@@ -150,18 +149,19 @@ function onSubmit(event) {
     .filter((item, index, self) => self.indexOf(item) === index) // remove duplicates
     .slice(0, MAX_IMAGES);
 
-  // Calculate totalStock for fashion products based on sizes
+  // Calculate totalStock based on category
   let calculatedTotalStock = Number(formData.totalStock);
-  if (formData.category === 'fashion' && Array.isArray(formData.sizes) && formData.sizes.length > 0) {
+  if (formData.category === 'fashion' && Array.isArray(formData.sizes)) {
     calculatedTotalStock = formData.sizes.reduce((total, sizeObj) => total + (sizeObj.stock || 0), 0);
+  } else if (formData.category === 'toys' && Array.isArray(formData.colors)) {
+    calculatedTotalStock = formData.colors.reduce((total, colorObj) => total + (colorObj.stock || 0), 0);
   }
 
   const preparedFormData = {
     ...formData,
-    image:
-      uploadedImageUrl && uploadedImageUrl.trim() !== ""
-        ? uploadedImageUrl
-        : formData.image,
+    image: uploadedImageUrl && uploadedImageUrl.trim() !== ""
+      ? uploadedImageUrl
+      : formData.image,
     additionalImages: mergedAdditionalImages,
     price: Number(formData.price),
     salePrice: Number(formData.salePrice),
@@ -229,6 +229,29 @@ function onSubmit(event) {
   useEffect(() => {
     dispatch(fetchAllProducts());
   }, [dispatch]);
+
+  function handleAddColor() {
+    setFormData((prev) => ({
+      ...prev,
+      colors: [...prev.colors, { color: "", stock: 0 }],
+    }));
+  }
+
+  function handleRemoveColor(index) {
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((_, i) => i !== index),
+    }));
+  }
+
+  function handleColorChange(index, field, value) {
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.map((colorItem, i) =>
+        i === index ? { ...colorItem, [field]: value } : colorItem
+      ),
+    }));
+  }
 
   return (
     <Fragment>
@@ -305,6 +328,47 @@ function onSubmit(event) {
               buttonText={currentEditedId !== null ? "Edit" : "Add"}
               formControls={getDynamicFormControls()}
             />
+            {formData.category === "toys" && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold">Colors</h3>
+                {formData.colors.map((colorItem, index) => (
+                  <div key={index} className="flex items-center gap-4 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Color"
+                      value={colorItem.color}
+                      onChange={(e) =>
+                        handleColorChange(index, "color", e.target.value)
+                      }
+                      className="border p-2 rounded w-1/2"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Stock"
+                      value={colorItem.stock}
+                      onChange={(e) =>
+                        handleColorChange(index, "stock", e.target.value)
+                      }
+                      className="border p-2 rounded w-1/2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveColor(index)}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleAddColor}
+                  className="mt-2 text-blue-500"
+                >
+                  Add Color
+                </button>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>

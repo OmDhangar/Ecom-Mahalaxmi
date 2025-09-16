@@ -178,6 +178,7 @@ function ShoppingCheckout() {
         price: item.salePrice > 0 ? item.salePrice : item.price,
         quantity: item.quantity,
         size: item.size || null,
+        color: item.color || null,
       })),
       addressInfo: {
         name: currentSelectedAddress?.name || user?.name,

@@ -3,7 +3,7 @@ const Product = require("../../models/Product");
 
 const addToCart = async (req, res) => {
   try {
-    const { userId, productId, quantity, size } = req.body;
+    const { userId, productId, quantity, size, color } = req.body;
 
     if (!userId || !productId || quantity <= 0) {
       return res.status(400).json({
@@ -19,6 +19,25 @@ const addToCart = async (req, res) => {
         success: false,
         message: "Product not found",
       });
+    }
+
+    // Validate color for toy products
+    if (product.category === 'toys') {
+      if (!color) {
+        return res.status(400).json({
+          success: false,
+          message: "Color is required for toy products",
+        });
+      }
+      
+      // Validate stock for the selected color
+      const colorStock = product.colors.find((c) => c.color === color);
+      if (!colorStock || colorStock.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for color ${color}. Available: ${colorStock ? colorStock.stock : 0}`,
+        });
+      }
     }
 
     // Validate size for fashion products
@@ -38,8 +57,10 @@ const addToCart = async (req, res) => {
           message: `Insufficient stock for size ${size}. Available: ${availableStock}`,
         });
       }
-    } else {
-      // For non-fashion products, check total stock
+    }
+    
+    // For non-fashion products (including toys and others), check total stock if not handled above
+    if (product.category !== 'fashion' && product.category !== 'toys') {
       if (product.totalStock < quantity) {
         return res.status(400).json({
           success: false,
@@ -54,11 +75,12 @@ const addToCart = async (req, res) => {
       cart = new Cart({ userId, items: [] });
     }
 
-    // For fashion products, find item by both productId and size
-    // For other products, find by productId only
+    // Find cart item based on product category
     const findCurrentProductIndex = cart.items.findIndex((item) => {
       if (product.category === 'fashion') {
         return item.productId.toString() === productId && item.size === size;
+      } else if (product.category === 'toys') {
+        return item.productId.toString() === productId && item.color === color;
       } else {
         return item.productId.toString() === productId;
       }
@@ -67,8 +89,11 @@ const addToCart = async (req, res) => {
     if (findCurrentProductIndex === -1) {
       // Add new item
       const newItem = { productId, quantity };
-      if (product.category === 'fashion') {
+      if (product.category === 'fashion' && size) {
         newItem.size = size;
+      }
+      if (product.category === 'toys' && color) {
+        newItem.color = color;
       }
       cart.items.push(newItem);
     } else {
@@ -84,7 +109,8 @@ const addToCart = async (req, res) => {
             message: `Cannot add ${quantity} more. Maximum available for size ${size}: ${availableStock}`,
           });
         }
-      } else {
+      } else if (product.category !== 'toys') {
+        // For non-fashion, non-toy products
         if (product.totalStock < newQuantity) {
           return res.status(400).json({
             success: false,
@@ -92,7 +118,17 @@ const addToCart = async (req, res) => {
           });
         }
       }
-      
+      // Check color stock for toys
+      if (product.category === 'toys' && color) {
+        const colorStock = product.colors.find((c) => c.color === color);
+        if (!colorStock || colorStock.stock < newQuantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Cannot add ${quantity} more. Maximum available for color ${color}: ${colorStock ? colorStock.stock : 0}`,
+          });
+        }
+      }
+
       cart.items[findCurrentProductIndex].quantity = newQuantity;
     }
 
@@ -155,6 +191,7 @@ const fetchCartItems = async (req, res) => {
       salePrice: item.productId.salePrice,
       quantity: item.quantity,
       size: item.size || null, // Include size for fashion products
+      color: item.color || null, // Include color for toy products
     }));
 
     res.status(200).json({
@@ -175,7 +212,7 @@ const fetchCartItems = async (req, res) => {
 
 const updateCartItemQty = async (req, res) => {
   try {
-    const { userId, productId, quantity, size } = req.body;
+    const { userId, productId, quantity, size, color } = req.body;
 
     if (!userId || !productId || quantity <= 0) {
       return res.status(400).json({
@@ -202,9 +239,12 @@ const updateCartItemQty = async (req, res) => {
     }
 
     // Find cart item by productId and size (for fashion products)
+    // Find cart item by productId and size/color
     const findCurrentProductIndex = cart.items.findIndex((item) => {
       if (product.category === 'fashion') {
         return item.productId.toString() === productId && item.size === size;
+      } else if (product.category === 'toys') {
+        return item.productId.toString() === productId && item.color === color;
       } else {
         return item.productId.toString() === productId;
       }
@@ -233,7 +273,24 @@ const updateCartItemQty = async (req, res) => {
           message: `Insufficient stock for size ${size}. Available: ${availableStock}`,
         });
       }
+    } else if (product.category === 'toys') {
+      // For toy products, validate color stock
+      if (!color) {
+        return res.status(400).json({
+          success: false,
+          message: "Color is required for toy products",
+        });
+      }
+      
+      const colorStock = product.colors?.find((c) => c.color === color);
+      if (!colorStock || colorStock.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for color ${color}. Available: ${colorStock ? colorStock.stock : 0}`,
+        });
+      }
     } else {
+      // For other products, check total stock
       if (product.totalStock < quantity) {
         return res.status(400).json({
           success: false,
@@ -250,6 +307,7 @@ const updateCartItemQty = async (req, res) => {
       select: "image title price salePrice",
     });
 
+    // Update the cart item mapping
     const populateCartItems = cart.items.map((item) => ({
       productId: item.productId ? item.productId._id : null,
       image: item.productId ? item.productId.image : null,
@@ -257,7 +315,8 @@ const updateCartItemQty = async (req, res) => {
       price: item.productId ? item.productId.price : null,
       salePrice: item.productId ? item.productId.salePrice : null,
       quantity: item.quantity,
-      size: item.size || null, // Include size for fashion products
+      size: item.size || null,
+      color: item.color || null, // Add color field
     }));
 
     res.status(200).json({
@@ -304,7 +363,7 @@ const clearCart = async (req, res) => {
 const deleteCartItem = async (req, res) => {
   try {
     const { userId, productId } = req.params;
-    const { size } = req.query; // Get size from query parameters
+    const { size, color } = req.query; // Get size and color from query parameters
     
     if (!userId || !productId) {
       return res.status(400).json({
@@ -325,13 +384,16 @@ const deleteCartItem = async (req, res) => {
       });
     }
 
-    // Filter out the specific item based on productId and size (for fashion products)
+    // Filter out the specific item based on productId, size (for fashion), and color (for toys)
     cart.items = cart.items.filter((item) => {
       if (size && item.productId.category === 'fashion') {
         // For fashion products, match both productId and size
         return !(item.productId._id.toString() === productId && item.size === size);
+      } else if (color && item.productId.category === 'toys') {
+        // For toy products, match both productId and color
+        return !(item.productId._id.toString() === productId && item.color === color);
       } else {
-        // For non-fashion products, match only productId
+        // For other products, match only productId
         return item.productId._id.toString() !== productId;
       }
     });
@@ -351,6 +413,7 @@ const deleteCartItem = async (req, res) => {
       salePrice: item.productId ? item.productId.salePrice : null,
       quantity: item.quantity,
       size: item.size || null, // Include size for fashion products
+      color: item.color || null, // Include color for toy products
     }));
 
     res.status(200).json({

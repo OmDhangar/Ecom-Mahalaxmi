@@ -16,14 +16,20 @@ import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
 import { WithAuth } from "@/components/common/with-auth";
 import SEO from "@/components/common/SEO";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
+import { toyColorOptions } from "@/config"; // Add this import
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
+  // Initialize navigate hook at component level
+  const navigate = useNavigate();
+
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
+  // Add selectedColor state
+  const [selectedColor, setSelectedColor] = useState("");
   const [similarProducts, setSimilarProducts] = useState([]);
   
   const dispatch = useDispatch();
@@ -31,102 +37,165 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);
   const { productList } = useSelector((state) => state.shopProducts);
+  const { toast } = useToast();
 
   
   // Combine main image with additional images for the carousel
   const allProductImages = productDetails ? 
     [productDetails.image, ...(productDetails.additionalImages || []).filter((img) => img !== productDetails.image)] : [];
 
-  const { toast } = useToast();
-
   function handleRatingChange(getRating) {
     setRating(getRating);
   }
 
   // Function to handle Buy Now action
-  function handleBuyNow(getCurrentProductId, getTotalStock) {
-    // First add to cart
-    handleAddToCart(getCurrentProductId, getTotalStock);
-    // Then navigate to checkout
-    navigate('/shop/checkout');
-  }
-
-  function handleAddToCart(getCurrentProductId, getTotalStock) {
-    let getCartItems = cartItems?.items || [];
-
-    // For fashion products with size selection, validate size requirements
-    if (productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0) {
-      if (!selectedSize) {
+  const handleBuyNow = async (getCurrentProductId, getTotalStock) => {
+    try {
+      if (productDetails?.category === 'fashion' && !selectedSize) {
         toast({
           title: "Please select a size first",
           variant: "destructive",
         });
         return;
       }
-      
-      // Get size-specific stock
-      const sizeObj = productDetails.sizes.find(s => s.size === selectedSize);
-      const sizeSpecificStock = sizeObj ? sizeObj.stock : 0;
-      
-      if (sizeSpecificStock === 0) {
+
+      if (productDetails?.category === 'toys' && !selectedColor) {
         toast({
-          title: `Size ${selectedSize} is out of stock`,
+          title: "Please select a color first",
           variant: "destructive",
         });
         return;
       }
-      
-      // Check if this specific product+size combination already exists in cart
-      if (getCartItems.length) {
-        const indexOfCurrentItem = getCartItems.findIndex(
-          (item) => item.productId === getCurrentProductId && item.size === selectedSize
-        );
-        if (indexOfCurrentItem > -1) {
-          const getQuantity = getCartItems[indexOfCurrentItem].quantity;
-          if (getQuantity + 1 > sizeSpecificStock) {
-            toast({
-              title: `Only ${sizeSpecificStock} quantity available for size ${selectedSize}`,
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-      }
-    } else {
-      // For non-fashion products, check total stock
-      if (getCartItems.length) {
-        const indexOfCurrentItem = getCartItems.findIndex(
-          (item) => item.productId === getCurrentProductId
-        );
-        if (indexOfCurrentItem > -1) {
-          const getQuantity = getCartItems[indexOfCurrentItem].quantity;
-          if (getQuantity + 1 > getTotalStock) {
-            toast({
-              title: `Only ${getTotalStock} quantity available`,
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-      }
+
+      // First add to cart
+      await handleAddToCart(getCurrentProductId, getTotalStock);
+      // Then navigate to checkout
+      navigate('/shop/checkout');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process purchase",
+        variant: "destructive",
+      });
     }
-    
-    dispatch(
-      addToCart({
-        userId: user?.id,
-        productId: getCurrentProductId,
-        quantity: 1,
-        size: selectedSize, // Include selected size for fashion items
-      })
-    ).then((data) => {
-      if (data?.payload?.success) {
-        dispatch(fetchCartItems(user?.id));
-        toast({
-          title: "Product is added to cart",
-        });
+  };
+
+  // Fix handleAddToCart function
+  const handleAddToCart = async (getCurrentProductId, getTotalStock) => {
+    let getCartItems = cartItems?.items || [];
+
+    try {
+      // Validation for fashion products
+      if (productDetails?.category === 'fashion' && productDetails.sizes?.length > 0) {
+        if (!selectedSize) {
+          toast({
+            title: "Please select a size first",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const sizeObj = productDetails.sizes.find(s => s.size === selectedSize);
+        if (!sizeObj || sizeObj.stock === 0) {
+          toast({
+            title: `Size ${selectedSize} is out of stock`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check cart for size-specific quantity
+        const existingItem = getCartItems.find(
+          item => item.productId === getCurrentProductId && item.size === selectedSize
+        );
+        if (existingItem && existingItem.quantity + 1 > sizeObj.stock) {
+          toast({
+            title: `Only ${sizeObj.stock} items available for size ${selectedSize}`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
-    });
-  }
+
+      // Validation for toys with color selection
+      if (productDetails?.category === 'toys') {
+        if (!selectedColor) {
+          toast({
+            title: "Please select a color first",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Find color stock from product details
+        const colorStock = productDetails.colors?.find(c => c.color === selectedColor)?.stock || 0;
+        
+        if (colorStock === 0) {
+          toast({
+            title: `${selectedColor} is out of stock`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check cart for color-specific quantity
+        const existingColorItem = getCartItems.find(
+          item => item.productId === getCurrentProductId && item.color === selectedColor
+        );
+
+        if (existingColorItem && existingColorItem.quantity + 1 > colorStock) {
+          toast({
+            title: `Only ${colorStock} items available in ${selectedColor}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // General stock validation for non-fashion/non-toy items
+      if (!productDetails?.category?.match(/fashion|toys/)) {
+        const existingItem = getCartItems.find(
+          item => item.productId === getCurrentProductId
+        );
+        if (existingItem && existingItem.quantity + 1 > getTotalStock) {
+          toast({
+            title: `Only ${getTotalStock} items available`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Add to cart
+      const response = await dispatch(
+        addToCart({
+          userId: user?.id,
+          productId: getCurrentProductId,
+          quantity: 1,
+          size: selectedSize,
+          color: selectedColor,
+          stockType: productDetails?.category === 'fashion' ? 'size' : 
+                    productDetails?.category === 'toys' ? 'color' : 'general'
+        })
+      );
+
+      if (response?.payload?.success) {
+        await dispatch(fetchCartItems(user?.id));
+        toast({
+          title: "Product added to cart",
+          variant: "default",
+        });
+      } else {
+        throw new Error(response?.payload?.message || "Failed to add to cart");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add to cart",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Get similar products based on category and brand
   useEffect(() => {
@@ -164,14 +233,15 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     setCurrentImageIndex(index);
   };
 
-  function handleDialogClose() {
+  const handleDialogClose = () => {
     setOpen(false);
-    dispatch(setProductDetails());
+    dispatch(setProductDetails(null));
     setRating(0);
     setReviewMsg("");
     setCurrentImageIndex(0);
     setShowReviewForm(false);
     setSelectedSize("");
+    setSelectedColor("");
   }
 
   function handleAddReview() {
@@ -521,8 +591,8 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                   </div>
                 )}
               </div>
-
-                
+                      
+            
               {/* Add to Cart and Buy Now Buttons */}
               <div className="mb-4 sm:mb-6 sticky bottom-4 sm:static bg-white sm:bg-transparent p-0 sm:p-0 z-10">
                 {productDetails?.totalStock === 0 ? (
@@ -535,17 +605,62 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                       onAction={() => handleAddToCart(productDetails?._id, productDetails?.totalStock)}
                     >
                       {(handleAuthAction) => (
-                        <Button
-                          className="w-full py-3 text-base bg-gradient-to-r from-gray-900 to-gray-700 text-white hover:from-gray-800 hover:to-gray-600 font-semibold shadow-lg sm:shadow-none"
-                          onClick={handleAuthAction}
-                          disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
-                        >
-                          <ShoppingCart className="w-5 h-5 mr-2" />
-                          {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize
-                            ? 'Select Size First'
-                            : 'Add to Cart'
-                          }
-                        </Button>
+                        <>
+                          {/* Toys Color Selection */}
+                          {productDetails?.category === 'toys' && (
+                            <div className="mb-4 p-4 bg-white rounded-lg">
+                              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                Select Color
+                              </h3>
+                              <div className="flex gap-2 flex-wrap">
+                                {productDetails.colors?.map(colorObj => (
+                                  <button
+                                    key={colorObj.color}
+                                    onClick={() => setSelectedColor(selectedColor === colorObj.color ? "" : colorObj.color)}
+                                    disabled={colorObj.stock === 0}
+                                    className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors relative ${
+                                      selectedColor === colorObj.color
+                                        ? 'bg-gray-500 text-white border-gray-500'
+                                        : colorObj.stock === 0
+                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:border-gray-300'
+                                    }`}
+                                  >
+                                    {colorObj.color}
+                                  </button>
+                                ))}
+                              </div>
+                              
+                              {/* Selected color display */}
+                              {selectedColor && (
+                                <div className="mt-2">
+                                  <p className="text-sm text-green-600">
+                                    Selected: {selectedColor} 
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Add to Cart Button */}
+                          <Button
+                            className="w-full py-3 text-base bg-gradient-to-r from-gray-900 to-gray-700 text-white hover:from-gray-800 hover:to-gray-600 font-semibold shadow-lg sm:shadow-none"
+                            onClick={handleAuthAction}
+                            disabled={
+                              (productDetails?.category === 'fashion' && productDetails.sizes?.length > 0 && !selectedSize) ||
+                              (productDetails?.category === 'toys' && !selectedColor)
+                            }
+                          >
+                            <ShoppingCart className="w-5 h-5 mr-2" />
+                            {productDetails?.category === 'fashion' && productDetails.sizes?.length > 0 && !selectedSize
+                              ? 'Select Size First'
+                              : productDetails?.category === 'toys' && !selectedColor
+                              ? 'Select Color First'
+                              : 'Add to Cart'
+                            }
+                          </Button>
+                        </>
                       )}
                     </WithAuth>
                     
@@ -556,10 +671,15 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                         <Button
                           className="w-full py-3 text-base bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 font-semibold shadow-lg sm:shadow-none"
                           onClick={handleAuthAction}
-                          disabled={productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize}
+                          disabled={
+                            (productDetails?.category === 'fashion' && !selectedSize) ||
+                            (productDetails?.category === 'toys' && !selectedColor)
+                          }
                         >
-                          {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && !selectedSize
+                          {productDetails?.category === 'fashion' && !selectedSize
                             ? 'Select Size First'
+                            : productDetails?.category === 'toys' && !selectedColor
+                            ? 'Select Color First'
                             : 'Buy Now'
                           }
                         </Button>
@@ -720,6 +840,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                     </CardContent>
                   </Card>
                 ))}
+                
               </div>
             </div>
           )}

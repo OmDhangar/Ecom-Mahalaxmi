@@ -20,6 +20,7 @@ const OrderSchema = new mongoose.Schema({
       price: String,
       quantity: Number,
       size: String, // Size for fashion products
+      color: String, // Color for toy products
     },
   ],
   addressInfo: {
@@ -49,7 +50,7 @@ const OrderSchema = new mongoose.Schema({
   },
   shippingStatus: {
     type: String,
-    enum: ["not_booked","pending", "booked", "in_transit", "delivered", "failed", "cancelled"],
+    enum: ["not_booked","pending", "pending_manual", "booked", "in_transit", "delivered", "failed", "cancelled"],
     default: "not_booked"
   },
   shippingErrorHistory: [
@@ -118,6 +119,7 @@ const OrderSchema = new mongoose.Schema({
   awbCode: String,
   courierCompanyId: Number,
   courierName: String,
+  shiprocketData: Object, // Store prepared data for manual Shiprocket entry
   
   // ✅ Inline Shiprocket error info
   shippingError: {

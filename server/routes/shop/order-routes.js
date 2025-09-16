@@ -6,7 +6,9 @@ const {
   getOrderDetails,
   verifyPayment,
   trackOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  getShiprocketChannels,
+  getOrderShiprocketData
 } = require("../../controllers/shop/order-controller");
 
 const router = express.Router();
@@ -21,5 +23,7 @@ router.get("/details/:id", getOrderDetails);
 
 router.get('/track/:orderId',trackOrder);
 router.put('/update-status/:orderId',updateOrderStatus);
+router.get('/shiprocket/channels', getShiprocketChannels);
+router.get('/:orderId/shiprocket-data', getOrderShiprocketData);
 
 module.exports = router;

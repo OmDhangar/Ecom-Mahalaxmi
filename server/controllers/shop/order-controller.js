@@ -43,74 +43,145 @@ async function createShiprocketOrder(orderData, products) {
   try {
     const token = await authenticateShiprocket();
 
-    // Calculate total weight and dimensions
-    let totalWeight = 0;
-    let totalLength = 0, totalBreadth = 0, totalHeight = 0;
+    // Get available pickup locations and channel info
+    let pickupLocation = "Primary";
+    let channelId = "";
+    
+    try {
+      const pickupResponse = await axios.get(
+        `${SHIPROCKET_BASE_URL}/settings/company/pickup`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      console.log('Available pickup locations:', pickupResponse.data);
+      
+      // Use the first available pickup location if Primary doesn't exist
+      if (pickupResponse.data && pickupResponse.data.data && pickupResponse.data.data.length > 0) {
+        pickupLocation = pickupResponse.data.data[0].nickname || pickupResponse.data.data[0].pickup_location;
+      }
+    } catch (pickupError) {
+      console.warn('Could not fetch pickup locations, using default:', pickupError.message);
+    }
+    
+    // Try to get channel information
+    try {
+      const channelResponse = await axios.get(
+        `${SHIPROCKET_BASE_URL}/channels`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      console.log('Available channels:', channelResponse.data);
+      
+      // Use the first available channel
+      if (channelResponse.data && channelResponse.data.data && channelResponse.data.data.length > 0) {
+        channelId = channelResponse.data.data[0].id.toString();
+      }
+    } catch (channelError) {
+      console.warn('Could not fetch channels, using default:', channelError.message);
+    }
 
-    // Sum shipping charges from products
-    let shippingChargesTotal = 0;
+    // Validate addressInfo
+    if (!orderData.addressInfo || 
+        !orderData.addressInfo.name || 
+        !orderData.addressInfo.address || 
+        !orderData.addressInfo.city || 
+        !orderData.addressInfo.state || 
+        !orderData.addressInfo.pincode || 
+        !orderData.addressInfo.phone) {
+      throw new Error("Billing address is incomplete. Please provide all required fields: name, address, city, state, pincode, phone.");
+    }
 
-    const orderItems = products.map(product => {
-      totalWeight += (product.weight || 0.5) * product.quantity;
-      totalLength = Math.max(totalLength, product.length || 10);
-      totalBreadth = Math.max(totalBreadth, product.breadth || 10);
-      totalHeight += (product.height || 5) * product.quantity;
+    // Ensure email exists (use a default if not provided)
+    const customerEmail = orderData.addressInfo.email || 'customer@example.com';
 
-      shippingChargesTotal += (product.shippingCharges || 0) * product.quantity;
+    // Validate pincode format (should be string and exactly 6 digits)
+    const pincode = orderData.addressInfo.pincode.toString();
+    if (!/^\d{6}$/.test(pincode)) {
+      throw new Error("Invalid pincode format. Pincode should be 6 digits.");
+    }
 
-      return {
-        name: product.title,
-        sku: product.sku || product._id,
-        units: product.quantity,
-        selling_price: product.price,
-        discount: product.discount || 0,
-        tax: product.tax || 0,
-        hsn: product.hsn || 0
-      };
-    });
+    // Validate phone number (should be 10 digits)
+    const phone = orderData.addressInfo.phone.toString().replace(/\D/g, ''); // Remove non-digits
+    if (phone.length !== 10) {
+      throw new Error("Invalid phone number. Phone should be 10 digits.");
+    }
+
+    console.log("Order Address Info:", orderData.addressInfo);
+    console.log("Validated Customer Email:", customerEmail);
+    console.log("Pincode:", pincode, "Phone:", phone);
+
+    // Determine the channel_id to use (try multiple fallback options)
+    // Common Shiprocket channel IDs: "0", "1", "2", or check your dashboard
+    const fallbackChannelIds = ["2058704", "1", "2", "0"];
+    const finalChannelId = process.env.SHIPROCKET_CHANNEL_ID || 
+                           channelId || 
+                           fallbackChannelIds[0]; // Try the most common one first
+    console.log('Using channel_id:', finalChannelId);
+    console.log('Available channelId from API:', channelId);
 
     const shiprocketOrderData = {
       order_id: orderData._id.toString(),
       order_date: orderData.orderDate.toISOString().split('T')[0],
-      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-      channel_id: "",
+      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || pickupLocation,
+      channel_id: finalChannelId,
       comment: orderData.addressInfo.notes || "Order placed via website",
-      billing_customer_name: orderData.addressInfo.name,
-      billing_last_name: "",
+      
+      // Billing Address (Required)
+      billing_customer_name: orderData.addressInfo.name.split(' ')[0] || orderData.addressInfo.name,
+      billing_last_name: orderData.addressInfo.name.split(' ').slice(1).join(' ') || "",
       billing_address: orderData.addressInfo.address,
-      billing_address_2: "",
+      billing_address_2: "", // Secondary address line
       billing_city: orderData.addressInfo.city,
-      billing_pincode: orderData.addressInfo.pincode,
+      billing_pincode: pincode,
       billing_state: orderData.addressInfo.state,
       billing_country: "India",
-      billing_email: orderData.addressInfo.email || "customer@example.com",
-      billing_phone: orderData.addressInfo.phone,
+      billing_email: customerEmail,
+      billing_phone: phone,
+      
+      // Shipping Address (Same as billing)
       shipping_is_billing: true,
-      shipping_customer_name: "",
-      shipping_last_name: "",
-      shipping_address: "",
+      shipping_customer_name: orderData.addressInfo.name.split(' ')[0] || orderData.addressInfo.name,
+      shipping_last_name: orderData.addressInfo.name.split(' ').slice(1).join(' ') || "",
+      shipping_address: orderData.addressInfo.address,
       shipping_address_2: "",
-      shipping_city: "",
-      shipping_pincode: "",
-      shipping_country: "",
-      shipping_state: "",
-      shipping_email: "",
-      shipping_phone: "",
-      order_items: orderItems,
+      shipping_city: orderData.addressInfo.city,
+      shipping_pincode: pincode,
+      shipping_country: "India",
+      shipping_state: orderData.addressInfo.state,
+      shipping_email: customerEmail,
+      shipping_phone: phone,
+      
+      // Order Items
+      order_items: orderData.cartItems.map(item => ({
+        name: item.title,
+        sku: item.productId || `SKU${item.productId}`,
+        units: item.quantity,
+        selling_price: parseFloat(item.price),
+        discount: 0,
+        tax: 0,
+        hsn: 0
+      })),
+      
+      // Payment and Pricing
       payment_method: orderData.paymentMethod === 'cod' ? 'COD' : 'Prepaid',
-      shipping_charges: shippingChargesTotal,
+      shipping_charges: products.reduce((total, product) => 
+        total + (parseFloat(product.shippingCharges || 0) * product.quantity), 0),
       giftwrap_charges: 0,
       transaction_charges: 0,
       total_discount: orderData.discount || 0,
-      sub_total: orderData.subTotal || orderData.totalAmount,
-      length: totalLength,
-      breadth: totalBreadth,
-      height: totalHeight,
-      weight: totalWeight || 0.5
+      sub_total: parseFloat(orderData.subTotal || orderData.totalAmount),
+      
+      // Package Dimensions and Weight
+      length: products.length > 0 ? Math.max(...products.map(product => product.length || 30)) : 30,
+      breadth: products.length > 0 ? Math.max(...products.map(product => product.breadth || 20)) : 20,
+      height: products.length > 0 ? products.reduce((total, product) => 
+        total + (product.height || 10) * product.quantity, 0) : 10,
+      weight: products.length > 0 ? products.reduce((total, product) => 
+        total + (product.weight || 1) * product.quantity, 0) : 1
     };
 
+    console.log("Shiprocket Order Data:", JSON.stringify(shiprocketOrderData, null, 2));
+
     const response = await axios.post(
-      `${SHIPROCKET_BASE_URL}/orders/create/adhoc`,
+      `${SHIPROCKET_BASE_URL}/orders/create`,
       shiprocketOrderData,
       {
         headers: {
@@ -119,13 +190,30 @@ async function createShiprocketOrder(orderData, products) {
         }
       }
     );
+    
 
     return response.data;
+
   } catch (error) {
     const enhancedError = new Error();
     enhancedError.name = 'ShiprocketError';
-
+    
     if (error.response) {
+      console.error("Shiprocket API Error Response:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers,
+        url: error.config?.url,
+        method: error.config?.method,
+        requestData: JSON.stringify(error.config?.data, null, 2)
+      });
+      
+      // Log specific validation errors
+      if (error.response.data?.errors) {
+        console.error("Shiprocket Validation Errors:", JSON.stringify(error.response.data.errors, null, 2));
+      }
+      
       enhancedError.message = error.response.data?.message || 'Shiprocket API error';
       enhancedError.statusCode = error.response.status;
       enhancedError.details = {
@@ -136,6 +224,7 @@ async function createShiprocketOrder(orderData, products) {
         method: error.config?.method
       };
     } else if (error.request) {
+      console.error("Shiprocket Network Error:", error.request);
       enhancedError.message = 'No response from Shiprocket API';
       enhancedError.details = {
         error: 'Network error',
@@ -143,13 +232,14 @@ async function createShiprocketOrder(orderData, products) {
         code: error.code
       };
     } else {
+      console.error("Shiprocket Setup Error:", error.message);
       enhancedError.message = error.message || 'Unknown Shiprocket error';
       enhancedError.details = {
         error: 'Request setup error',
         originalMessage: error.message
       };
     }
-
+    
     throw enhancedError;
   }
 }
@@ -191,8 +281,16 @@ async function processShiprocketForOrder(order, products, cartId) {
         }
         // Update size-specific stock using the model method
         await product.updateStock(item.quantity, 'subtract', item.size);
+      } else if (product.category === 'toys' && item.color) {
+        // Handle color-specific stock deduction for toy products
+        const colorItem = product.colors.find(c => c.color === item.color);
+        if (!colorItem || colorItem.stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${product.title} color ${item.color}. Available: ${colorItem ? colorItem.stock : 0}`);
+        }
+        // Use the model's updateStock method for color-specific stock
+        await product.updateStock(item.quantity, 'subtract', null, item.color);
       } else {
-        // Handle regular stock deduction for non-fashion products
+        // Handle regular stock deduction for other products
         if (product.totalStock < item.quantity) {
           throw new Error(`Insufficient stock for ${product.title}. Available: ${product.totalStock}`);
         }
@@ -303,6 +401,14 @@ const createOrder = async (req, res) => {
               throw new Error(`Insufficient stock for ${product.title} size ${item.size}. Available: ${availableStock}`);
             }
             await product.updateStock(item.quantity, 'subtract', item.size);
+          } else if (product.category === 'toys' && item.color) {
+            // Handle color-specific stock deduction for toy products
+            const colorItem = product.colors.find(c => c.color === item.color);
+            if (!colorItem || colorItem.stock < item.quantity) {
+              throw new Error(`Insufficient stock for ${product.title} color ${item.color}. Available: ${colorItem ? colorItem.stock : 0}`);
+            }
+            // Use the model's updateStock method for color-specific stock
+            await product.updateStock(item.quantity, 'subtract', null, item.color);
           } else {
             if (product.totalStock < item.quantity) {
               throw new Error(`Insufficient stock for ${product.title}. Available: ${product.totalStock}`);
@@ -457,6 +563,61 @@ const trackOrder = async (req, res) => {
   }
 };
 
+// Get Shiprocket data for manual order entry
+const getOrderShiprocketData = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    
+    if (!order.shiprocketData) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "No Shiprocket data found for this order" 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      orderId: order._id,
+      orderStatus: order.orderStatus,
+      shippingStatus: order.shippingStatus,
+      needsManualShipment: order.needsManualShipment,
+      shiprocketData: order.shiprocketData
+    });
+  } catch (error) {
+    console.error('Error getting Shiprocket data:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Helper function to get Shiprocket channels (for setup purposes)
+const getShiprocketChannels = async (req, res) => {
+  try {
+    const token = await authenticateShiprocket();
+    
+    const channelResponse = await axios.get(
+      `${SHIPROCKET_BASE_URL}/channels`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    
+    res.status(200).json({
+      success: true,
+      channels: channelResponse.data
+    });
+  } catch (error) {
+    console.error('Error fetching Shiprocket channels:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch channels',
+      error: error.message
+    });
+  }
+};
+
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -524,4 +685,6 @@ module.exports = {
   getOrderDetails,
   trackOrder,
   updateOrderStatus,
+  getShiprocketChannels,
+  getOrderShiprocketData,
 };

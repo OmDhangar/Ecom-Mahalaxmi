@@ -282,35 +282,9 @@ sizes: {
     default: Date.now,
   },
   
-  // Replace the simple color field with colors array for toys
-  colors: {
-    type: [{
-      color: {
-        type: String,
-        required: true
-      },
-      stock: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-      }
-    }],
-    validate: {
-      validator: function(v) {
-        if (this.category === 'toys') {
-          return Array.isArray(v) && v.length > 0;
-        }
-        return true;
-      },
-      message: 'At least one color with stock is required for toy products'
-    }
-  },
-
-  // Make additional images optionalñ
+  // Additional images
   additionalImages: [{
     type: String,
-    required: false
   }],
   
   // Discount information
@@ -431,8 +405,7 @@ ProductSchema.pre('save', function(next) {
     const totalRating = this.reviews.reduce((sum, review) => sum + review.rating, 0);
     this.averageReview = totalRating / this.reviews.length;
   }
-  
-  // Category-specific validations
+   // Category-specific validations
   if (this.category === 'electronics') {
     if (!this.batteryHealth || !this.condition) {
       next(new Error('Battery health and condition are required for electronics products'));
@@ -451,19 +424,6 @@ ProductSchema.pre('save', function(next) {
       this.totalStock = this.sizes.reduce((total, sizeObj) => total + (sizeObj.stock || 0), 0);
     }
   }
-
-  if (this.category === 'toys') {
-    if (!Array.isArray(this.colors) || this.colors.length === 0) {
-      next(new Error('Colors are required for toy products'));
-      return;
-    }
-    
-    // Auto-calculate totalStock from color stocks for toy products
-    if (this.colors && this.colors.length > 0) {
-      this.totalStock = this.colors.reduce((total, colorObj) => total + (colorObj.stock || 0), 0);
-    }
-  }
-
   
   next();
 });
@@ -515,7 +475,7 @@ ProductSchema.statics.findOutOfStock = function() {
 };
 
 // Instance method to update stock
-ProductSchema.methods.updateStock = function(quantity, operation = 'set', size = null, color = null) {
+ProductSchema.methods.updateStock = function(quantity, operation = 'set', size = null) {
   if (this.category === 'fashion' && size) {
     // Update size-specific stock for fashion products
     const sizeIndex = this.sizes.findIndex(s => s.size === size);
@@ -538,30 +498,8 @@ ProductSchema.methods.updateStock = function(quantity, operation = 'set', size =
     
     // Recalculate totalStock from all sizes
     this.totalStock = this.sizes.reduce((total, sizeObj) => total + (sizeObj.stock || 0), 0);
-  } else if (this.category === 'toys' && color) {
-    // Update color-specific stock for toy products
-    const colorIndex = this.colors.findIndex(c => c.color === color);
-    if (colorIndex === -1) {
-      throw new Error(`Color ${color} not found for this product`);
-    }
-    
-    switch (operation) {
-      case 'add':
-        this.colors[colorIndex].stock += quantity;
-        break;
-      case 'subtract':
-        this.colors[colorIndex].stock = Math.max(0, this.colors[colorIndex].stock - quantity);
-        break;
-      case 'set':
-      default:
-        this.colors[colorIndex].stock = quantity;
-        break;
-    }
-    
-    // Recalculate totalStock from all colors
-    this.totalStock = this.colors.reduce((total, colorObj) => total + (colorObj.stock || 0), 0);
   } else {
-    // Update totalStock for other products or when no size/color specified
+    // Update totalStock for non-fashion products or when no size specified
     switch (operation) {
       case 'add':
         this.totalStock += quantity;
@@ -588,43 +526,6 @@ ProductSchema.methods.getStockForSize = function(size) {
   const sizeObj = this.sizes.find(s => s.size === size);
   return sizeObj ? sizeObj.stock : 0;
 };
-
-// Instance method to check if size is available
-ProductSchema.methods.isSizeAvailable = function(size, quantity = 1) {
-  if (this.category !== 'fashion') {
-    return this.totalStock >= quantity;
-  }
-  
-  const sizeObj = this.sizes.find(s => s.size === size);
-  return sizeObj ? sizeObj.stock >= quantity : false;
-};
-
-// Instance method to add review
-ProductSchema.methods.addReview = function(userId, rating, comment) {
-  this.reviews.push({
-    userId,
-    rating,
-    comment,
-    reviewDate: new Date(),
-    verified: false
-  });
-  return this.save();
-};
-
-// Add a method to check color stock availability
-ProductSchema.methods.isColorAvailable = function(color, quantity) {
-  if (this.category !== 'toys') return true;
-  const colorItem = this.colors.find(c => c.color === color);
-  return colorItem && colorItem.stock >= quantity;
-};
-
-// Update the inStock virtual for toys
-ProductSchema.virtual('inStock').get(function() {
-  if (this.category === 'toys') {
-    return this.colors.some(c => c.stock > 0);
-  }
-  return this.totalStock > 0;
-});
 
 // Instance method to check if size is available
 ProductSchema.methods.isSizeAvailable = function(size, quantity = 1) {

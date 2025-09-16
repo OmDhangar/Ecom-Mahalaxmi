@@ -43,6 +43,7 @@ const addProduct = async (req, res) => {
       price,
       salePrice,
       totalStock,
+      // Don't accept averageReview from client for new product creation
       weight,
       length,
       breadth,
@@ -58,8 +59,7 @@ const addProduct = async (req, res) => {
       returnPolicy,
       batteryHealth,
       condition,
-      sizes,
-      colors // Updated field for toys
+      sizes
     } = req.body;
 
     // Generate SKU if not provided
@@ -90,6 +90,7 @@ const addProduct = async (req, res) => {
 
     // Category-specific validations
     if (category === 'electronics') {
+      // condition must be one of enum values, not empty string
       const validConditions = ['new', 'refurbished', 'second-hand'];
       if (!batteryHealth || !condition || !validConditions.includes(condition)) {
         return res.status(400).json({
@@ -106,8 +107,11 @@ const addProduct = async (req, res) => {
           message: 'Sizes are required for fashion items and must be a non-empty array',
         });
       }
+      
+      // Validate sizes array - should be array of objects with size and stock
       const validSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
       const invalidSizes = [];
+      
       for (const sizeItem of sizes) {
         if (typeof sizeItem === 'object' && sizeItem.size && typeof sizeItem.stock === 'number') {
           if (!validSizes.includes(sizeItem.size)) {
@@ -126,34 +130,12 @@ const addProduct = async (req, res) => {
           });
         }
       }
+      
       if (invalidSizes.length > 0) {
         return res.status(400).json({
           success: false,
           message: `Invalid sizes provided: ${invalidSizes.join(', ')}`,
         });
-      }
-    }
-
-    if (category === 'toys') {
-      if (!colors || !Array.isArray(colors) || colors.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Colors are required for toy products and must be a non-empty array',
-        });
-      }
-      for (const colorItem of colors) {
-        if (typeof colorItem !== 'object' || !colorItem.color || typeof colorItem.stock !== 'number') {
-          return res.status(400).json({
-            success: false,
-            message: 'Each color item must have both color and stock properties',
-          });
-        }
-        if (colorItem.stock < 0) {
-          return res.status(400).json({
-            success: false,
-            message: `Stock for color ${colorItem.color} cannot be negative`,
-          });
-        }
       }
     }
 
@@ -168,7 +150,7 @@ const addProduct = async (req, res) => {
       price,
       salePrice,
       totalStock,
-      averageReview: 0,
+      averageReview: 0, // start at 0 for new product
       weight: parseFloat(weight),
       length: parseFloat(length),
       breadth: parseFloat(breadth),
@@ -182,10 +164,11 @@ const addProduct = async (req, res) => {
       careInstructions,
       warranty,
       returnPolicy,
+      shippingCost: req.body.shippingCost || 0, // if you want to include this field
+      // Only add these fields if relevant
       batteryHealth: category === 'electronics' ? batteryHealth : undefined,
       condition: category === 'electronics' ? condition : undefined,
       sizes: category === 'fashion' ? sizes : undefined,
-      colors: category === 'toys' ? colors : undefined,
     };
 
     const newlyCreatedProduct = new Product(newProductData);
@@ -298,10 +281,6 @@ const editProduct = async (req, res) => {
       warranty,
       returnPolicy,
       specifications,
-      color, // Add color field
-      batteryHealth,
-      condition,
-      sizes
     } = req.body;
 
     let findProduct = await Product.findById(id);
@@ -396,31 +375,6 @@ const editProduct = async (req, res) => {
     // Update timestamp
     findProduct.updatedAt = new Date();
 
-    // Category-specific validations for toys
-    if (category === 'toys' && !findProduct.color && !color) {
-      return res.status(400).json({
-        success: false,
-        message: 'Color is required for toy products',
-      });
-    }
-
-    // Update basic fields
-    if (image !== undefined) findProduct.image = image;
-    if (req.body.additionalImages !== undefined) findProduct.additionalImages = req.body.additionalImages;
-    findProduct.title = title || findProduct.title;
-    findProduct.description = description || findProduct.description;
-    findProduct.category = category || findProduct.category;
-    findProduct.brand = brand || findProduct.brand;
-    findProduct.price = price === "" ? 0 : (price !== undefined ? parseFloat(price) : findProduct.price);
-    findProduct.salePrice = salePrice === "" ? 0 : (salePrice !== undefined ? parseFloat(salePrice) : findProduct.salePrice);
-    findProduct.totalStock = totalStock !== undefined ? parseInt(totalStock) : findProduct.totalStock;
-    findProduct.averageReview = averageReview !== undefined ? parseFloat(averageReview) : findProduct.averageReview;
-
-    // Update category-specific fields
-    if (category === 'toys' || findProduct.category === 'toys') {
-      findProduct.color = color || findProduct.color;
-    }
-
     await findProduct.save();
     res.status(200).json({
       success: true,
@@ -496,7 +450,6 @@ const getProductBySKU = async (req, res) => {
         message: "Product not found with this SKU",
       });
     }
-    console.log(product);
 
     res.status(200).json({
       success: true,

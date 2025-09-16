@@ -24,10 +24,6 @@ const CartSchema = new mongoose.Schema(
           enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
           required: false, // Only required for fashion products, validated in controller
         },
-        color: {
-          type: mongoose.Schema.Types.Mixed, // Allows flexibility for object or array
-          required: false, // Will be conditionally validated in controller
-        },
       },
     ],
   },

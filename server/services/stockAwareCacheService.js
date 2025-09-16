@@ -86,8 +86,7 @@ class StockAwareCacheService {
       effectivePrice: product.effectivePrice,
       discountPercentage: product.discountPercentage,
       inStock: product.inStock,
-      isLowStock: product.isLowStock,
-      colors: product.colors,
+      isLowStock: product.isLowStock
     };
 
     return { staticData, dynamicData };

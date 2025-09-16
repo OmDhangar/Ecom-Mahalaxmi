@@ -288,7 +288,7 @@ async function deleteImageFromCloudinary(imageUrl) {
 
       {/* 🟩 Additional Images */}
       <div className="flex justify-between items-center mb-2">
-        <Label className="text-lg font-semibold">Additional Images {isEditMode ? "(optional)" : "*"} </Label>
+        <Label className="text-lg font-semibold">Additional Images (optional)</Label>
         <Badge variant={maxImagesReached ? "destructive" : "outline"}>
           {(uploadedImageUrls?.length || 0) + (existingImages?.length || 0)}/{MAX_IMAGES - 1}
         </Badge>

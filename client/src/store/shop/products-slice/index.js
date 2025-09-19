@@ -36,7 +36,6 @@ export const fetchAllFilteredProducts = createAsyncThunk(
     const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
 
     const result = await axios.get(url);
-    console.log("index resutl", result?.data);
     return result?.data;
   }
 );
@@ -90,7 +89,6 @@ const shoppingProductSlice = createSlice({
       })
       .addCase(fetchAllFilteredProducts.fulfilled, (state, action) => {
         state.isLoading = false;
-        console.log("fetchAllFilteredProducts fulfilled", action.payload);
         // Fix: Use action.payload.data and action.payload.pagination
         state.productList = {
           data: action.payload.data, // array of products

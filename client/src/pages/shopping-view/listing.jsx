@@ -42,7 +42,6 @@ function ShoppingListing() {
   const { productList, productDetails } = useSelector(
     (state) => state.shopProducts
   );
-  console.log(productList);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
   const [filters, setFilters] = useState({});
@@ -105,7 +104,6 @@ function ShoppingListing() {
   }
 
   function handleAddtoCart(getCurrentProductId, getTotalStock) {
-    console.log(cartItems);
     let getCartItems = cartItems.items || [];
 
     if (getCartItems.length) {
@@ -139,6 +137,17 @@ function ShoppingListing() {
       }
     });
   }
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prevPage) => prevPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (productList?.pagination && currentPage < productList.pagination.totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  };
 
   useEffect(() => {
     setSort("price-lowtohigh");
@@ -158,6 +167,7 @@ function ShoppingListing() {
     const [pagination, setPagination] = useState(null);
   
   // Fetch products with pagination
+  console.log(pagination);
   useEffect(() => {
     if (filters !== null && sort !== null) {
        dispatch(
@@ -239,6 +249,8 @@ function ShoppingListing() {
               All Products
             </h1>
           </div>
+
+
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">
               {productList?.length || 0} items
@@ -317,6 +329,7 @@ function ShoppingListing() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      
 
   {/* Brand Filter - Dynamic based on selected category */}
   {filters['category']?.length > 0 && (
@@ -491,6 +504,44 @@ function ShoppingListing() {
           )}
         </div>
       </div>
+                      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 py-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+
+          {/* Page Numbers */}
+          <div className="flex items-center gap-1">
+            {Array.from({ length: pagination.totalPages }, (_, index) => (
+              <Button
+                key={index + 1}
+                variant={currentPage === index + 1 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === pagination.totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+      
+      
 
       <ProductDetailsDialog
         open={openDetailsDialog}

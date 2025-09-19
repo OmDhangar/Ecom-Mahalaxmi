@@ -101,10 +101,10 @@ function UserCartItemsContent({ cartItem }) {
       <img
         src={cartItem?.image}
         alt={cartItem?.title}
-        className="w-20 h-20 rounded object-cover"
+        className="w-16 h-16 rounded object-cover"
       />
       <div className="flex-1">
-        <h3 className="font-extrabold">{cartItem?.title}</h3>
+        <h3 className="font-bold text-sm">{cartItem?.title}</h3>
         {cartItem?.size && (
           <p className="text-sm text-gray-600 mt-1">
             Size: <span className="font-medium">{cartItem.size}</span>
@@ -129,7 +129,7 @@ function UserCartItemsContent({ cartItem }) {
             onClick={() => handleUpdateQuantity(cartItem, "plus")}
           >
             <Plus className="w-4 h-4" />
-            <span className="sr-only">Decrease</span>
+            <span className="sr-only">Increase</span>
           </Button>
         </div>
       </div>
@@ -141,11 +141,15 @@ function UserCartItemsContent({ cartItem }) {
             cartItem?.quantity
           ).toFixed(2)}
         </p>
-        <Trash
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 mt-1 mr-4 text-red-500 hover:text-red-700 hover:bg-red-50"
           onClick={() => handleCartItemDelete(cartItem)}
-          className="cursor-pointer mt-1"
-          size={20}
-        />
+        >
+          <Trash className="w-4 h-4" />
+          <span className="sr-only">Delete item</span>
+        </Button>
       </div>
     </div>
   );

@@ -2,9 +2,10 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
-  isLoading: false,
-  productList: [],
+  productList: { data: [], pagination: null },
   productDetails: null,
+  isLoading: false,
+  error: null,
   featuredList: [],
 };
 
@@ -35,7 +36,8 @@ export const fetchAllFilteredProducts = createAsyncThunk(
     const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
 
     const result = await axios.get(url);
-    return result?.data.data;
+    console.log("index resutl", result?.data);
+    return result?.data;
   }
 );
 
@@ -88,11 +90,16 @@ const shoppingProductSlice = createSlice({
       })
       .addCase(fetchAllFilteredProducts.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.productList = action.payload || [];
+        console.log("fetchAllFilteredProducts fulfilled", action.payload);
+        // Fix: Use action.payload.data and action.payload.pagination
+        state.productList = {
+          data: action.payload.data, // array of products
+          pagination: action.payload.pagination // pagination info
+        };
       })
       .addCase(fetchAllFilteredProducts.rejected, (state) => {
-        state.isLoading = false;
-        state.productList = [];
+          state.isLoading = false;
+          state.productList = { data: [], pagination: null };
       })
       .addCase(fetchProductDetails.pending, (state) => {
         state.isLoading = true;

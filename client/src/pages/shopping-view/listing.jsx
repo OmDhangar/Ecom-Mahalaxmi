@@ -42,6 +42,7 @@ function ShoppingListing() {
   const { productList, productDetails } = useSelector(
     (state) => state.shopProducts
   );
+  console.log(productList);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
   const [filters, setFilters] = useState({});
@@ -151,13 +152,30 @@ function ShoppingListing() {
     }
   }, [filters]);
 
-  useEffect(() => {
-    if (filters !== null && sort !== null)
-      dispatch(
-        fetchAllFilteredProducts({ filterParams: filters, sortParams: sort })
-      );
-  }, [dispatch, sort, filters]);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12; // or 10/15 as you prefer
+    const [pagination, setPagination] = useState(null);
+  
+  // Fetch products with pagination
+  useEffect(() => {
+    if (filters !== null && sort !== null) {
+       dispatch(
+        fetchAllFilteredProducts({
+          filterParams: { ...filters, page: currentPage, limit: itemsPerPage },
+          sortParams: sort
+        })
+      );
+
+    }
+  }, [dispatch, sort, filters, currentPage]);
+  
+  // Listen for pagination info from backend
+  useEffect(() => {
+    if (productList && productList.pagination) {
+      setPagination(productList.pagination);
+    }
+  }, [productList]);
   useEffect(() => {
     if (productDetails !== null) setOpenDetailsDialog(true);
   }, [productDetails]);
@@ -378,8 +396,8 @@ function ShoppingListing() {
 
       <div className="p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-          {productList && productList.length > 0 ? (
-            productList.map((productItem) => {
+          {productList && productList.data && productList.data.length > 0 ? (
+            productList.data.map((productItem) => {
               const discount =
                 productItem?.salePrice > 0
                   ? Math.round(((productItem.price - productItem.salePrice) / productItem.price) * 100)

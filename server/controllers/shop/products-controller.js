@@ -4,7 +4,13 @@ const stockAwareCacheService = require("../../services/stockAwareCacheService");
 
 const getFilteredProducts = async (req, res) => {
   try {
-    const { category = [], brand = [], sortBy = "price-lowtohigh" } = req.query;
+    const { 
+      category = [], 
+      brand = [], 
+      sortBy = "price-lowtohigh",
+      page = 1,
+      limit = 12 
+    } = req.query;
     
     // Generate cache key for stock-aware listing cache
     const cacheKey = stockAwareCacheService.generateListingCacheKey(req);
@@ -50,12 +56,27 @@ const getFilteredProducts = async (req, res) => {
         break;
     }
 
-    const products = await Product.find(filters).sort(sort);
-    
+    // Calculate skip value for pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get total count for pagination
+    const totalCount = await Product.countDocuments(filters);
+
+    // Get paginated products
+    const products = await Product.find(filters)
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
     
     const responseData = {
       success: true,
       data: products,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        totalItems: totalCount,
+        itemsPerPage: parseInt(limit)
+      },
       cached: false,
       cacheType: 'fresh-from-database-with-live-stock'
     };
@@ -67,7 +88,7 @@ const getFilteredProducts = async (req, res) => {
   } catch (e) {
     res.status(500).json({
       success: false,
-      message: "Some error occured",
+      message: "Some error occurred",
     });
   }
 };

@@ -36,7 +36,7 @@ function createSearchParamsHelper(filterParams) {
   return queryParams.join("&");
 }
 
-function ShoppingListing() {
+const ShoppingListing = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { productList, productDetails } = useSelector(
@@ -167,18 +167,26 @@ function ShoppingListing() {
     const [pagination, setPagination] = useState(null);
   
   // Fetch products with pagination
-  console.log(pagination);
+  
   useEffect(() => {
-    if (filters !== null && sort !== null) {
-       dispatch(
-        fetchAllFilteredProducts({
-          filterParams: { ...filters, page: currentPage, limit: itemsPerPage },
-          sortParams: sort
-        })
-      );
+    const fetchProducts = async () => {
+      const filterParams = {
+        filterParams: { ...filters, page: currentPage, limit: itemsPerPage },
+        sortParams: sort
+      };
+      dispatch(fetchAllFilteredProducts(filterParams));
+    };
 
-    }
-  }, [dispatch, sort, filters, currentPage]);
+    fetchProducts();
+  }, [
+    // ... existing dependencies (e.g., category, search term, etc.)
+    // Ensure all filters that can change are included here
+    currentPage,
+    itemsPerPage,
+    filters,
+    sort,
+    dispatch,
+  ]);
   
   // Listen for pagination info from backend
   useEffect(() => {

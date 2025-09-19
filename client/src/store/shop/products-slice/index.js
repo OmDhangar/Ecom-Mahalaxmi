@@ -27,6 +27,14 @@ export const fetchAllFilteredProducts = createAsyncThunk(
       query.append("brand", filterParams.brand.join(","));
     }
 
+    // Add page and limit to query parameters
+    if (filterParams.page) {
+      query.append("page", filterParams.page);
+    }
+    if (filterParams.limit) {
+      query.append("limit", filterParams.limit);
+    }
+
     // Safe check for sorting
     if (sortParams) {
       query.append("sortBy", sortParams);

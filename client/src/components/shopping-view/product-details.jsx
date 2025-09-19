@@ -31,6 +31,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);
   const { productList } = useSelector((state) => state.shopProducts);
+  const navigate = useNavigate();
 
   
   // Combine main image with additional images for the carousel

@@ -131,14 +131,19 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
 
   // Get similar products based on category and brand
   useEffect(() => {
-    if (productDetails && productList) {
-      const similar = productList
+    // Normalize productList — it may be an object { data, pagination } or an array
+    const productsArray = Array.isArray(productList) ? productList : productList?.data || [];
+
+    if (productDetails && productsArray && productsArray.length) {
+      const similar = productsArray
         .filter(product => 
           product._id !== productDetails._id && 
           (product.category === productDetails.category || product.brand === productDetails.brand)
         )
         .slice(0, 6); // Limit to 6 similar products
       setSimilarProducts(similar);
+    } else {
+      setSimilarProducts([]);
     }
   }, [productDetails, productList]);
 

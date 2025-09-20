@@ -46,7 +46,7 @@ app.use(compression({
 
 app.use(
 cors({
-  origin: "https://shrimahalaxmimobile.in",   
+  origin: ["https://shrimahalaxmimobile.in","https://www.shrimahalaxmimobile.in","http://localhost:5173","https://www.api.shrimahalaxmimobile.in","https://api.shrimahalaxmimobile.in"],   
   methods: ["GET", "POST", "DELETE", "PUT", "PATCH","OPTIONS","HEAD"], 
 
   allowedHeaders: [

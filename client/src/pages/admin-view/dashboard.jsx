@@ -11,10 +11,19 @@ const Dashboard = () => {
 
   const { isLoading, productList, error } = useSelector((state) => state.shopProducts);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Admin dashboard can show 10 items per page
+  const [pagination, setPagination] = useState(null);
+
   const fetchProducts = () => {
     dispatch(
       fetchAllFilteredProducts({
-        filterParams: selectedCategory ? { category: selectedCategory } : {},
+        filterParams: {
+          ...(selectedCategory ? { category: selectedCategory } : {}),
+          page: currentPage, // Pass current page
+          limit: itemsPerPage, // Pass items per page
+        },
         sortParams: "price-lowtohigh",
       })
     );
@@ -22,10 +31,30 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [dispatch, selectedCategory]);
+  }, [dispatch, selectedCategory, currentPage]); // Add currentPage to dependencies
+
+  // Listen for pagination info from backend
+  useEffect(() => {
+    if (productList && productList.pagination) {
+      setPagination(productList.pagination);
+    }
+  }, [productList]);
 
   const handleCategoryChange = (e) => {
     setSelectedCategory(e.target.value);
+    setCurrentPage(1); // Reset to first page when category changes
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prevPage) => prevPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination && currentPage < pagination.totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
   };
 
   const handleMarkAsFeaturedClick = (productId) => {
@@ -165,8 +194,8 @@ const Dashboard = () => {
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {Array.isArray(productList) &&
-          productList.map((product) => {
+        {productList?.data && Array.isArray(productList.data) &&
+          productList.data.map((product) => {
             const localState = featuredDetails[product._id] || {};
             const showForm = localState.showForm || false;
             const isEditing = localState.editing || false;
@@ -217,8 +246,8 @@ const Dashboard = () => {
                       />
                       <div className="flex gap-2">
                         <button
-                          onClick={() => 
-                            isEditing 
+                          onClick={() =>
+                            isEditing
                               ? handleEditSubmit(product._id)
                               : handleFeatureSubmit(product._id)
                           }
@@ -251,6 +280,29 @@ const Dashboard = () => {
             );
           })}
       </div>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-8">
+          <button
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span>
+            Page {currentPage} of {pagination.totalPages}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage === pagination.totalPages}
+            className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

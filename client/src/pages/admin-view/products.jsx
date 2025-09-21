@@ -52,9 +52,14 @@ function AdminProducts() {
   const [imageLoadingStates, setImageLoadingStates] = useState([]);
   const [currentEditedId, setCurrentEditedId] = useState(null);
 
-  const { productList } = useSelector((state) => state.adminProducts);
+  const { productList, isLoading } = useSelector((state) => state.adminProducts); // Get isLoading
   const dispatch = useDispatch();
   const { toast } = useToast();
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Admin products page can show 10 items per page
+  const [pagination, setPagination] = useState(null);
 
   function resetFormState() {
     setOpenCreateProductsDialog(false);
@@ -176,7 +181,7 @@ function onSubmit(event) {
     dispatch(editProduct({ id: currentEditedId, formData: preparedFormData })).then(
       (data) => {
         if (data?.payload?.success) {
-          dispatch(fetchAllProducts());
+          dispatch(fetchAllProducts({ page: currentPage, limit: itemsPerPage })); // Re-fetch with pagination
           resetFormState();
         }
       }
@@ -184,7 +189,7 @@ function onSubmit(event) {
   } else {
     dispatch(addNewProduct(preparedFormData)).then((data) => {
       if (data?.payload?.success) {
-        dispatch(fetchAllProducts());
+        dispatch(fetchAllProducts({ page: currentPage, limit: itemsPerPage })); // Re-fetch with pagination
         resetFormState();
         toast({ title: "Product added successfully" });
       }
@@ -221,14 +226,33 @@ function onSubmit(event) {
   function handleDelete(getCurrentProductId) {
     dispatch(deleteProduct(getCurrentProductId)).then((data) => {
       if (data?.payload?.success) {
-        dispatch(fetchAllProducts());
+        dispatch(fetchAllProducts({ page: currentPage, limit: itemsPerPage })); // Re-fetch with pagination
       }
     });
   }
 
   useEffect(() => {
-    dispatch(fetchAllProducts());
-  }, [dispatch]);
+    dispatch(fetchAllProducts({ page: currentPage, limit: itemsPerPage }));
+  }, [dispatch, currentPage, itemsPerPage]); // Add currentPage and itemsPerPage to dependencies
+
+  // Listen for pagination info from backend
+  useEffect(() => {
+    if (productList && productList.pagination) {
+      setPagination(productList.pagination);
+    }
+  }, [productList]);
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prevPage) => prevPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination && currentPage < pagination.totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  };
 
   return (
     <Fragment>
@@ -238,8 +262,9 @@ function onSubmit(event) {
         </Button>
       </div>
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {productList && productList.length > 0
-          ? productList.map((productItem) => (
+        {isLoading && <p>Loading products...</p>}
+        {productList?.data && Array.isArray(productList.data) && productList.data.length > 0
+          ? productList.data.map((productItem) => (
               <AdminProductTile
                 setFormData={setFormData}
                 setOpenCreateProductsDialog={setOpenCreateProductsDialog}
@@ -248,8 +273,32 @@ function onSubmit(event) {
                 handleDelete={handleDelete}
               />
             ))
-          : null}
+          : !isLoading && <p>No products found.</p>}
       </div>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-8">
+          <button
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span>
+            Page {currentPage} of {pagination.totalPages}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage === pagination.totalPages}
+            className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
       <Sheet
         open={openCreateProductsDialog}
         onOpenChange={() => {

@@ -16,13 +16,13 @@ import {
   getAllOrdersForAdmin,
   getOrderDetailsForAdmin,
   resetOrderDetails,
-  getShippingFailedOrders,
+  // Removed getShippingFailedOrders as it's no longer needed here
 } from "@/store/admin/order-slice";
 import { Badge } from "../ui/badge";
 
 function AdminOrdersView() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "shippingError"
+  // Removed activeTab state as only "all" orders will be displayed
   const [fromDate, setFromDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -32,7 +32,7 @@ function AdminOrdersView() {
     return today.toISOString().split("T")[0];
   });
 
-  const { orderList, shippingFailedOrders, orderDetails } = useSelector(
+  const { orderList, /* Removed shippingFailedOrders */ orderDetails } = useSelector(
     (state) => state.adminOrder
   );
   const dispatch = useDispatch();
@@ -43,7 +43,7 @@ function AdminOrdersView() {
 
   useEffect(() => {
     dispatch(getAllOrdersForAdmin({ fromDate, toDate }));
-    dispatch(getShippingFailedOrders());
+    // Removed dispatch(getShippingFailedOrders());
   }, [dispatch, fromDate, toDate]);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ function AdminOrdersView() {
           <Button
             onClick={() => {
               dispatch(getAllOrdersForAdmin({ fromDate, toDate }));
-              dispatch(getShippingFailedOrders());
+              // Removed dispatch(getShippingFailedOrders());
             }}
             className="ml-4"
           >
@@ -87,7 +87,8 @@ function AdminOrdersView() {
           </Button>
         </div>
 
-        {/* Tab Buttons */}
+        {/* Removed Tab Buttons */}
+        {/*
         <div className="flex gap-2 mt-4">
           <Button
             variant={activeTab === "all" ? "default" : "outline"}
@@ -102,10 +103,12 @@ function AdminOrdersView() {
             Shipping Errors
           </Button>
         </div>
+        */}
       </CardHeader>
 
       <CardContent>
-        {activeTab === "all" ? (
+        {/* Simplified to always show "All Orders" */}
+        {/* {activeTab === "all" ? ( */}
           <Table>
             <TableHeader>
               <TableRow>
@@ -189,67 +192,9 @@ function AdminOrdersView() {
               )}
             </TableBody>
           </Table>
-        ) : (
-          // Shipping Error Tab
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Order Date</TableHead>
-                <TableHead>Error Message</TableHead>
-                <TableHead>Error Details</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shippingFailedOrders && shippingFailedOrders.length > 0 ? (
-                shippingFailedOrders.map((orderItem) => (
-                  <TableRow key={orderItem._id}>
-                    <TableCell>{orderItem._id}</TableCell>
-                    <TableCell>{orderItem.userId}</TableCell>
-                    <TableCell>
-                      {orderItem.orderDate?.split("T")[0] || "N/A"}
-                    </TableCell>
-                    <TableCell className="text-red-500 font-semibold">
-                      {orderItem.shippingError?.message || "Unknown error"}
-                    </TableCell>
-                    <TableCell>
-                      {orderItem.shippingError?.details
-                        ? JSON.stringify(orderItem.shippingError.details)
-                        : "No details"}
-                    </TableCell>
-                    <TableCell>
-                      <Dialog
-                        open={openDetailsDialog}
-                        onOpenChange={() => {
-                          setOpenDetailsDialog(false);
-                          dispatch(resetOrderDetails());
-                        }}
-                      >
-                        <Button
-                          onClick={() =>
-                            handleFetchOrderDetails(orderItem._id)
-                          }
-                        >
-                          View Details
-                        </Button>
-                        <AdminOrderDetailsView orderDetails={orderDetails} />
-                      </Dialog>
-                      {/* You can add Retry button here */}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-500">
-                    No shipping error orders.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
+        {/* ) : ( */}
+          {/* Removed Shipping Error Tab */}
+        {/* )} */}
       </CardContent>
     </Card>
   );

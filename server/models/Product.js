@@ -130,7 +130,7 @@ sizes: {
   length: {
     type: Number,
     required: true,
-    min: 1,
+     min: 0.2, 
     default: 10, // in cm
     validate: {
       validator: function(v) {
@@ -142,7 +142,7 @@ sizes: {
   breadth: {
     type: Number,
     required: true,
-    min: 1,
+    min: 0.2,
     default: 10, // in cm
     validate: {
       validator: function(v) {
@@ -154,7 +154,7 @@ sizes: {
   height: {
     type: Number,
     required: true,
-    min: 1,
+    min: 0.2,
     default: 5, // in cm
     validate: {
       validator: function(v) {

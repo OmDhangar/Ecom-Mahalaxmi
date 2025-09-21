@@ -3,6 +3,31 @@ const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 const { generateOTP, sendOTPEmail } = require("../../helpers/emailService");
 
+// Helper function to generate access token
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      email: user.email,
+      userName: user.userName,
+    },
+    process.env.JWT_SECRET || "CLIENT_SECRET_KEY", // Use environment variable for secret
+    { expiresIn: "7d" } // Access token expires in 7 days
+  );
+};
+
+// Helper function to generate refresh token
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+    },
+    process.env.JWT_REFRESH_SECRET || "CLIENT_REFRESH_SECRET_KEY", // Use environment variable for secret
+    { expiresIn: "21d" } // Refresh token expires in 21 days
+  );
+};
 
 //register
 const registerUser = async (req, res) => {
@@ -68,18 +93,28 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: checkUser._id,
-        role: checkUser.role,
-        email: checkUser.email,
-        userName: checkUser.userName,
-      },
-      "CLIENT_SECRET_KEY",
-      { expiresIn: "60m" }
-    );
+    // Generate Access Token and Refresh Token
+    const accessToken = generateAccessToken(checkUser);
+    const refreshToken = generateRefreshToken(checkUser);
 
-    res.cookie("token", token, { httpOnly: true, secure: false }).json({
+    // Store refresh token in DB
+    checkUser.refreshToken = refreshToken;
+    await checkUser.save();
+
+    // Set cookies
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Use secure in production
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Use secure in production
+      maxAge: 21 * 24 * 60 * 60 * 1000, // 21 days
+    });
+
+    res.status(200).json({
       success: true,
       message: "Logged in successfully",
       user: {
@@ -269,7 +304,9 @@ const resetPassword = async (req, res) => {
 
 //logout
 const logoutUser = (req, res) => {
-  res.clearCookie("token").json({
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  res.json({
     success: true,
     message: "Logged out successfully!",
   });
@@ -277,31 +314,95 @@ const logoutUser = (req, res) => {
 
 //auth middleware
 const authMiddleware = async (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token)
+  const accessToken = req.cookies.accessToken;
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!accessToken && !refreshToken) {
     return res.status(401).json({
       success: false,
-      message: "Unauthorised user!",
+      message: "Unauthorized user! No tokens provided.",
     });
+  }
 
   try {
-    const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
+    // Try to verify access token
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET || "CLIENT_SECRET_KEY");
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: "Unauthorised user!",
-    });
+    // If access token expired or invalid, try to use refresh token
+    if (error.name === "TokenExpiredError" && refreshToken) {
+      try {
+        const decodedRefresh = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || "CLIENT_REFRESH_SECRET_KEY");
+        const user = await User.findById(decodedRefresh.id);
+
+        if (!user || user.refreshToken !== refreshToken) {
+          throw new Error("Invalid refresh token or user not found.");
+        }
+
+        // Generate new access and refresh tokens
+        const newAccessToken = generateAccessToken(user);
+        const newRefreshToken = generateRefreshToken(user);
+
+        // Update refresh token in DB
+        user.refreshToken = newRefreshToken;
+        await user.save();
+
+        // Set new cookies
+        res.cookie("accessToken", newAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        res.cookie("refreshToken", newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 21 * 24 * 60 * 60 * 1000,
+        });
+
+        req.user = jwt.decode(newAccessToken); // Decode new access token for req.user
+        // Instead of calling next(), we send a success response with the user data
+        // This ensures the frontend receives the updated user info and can update its state.
+        return res.status(200).json({
+          success: true,
+          message: "Tokens refreshed successfully",
+          user: {
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            id: user._id,
+            userName: user.userName,
+          },
+        });
+      } catch (refreshError) {
+        console.error("Refresh token error:", refreshError);
+        // Clear invalid tokens and send unauthorized
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized user! Invalid or expired refresh token.",
+        });
+      }
+    } else {
+      // Other access token errors or no refresh token
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user! Invalid access token.",
+      });
+    }
   }
 };
 
-module.exports = { 
-  registerUser, 
-  loginUser, 
-  logoutUser, 
+module.exports = {
+  registerUser,
+  loginUser,
+  logoutUser,
   authMiddleware,
   sendPasswordResetOTP,
   verifyOTP,
-  resetPassword
+  resetPassword,
+  // No need for a separate refreshToken endpoint, authMiddleware handles it
 };

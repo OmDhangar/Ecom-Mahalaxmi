@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   orderList: [],
@@ -11,48 +11,57 @@ const initialState = {
 // ✅ Get all orders (date filtered)
 export const getAllOrdersForAdmin = createAsyncThunk(
   "/order/getAllOrdersForAdmin",
-  async ({ fromDate, toDate }) => {
-    const response = await axios.get(
-      `/api/admin/orders/get?fromDate=${fromDate}&toDate=${toDate}`
-    );
-    return response.data;
+  async ({ fromDate, toDate }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/api/admin/orders/get?fromDate=${fromDate}&toDate=${toDate}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 // ✅ Get single order details
 export const getOrderDetailsForAdmin = createAsyncThunk(
   "/order/getOrderDetailsForAdmin",
-  async (id) => {
-    const response = await axios.get(
-      `/api/admin/orders/details/${id}`
-    );
-    return response.data;
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/admin/orders/details/${id}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 // ✅ Update order status
 export const updateOrderStatus = createAsyncThunk(
   "/order/updateOrderStatus",
-  async ({ id, orderStatus, paymentStatus }) => {
-    const response = await axios.put(
-      `/api/admin/orders/update/${id}`,
-      {
+  async ({ id, orderStatus, paymentStatus }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/api/admin/orders/update/${id}`, {
         orderStatus,
         ...(paymentStatus && { paymentStatus }),
-      }
-    );
-    return response.data;
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 // ✅ Get orders with shipping errors
 export const getShippingFailedOrders = createAsyncThunk(
   "/order/getShippingFailedOrders",
-  async () => {
-    const response = await axios.get(
-      "/api/admin/orders/shipping-failed"
-    );
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/api/admin/orders/shipping-failed");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

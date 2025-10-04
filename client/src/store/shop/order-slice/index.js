@@ -1,6 +1,6 @@
 // store/shop/order-slice.js
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 
 const initialState = {
   approvalURL: null,
@@ -20,15 +20,10 @@ export const createNewOrder = createAsyncThunk(
   "order/createNewOrder",
   async (orderData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        "/api/shop/order/create",
-        orderData
-      );
+      const response = await api.post("/api/shop/order/create", orderData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to create order"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -38,15 +33,10 @@ export const verifyPayment = createAsyncThunk(
   "order/verifyPayment",
   async (paymentData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        "/api/shop/order/verify",
-        paymentData
-      );
+      const response = await api.post("/api/shop/order/verify", paymentData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Payment verification failed"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -56,14 +46,10 @@ export const getAllOrdersByUserId = createAsyncThunk(
   "order/getAllOrdersByUserId",
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `/api/shop/order/list/${userId}`
-      );
+      const response = await api.get(`/api/shop/order/list/${userId}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch orders"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -73,14 +59,10 @@ export const getOrderDetails = createAsyncThunk(
   "order/getOrderDetails",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `/api/shop/order/details/${id}`
-      );
+      const response = await api.get(`/api/shop/order/details/${id}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch order details"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -90,14 +72,10 @@ export const trackOrder = createAsyncThunk(
   "order/trackOrder",
   async (orderId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `/api/shop/order/track/${orderId}`
-      );
+      const response = await api.get(`/api/shop/order/track/${orderId}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to track order"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -107,18 +85,13 @@ export const cancelOrder = createAsyncThunk(
   "order/cancelOrder",
   async ({ orderId, reason }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(
-        `/api/shop/order/update-status/${orderId}`,
-        { 
-          orderStatus: "cancelled",
-          cancellationReason: reason 
-        }
-      );
+      const response = await api.put(`/api/shop/order/update-status/${orderId}`, { 
+        orderStatus: "cancelled",
+        cancellationReason: reason 
+      });
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to cancel order"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -130,15 +103,10 @@ export const calculateShippingCharge = createAsyncThunk(
   "order/calculateShippingCharge",
   async ({ cartItems, deliveryPincode }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        "/api/shipping/calculate-shipping",
-        { cartItems, deliveryPincode }
-      );
+      const response = await api.post("/api/shipping/calculate-shipping", { cartItems, deliveryPincode });
       return response.data; // Expected format: { success: true, shippingCharge: number }
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to calculate shipping charge"
-      );
+      return rejectWithValue(error.message);
     }
   }
 );

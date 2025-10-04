@@ -1,23 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   carouselList: [],
   isLoading: false,
   error: null
 };
-
-// Create axios instance that works with Vite proxy
-const api = axios.create();
-
-// Add Authorization header for all requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 // Async thunks
 export const fetchAllCarouselSlides = createAsyncThunk(

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   isLoading: false,
@@ -8,12 +8,13 @@ const initialState = {
 
 export const getSearchResults = createAsyncThunk(
   "/order/getSearchResults",
-  async (keyword) => {
-    const response = await axios.get(
-      `/api/shop/search/${keyword}`
-    );
-
-    return response.data;
+  async (keyword, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/shop/search/${keyword}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

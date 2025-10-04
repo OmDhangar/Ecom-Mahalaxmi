@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   isLoading: false,
@@ -8,18 +8,13 @@ const initialState = {
 
 export const addNewProduct = createAsyncThunk(
   "/products/addnewproduct",
-  async (formData) => {
-    const result = await axios.post(
-      "/api/admin/products/add",
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return result?.data;
+  async (formData, { rejectWithValue }) => {
+    try {
+      const result = await api.post("/api/admin/products/add", formData);
+      return result?.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
@@ -29,40 +24,35 @@ export const fetchAllProducts = createAsyncThunk(
     try {
       const queryString = new URLSearchParams(filterParams).toString();
       const url = `/api/admin/products/get${queryString ? `?${queryString}` : ""}`;
-      const response = await axios.get(url);
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
-      console.error("Error fetching all products:", error);
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.message);
     }
   }
 );
 
 export const editProduct = createAsyncThunk(
   "/products/editProduct",
-  async ({ id, formData }) => {
-    const result = await axios.put(
-      `/api/admin/products/edit/${id}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return result?.data;
+  async ({ id, formData }, { rejectWithValue }) => {
+    try {
+      const result = await api.put(`/api/admin/products/edit/${id}`, formData);
+      return result?.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const deleteProduct = createAsyncThunk(
   "/products/deleteProduct",
-  async (id) => {
-    const result = await axios.delete(
-      `/api/admin/products/delete/${id}`
-    );
-
-    return result?.data;
+  async (id, { rejectWithValue }) => {
+    try {
+      const result = await api.delete(`/api/admin/products/delete/${id}`);
+      return result?.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

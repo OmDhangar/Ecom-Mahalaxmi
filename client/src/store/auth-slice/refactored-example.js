@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import api from '../../api/axiosInstance';
+import api from "../../api/axiosInstance";
 
 const initialState = {
   isAuthenticated: false,
@@ -7,6 +7,7 @@ const initialState = {
   user: null,
 };
 
+// Refactored async thunks using centralized Axios instance
 export const registerUser = createAsyncThunk(
   "/auth/register",
   async (formData, { rejectWithValue }) => {
@@ -25,9 +26,9 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await api.post("/api/auth/login", formData);
       
-      // No need to store tokens as they are httpOnly cookies
-      // Just store user data for UI purposes
-      if (response.data.success && response.data.user) {
+      // Store token and user data in localStorage for persistence
+      if (response.data.success && response.data.token) {
+        localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
       
@@ -44,12 +45,14 @@ export const logoutUser = createAsyncThunk(
     try {
       const response = await api.post("/api/auth/logout", {});
       
-      // Clear user data from localStorage (cookies are cleared by server)
+      // Clear local storage on successful logout
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       
       return response.data;
     } catch (error) {
       // Even if server logout fails, clear local data
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       return rejectWithValue(error.message);
     }
@@ -73,7 +76,8 @@ export const checkAuth = createAsyncThunk(
       
       return response.data;
     } catch (error) {
-      // Clear user data on failed check (cookies are handled by server)
+      // Clear invalid auth data on failed check
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       return rejectWithValue(error.message);
     }
@@ -90,6 +94,7 @@ const authSlice = createSlice({
     clearAuth: (state) => {
       state.isAuthenticated = false;
       state.user = null;
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
     },
   },
@@ -112,7 +117,6 @@ const authSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-
         state.isLoading = false;
         state.user = action.payload.success ? action.payload.user : null;
         state.isAuthenticated = action.payload.success;
@@ -127,7 +131,6 @@ const authSlice = createSlice({
       })
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.isLoading = false;
-        // The backend now sends back the user object upon successful authentication/refresh
         state.user = action.payload.success ? action.payload.user : null;
         state.isAuthenticated = action.payload.success;
       })

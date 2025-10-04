@@ -1,5 +1,5 @@
-import axios from "axios";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   cartItems: { items: [] }, // Initialize with proper cart structure
@@ -9,78 +9,86 @@ const initialState = {
 // Add to Cart with optional size
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
-  async ({ userId, productId, quantity, size }) => {
-    if (!userId) {
-      return rejectWithValue({
-        success: false,
-        message: "Authentication required"
-      });
-    }
-    const response = await axios.post(
-      "/api/shop/cart/add",
-      {
+  async ({ userId, productId, quantity, size }, { rejectWithValue }) => {
+    try {
+      if (!userId) {
+        return rejectWithValue({
+          success: false,
+          message: "Authentication required"
+        });
+      }
+      const response = await api.post("/api/shop/cart/add", {
         userId,
         productId,
         quantity,
         size, // include size for fashion products
-      }
-    );
+      });
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 // Fetch Cart Items
 export const fetchCartItems = createAsyncThunk(
   "cart/fetchCartItems",
-  async (userId) => {
-    const response = await axios.get(
-      `/api/shop/cart/get/${userId}`
-    );
-
-    return response.data;
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/shop/cart/get/${userId}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 // Delete Cart Item
 export const deleteCartItem = createAsyncThunk(
   "cart/deleteCartItem",
-  async ({ userId, productId, size }) => {
-    // Send size as query param for fashion products
-    const url = size
-      ? `/api/shop/cart/${userId}/${productId}?size=${size}`
-      : `/api/shop/cart/${userId}/${productId}`;
+  async ({ userId, productId, size }, { rejectWithValue }) => {
+    try {
+      // Send size as query param for fashion products
+      const url = size
+        ? `/api/shop/cart/${userId}/${productId}?size=${size}`
+        : `/api/shop/cart/${userId}/${productId}`;
 
-    const response = await axios.delete(url);
-
-    return response.data;
+      const response = await api.delete(url);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 export const clearUserCart = createAsyncThunk(
   "cart/clearCart",
-  async (userId) => {
-    const response = await axios.delete(
-      `/api/shop/cart/clear/${userId}`
-    );
-    return response.data;
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(`/api/shop/cart/clear/${userId}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 // Update Cart Quantity (with optional size)
 export const updateCartQuantity = createAsyncThunk(
   "cart/updateCartQuantity",
-  async ({ userId, productId, quantity, size }) => {
-    const response = await axios.put(
-      "/api/shop/cart/update-cart",
-      {
+  async ({ userId, productId, quantity, size }, { rejectWithValue }) => {
+    try {
+      const response = await api.put("/api/shop/cart/update-cart", {
         userId,
         productId,
         quantity,
         size, // include size for fashion products
-      }
-    );
+      });
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

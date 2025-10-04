@@ -79,19 +79,11 @@ export default defineConfig({
       }
     },
     // Chunk size warnings
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 15000,
     // CSS code splitting
     cssCodeSplit: true,
     // Generate source maps for production debugging
     sourcemap: false
-  },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000', // your backend
-        changeOrigin: true,
-        secure: true, // Set to false for HTTP backend in development
-      }
-    }
   }
+  // Removed proxy configuration - now using centralized Axios instance with full URLs
 });

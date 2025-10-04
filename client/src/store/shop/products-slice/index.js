@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   productList: { data: [], pagination: null },
@@ -11,40 +11,44 @@ const initialState = {
 
 export const fetchAllFilteredProducts = createAsyncThunk(
   "/products/fetchAllProducts",
-  async ({ filterParams = {}, sortParams } = {}) => {
-    const query = new URLSearchParams();
+  async ({ filterParams = {}, sortParams } = {}, { rejectWithValue }) => {
+    try {
+      const query = new URLSearchParams();
 
-    // Safe check for category
-    if (filterParams.category) {
-      const categoryValue = Array.isArray(filterParams.category)
-        ? filterParams.category.join(",")
-        : filterParams.category;
-      query.append("category", categoryValue);
+      // Safe check for category
+      if (filterParams.category) {
+        const categoryValue = Array.isArray(filterParams.category)
+          ? filterParams.category.join(",")
+          : filterParams.category;
+        query.append("category", categoryValue);
+      }
+
+      // Safe check for brand
+      if (filterParams.brand && filterParams.brand.length > 0) {
+        query.append("brand", filterParams.brand.join(","));
+      }
+
+      // Add page and limit to query parameters
+      if (filterParams.page) {
+        query.append("page", filterParams.page);
+      }
+      if (filterParams.limit) {
+        query.append("limit", filterParams.limit);
+      }
+
+      // Safe check for sorting
+      if (sortParams) {
+        query.append("sortBy", sortParams);
+      }
+
+      const queryString = query.toString();
+      const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
+
+      const result = await api.get(url);
+      return result?.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
-
-    // Safe check for brand
-    if (filterParams.brand && filterParams.brand.length > 0) {
-      query.append("brand", filterParams.brand.join(","));
-    }
-
-    // Add page and limit to query parameters
-    if (filterParams.page) {
-      query.append("page", filterParams.page);
-    }
-    if (filterParams.limit) {
-      query.append("limit", filterParams.limit);
-    }
-
-    // Safe check for sorting
-    if (sortParams) {
-      query.append("sortBy", sortParams);
-    }
-
-    const queryString = query.toString();
-    const url = `/api/shop/products/get${queryString ? `?${queryString}` : ""}`;
-
-    const result = await axios.get(url);
-    return result?.data;
   }
 );
 
@@ -52,33 +56,38 @@ export const fetchFeaturedProducts = createAsyncThunk(
   "products/fetchFeaturedProducts",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get("/api/shop/products/featured");
-
+      const res = await api.get("/api/shop/products/featured");
       return res.data.data;
-    } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch featured products"
-      );
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
   }
 );
 
 export const markAsFeatured = createAsyncThunk(
   "products/markAsFeatured",
-  async ({ id, isFeatured, featuredDescription }) => {
-    const response = await axios.post(`/api/shop/products/${id}/feature`, {
-      isFeatured,
-      featuredDescription,
-    });
-    return response.data.data;
+  async ({ id, isFeatured, featuredDescription }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/api/shop/products/${id}/feature`, {
+        isFeatured,
+        featuredDescription,
+      });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const fetchProductDetails = createAsyncThunk(
   "/products/fetchProductDetails",
-  async (id) => {
-    const result = await axios.get(`/api/shop/products/get/${id}`);
-    return result?.data.data;
+  async (id, { rejectWithValue }) => {
+    try {
+      const result = await api.get(`/api/shop/products/get/${id}`);
+      return result?.data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

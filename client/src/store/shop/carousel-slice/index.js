@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../../../api/axiosInstance';
 import { isCacheFresh, localCache } from '@/utils/cacheUtils';
 
 const initialState = {
@@ -34,11 +34,7 @@ export const fetchActiveCarouselSlides = createAsyncThunk(
       }
       
       console.log('Fetching carousel data from database');
-      const response = await axios.get('/api/shop/carousel/active');
-
-      if (response.status !== 200) {
-        throw new Error(response.data?.message || 'Failed to fetch carousel slides');
-      }
+      const response = await api.get('/api/shop/carousel/active');
 
       const slides = Array.isArray(response.data.data) ? response.data.data : [];
       

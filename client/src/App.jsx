@@ -30,6 +30,7 @@ const UnauthPage = lazy(() => import("./pages/unauth-page"));
 
 // Shopping pages - Home is critical, others can be lazy loaded
 import ShoppingHome from "./pages/shopping-view/home";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 const ShoppingListing = lazy(() => import("./pages/shopping-view/listing"));
 const ShoppingCheckout = lazy(() => import("./pages/shopping-view/checkout"));
 const ShoppingAccount = lazy(() => import("./pages/shopping-view/account"));
@@ -275,7 +276,7 @@ function App() {
           <Route path="/auth" element={<AuthLayout />}>
             <Route path="login" element={<AuthLogin />} />
             <Route path="register" element={<AuthRegister />} />
-            <Route path="forgot-password" element={<ForgetPassword />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
           </Route>
 
           {/* Admin routes */}

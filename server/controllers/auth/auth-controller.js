@@ -104,15 +104,20 @@ const loginUser = async (req, res) => {
     // Set cookies
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Use secure in production
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+      sameSite: "Strict", // or "Lax" if you need cross-site login
+      path: "/",          // required for consistency
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Use secure in production
-      maxAge: 21 * 24 * 60 * 60 * 1000, // 21 days
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict", // or "Lax" if frontend/backend are on different subdomains
+      path: "/",
+      maxAge: 21 * 24 * 60 * 60 * 1000,
     });
+
 
     res.status(200).json({
       success: true,
@@ -161,19 +166,33 @@ const sendPasswordResetOTP = async (req, res) => {
     await user.save();
 
     // Send OTP email
-    await sendOTPEmail(user.email, otp, user.userName);
-
-    res.json({
-      success: true,
-      message: "OTP sent successfully to your email address",
-      email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'), // Mask email for security
-    });
+    try {
+      await sendOTPEmail(user.email, otp, user.userName);
+      
+      res.json({
+        success: true,
+        message: "OTP sent successfully to your email address",
+        email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'), // Mask email for security
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError.message);
+      
+      // Clear the OTP from database since email failed
+      user.resetPasswordOTP = null;
+      user.resetPasswordOTPExpires = null;
+      await user.save();
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to send OTP email. Please check your email address and try again.",
+      });
+    }
 
   } catch (error) {
-    console.error("Error sending OTP:", error);
+    console.error("Error in forgot password process:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to send OTP. Please try again later.",
+      message: "An error occurred while processing your request. Please try again later.",
     });
   }
 };
@@ -351,14 +370,20 @@ const authMiddleware = async (req, res, next) => {
         // Set new cookies
         res.cookie("accessToken", newAccessToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+          sameSite: "Strict", // or "Lax" if you need cross-site login
+          path: "/",          // required for consistency
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
+
         res.cookie("refreshToken", newRefreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
+          sameSite: "Strict", // or "Lax" if frontend/backend are on different subdomains
+          path: "/",
           maxAge: 21 * 24 * 60 * 60 * 1000,
         });
+
 
         req.user = jwt.decode(newAccessToken); // Decode new access token for req.user
         // Instead of calling next(), we send a success response with the user data

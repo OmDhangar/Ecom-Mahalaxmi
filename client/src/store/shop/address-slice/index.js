@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   isLoading: false,
@@ -8,47 +8,49 @@ const initialState = {
 
 export const addNewAddress = createAsyncThunk(
   "/addresses/addNewAddress",
-  async (formData) => {
-    const response = await axios.post(
-      "/api/shop/address/add",
-      formData
-    );
-
-    return response.data;
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/api/shop/address/add", formData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const fetchAllAddresses = createAsyncThunk(
   "/addresses/fetchAllAddresses",
-  async (userId) => {
-    const response = await axios.get(
-      `/api/shop/address/get/${userId}`
-    );
-
-    return response.data;
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/shop/address/get/${userId}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const editaAddress = createAsyncThunk(
   "/addresses/editaAddress",
-  async ({ userId, addressId, formData }) => {
-    const response = await axios.put(
-      `/api/shop/address/update/${userId}/${addressId}`,
-      formData
-    );
-
-    return response.data;
+  async ({ userId, addressId, formData }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/api/shop/address/update/${userId}/${addressId}`, formData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const deleteAddress = createAsyncThunk(
   "/addresses/deleteAddress",
-  async ({ userId, addressId }) => {
-    const response = await axios.delete(
-      `/api/shop/address/delete/${userId}/${addressId}`
-    );
-
-    return response.data;
+  async ({ userId, addressId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(`/api/shop/address/delete/${userId}/${addressId}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

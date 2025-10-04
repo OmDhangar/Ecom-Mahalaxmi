@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 const initialState = {
   isLoading: false,
@@ -8,23 +8,27 @@ const initialState = {
 
 export const addReview = createAsyncThunk(
   "/order/addReview",
-  async (formdata) => {
-    const response = await axios.post(
-      `/api/shop/review/add`,
-      formdata
-    );
-
-    return response.data;
+  async (formdata, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/api/shop/review/add`, formdata);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
-export const getReviews = createAsyncThunk("/order/getReviews", async (id) => {
-  const response = await axios.get(
-    `/api/shop/review/${id}`
-  );
-
-  return response.data;
-});
+export const getReviews = createAsyncThunk(
+  "/order/getReviews", 
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/shop/review/${id}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 const reviewSlice = createSlice({
   name: "reviewSlice",

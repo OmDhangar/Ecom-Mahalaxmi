@@ -113,49 +113,69 @@ const CarouselAdmin = () => {
 
   const createFormData = () => {
     const form = new FormData();
-    form.append('title', formData.title);
-    form.append('subtitle', formData.subtitle);
-    form.append('cta', formData.cta);
-    form.append('link', `/shop/listing?category=${formData.category}`);
-    form.append('bg', formData.bg);
-    form.append('isActive', formData.isActive);
     
-    if (imageFile) {
-      form.append('image', imageFile);
+    // Ensure all form fields are properly added
+    form.append('title', formData.title || '');
+    form.append('subtitle', formData.subtitle || '');
+    form.append('cta', formData.cta || '');
+    form.append('link', `/shop/listing?category=${formData.category || ''}`);
+    form.append('bg', formData.bg || 'from-blue-500 to-indigo-500');
+    form.append('isActive', formData.isActive === undefined ? true : formData.isActive);
+    
+    // Make sure the image file is properly appended
+    if (imageFile && imageFile instanceof File) {
+      form.append('image', imageFile, imageFile.name);
+    }
+    
+    // FormData objects appear empty when logged, but we can verify content by iterating
+    for (let [key, value] of form.entries()) {
+      console.log(`Form contains ${key}: ${value instanceof File ? value.name : value}`);
     }
     
     return form;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!imageFile && !editingSlide) {
-      alert('Please select an image');
-      return;
-    }
+  e.preventDefault();
+  
+  // For new slides, image is required
+  if (!imageFile && !editingSlide) {
+    alert('Please select an image');
+    return;
+  }
 
-    const form = createFormData();
+  const form = createFormData();
 
-    try {
-      if (editingSlide) {
-        await dispatch(updateCarouselSlide({ 
-          id: editingSlide._id, 
-          formData: form 
-        })).unwrap();
-      } else {
-        await dispatch(createCarouselSlide(form)).unwrap();
+  try {
+    if (editingSlide) {
+      // For updates, only include image if a new one is selected
+      await dispatch(updateCarouselSlide({ 
+        id: editingSlide._id, 
+        formData: form 
+      })).unwrap();
+    } else {
+      // Double check image is present for new slides
+      if (!imageFile) {
+        alert('Please select an image');
+        return;
       }
-
-      // Reset form and states
-      resetForm();
-      
-      // Show success message
-      alert(editingSlide ? 'Slide updated successfully!' : 'Slide created successfully!');
-    } catch (error) {
-      alert(`Error: ${error}`);
+      // Debug: log FormData contents
+      for (let [key, value] of form.entries()) {
+        console.log(`FormData contains ${key}:`, value);
+      }
+      await dispatch(createCarouselSlide(form)).unwrap(); // Make sure thunk/API does NOT set Content-Type manually
     }
-  };
+
+    // Reset form and states
+    resetForm();
+    
+    // Show success message
+    alert(editingSlide ? 'Slide updated successfully!' : 'Slide created successfully!');
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    alert(`Error: ${error.message || 'Failed to save carousel slide'}`);
+  }
+};
 
   const resetForm = () => {
     setFormData({

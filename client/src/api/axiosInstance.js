@@ -34,9 +34,6 @@ const isOptionalAuthEndpoint = (url) => {
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ,
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000, // Use env timeout or default to 10 seconds
 });
 

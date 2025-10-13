@@ -76,7 +76,14 @@ const getActiveCarouselSlides = async (req, res) => {
 const createCarouselSlide = async (req, res) => {
   try {
     const { title, subtitle, cta, link, bg, isActive } = req.body;
-    if (!req.file) return res.status(400).json({ success: false, message: 'Image is required' });
+    
+    // Check if image file exists
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Image is required' 
+      });
+    }
 
     const maxOrderSlide = await Carousel.findOne().sort({ order: -1 });
     const nextOrder = maxOrderSlide ? maxOrderSlide.order + 1 : 1;
@@ -96,11 +103,18 @@ const createCarouselSlide = async (req, res) => {
 
     const savedSlide = await newSlide.save();
     
-    
-    res.status(201).json({ success: true, message: 'Carousel slide created successfully', data: savedSlide });
+    res.status(201).json({ 
+      success: true, 
+      message: 'Carousel slide created successfully', 
+      data: savedSlide 
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Failed to create carousel slide', error: error.message });
+    console.error('Error creating carousel slide:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create carousel slide', 
+      error: error.message 
+    });
   }
 };
 
@@ -108,7 +122,22 @@ const createCarouselSlide = async (req, res) => {
 const updateCarouselSlide = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+    
+    // Handle image update
+    if (req.file) {
+      // If a new image is uploaded, use its path
+      updateData.image = req.file.path;
+      
+      // Delete old image if exists
+      const existingSlide = await Carousel.findById(id);
+      if (existingSlide && existingSlide.image) {
+        await deleteFromCloudinary(existingSlide.image);
+      }
+    } else if (updateData.image && typeof updateData.image === 'object') {
+      // If image is an object (like {}), delete it from updateData to prevent the error
+      delete updateData.image;
+    }
 
     const updatedSlide = await Carousel.findByIdAndUpdate(
       id, 
@@ -123,14 +152,11 @@ const updateCarouselSlide = async (req, res) => {
       });
     }
 
-
-
     res.status(200).json({
       success: true,
       message: 'Carousel slide updated successfully',
       data: updatedSlide
     });
-
   } catch (error) {
     console.error('Error updating carousel slide:', error);
     res.status(500).json({

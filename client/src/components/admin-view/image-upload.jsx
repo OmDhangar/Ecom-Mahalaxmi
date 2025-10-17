@@ -7,7 +7,6 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 import { toast } from "../ui/use-toast";
@@ -185,7 +184,7 @@ async function deleteImageFromCloudinary(imageUrl) {
 
     try {
       // Simple, fast upload - no extra processing
-      const response = await axios.post(
+      const response = await api.post(
         "/api/admin/products/upload-image",
         data,
       );

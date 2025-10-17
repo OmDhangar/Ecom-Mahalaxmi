@@ -11,7 +11,7 @@ import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 import { toast } from "../ui/use-toast";
-import api from "../../../api/axiosInstance";
+import api from "../../api/axiosInstance";
 
 
 function ProductImageUpload({

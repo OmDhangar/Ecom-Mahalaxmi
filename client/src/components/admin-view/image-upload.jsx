@@ -11,6 +11,7 @@ import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 import { toast } from "../ui/use-toast";
+import api from "../../../api/axiosInstance";
 
 
 function ProductImageUpload({
@@ -66,7 +67,7 @@ async function deleteImageFromCloudinary(imageUrl) {
       return false;
     }
     
-    const response = await axios.post('/api/admin/products/delete-image', {
+    const response = await api.post('/api/admin/products/delete-image', {
       public_id: publicId
     });
     
@@ -103,7 +104,7 @@ async function deleteImageFromCloudinary(imageUrl) {
 
     try {
       // Fast main image upload - minimal processing
-      const response = await axios.post(
+      const response = await api.post(
         "/api/admin/products/upload-image",
         data,
         {
@@ -187,11 +188,6 @@ async function deleteImageFromCloudinary(imageUrl) {
       const response = await axios.post(
         "/api/admin/products/upload-image",
         data,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
       );
 
       if (response?.data?.success) {

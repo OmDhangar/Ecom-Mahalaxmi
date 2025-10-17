@@ -30,6 +30,7 @@ const isOptionalAuthEndpoint = (url) => {
   return OPTIONAL_AUTH_ENDPOINTS.some(endpoint => url.includes(endpoint));
 };
 
+console.log(import.meta.env.VITE_API_BASE_URL);
 // Create centralized Axios instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ,

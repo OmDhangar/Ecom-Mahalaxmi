@@ -96,7 +96,7 @@ const getFilteredProducts = async (req, res) => {
 const getFeaturedProducts = async (req, res) => {
   try {
     const featuredProducts = await Product.find({ isFeatured: true })
-      .select('title price image description brand category isFeatured totalStock featuredDescription reviews')
+      .select('title price salePrice image description brand category isFeatured totalStock featuredDescription reviews')
       .populate('reviews')
       .lean();
 

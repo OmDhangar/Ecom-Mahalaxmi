@@ -131,6 +131,7 @@ function ShoppingHome() {
   }, [dispatch]);
 
   const { featuredList } = useSelector((state) => state.shopProducts);
+  console.log("dfgh",featuredList)
 
   useEffect(() => {
     dispatch(getFeatureImages());
@@ -337,6 +338,7 @@ function ShoppingHome() {
           >
             {featuredList.length > 0 &&
               featuredList.map((productItem) => (
+                console.log(productItem),
                 <div key={productItem._id} className="flex-shrink-0">
                   {/* Custom Square Product Card */}
                   <div className="w-36 sm:w-44 lg:w-52 bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-300">

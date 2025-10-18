@@ -20,7 +20,7 @@
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
-    "@radix-ui/react-toast": "^1.2.1",
+    "@radix-ui/react-toast": "^1.2.15",
     "@reduxjs/toolkit": "^2.9.0",
     "@vueuse/core": "^13.9.0",
     "axios": "^1.7.4",

@@ -45,6 +45,9 @@ module.exports = {
           '"Segoe UI Emoji"',
           '"Segoe UI Symbol"'
         ],
+        // SHOP.CO Design System Fonts
+        integral: ['Integral CF', 'sans-serif'], // For headings (uppercase, heavy weight)
+        satoshi: ['Satoshi', 'sans-serif'], // For body text (clean sans-serif)
         mono: [
           'ui-monospace',
           'SFMono-Regular',
@@ -62,31 +65,31 @@ module.exports = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#000000", // SHOP.CO: Black for buttons and headings
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#F0F0F0", // SHOP.CO: Product card backgrounds
+          foreground: "#000000",
+        },
+        accent: {
+          DEFAULT: "#FF3333", // SHOP.CO: Discount badges
+          foreground: "#FFFFFF",
+        },
+        muted: {
+          DEFAULT: "rgba(0, 0, 0, 0.6)", // SHOP.CO: Rating text, breadcrumbs (#00000099)
+          foreground: "rgba(0, 0, 0, 0.6)",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
+          DEFAULT: "#F0F0F0", // SHOP.CO: Product card background
           foreground: "hsl(var(--card-foreground))",
         },
       },
@@ -94,6 +97,9 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // SHOP.CO Design System Border Radius
+        '2xl': "20px", // Product cards
+        'full': "9999px", // Buttons and search bars
       },
       keyframes: {
         "accordion-down": {

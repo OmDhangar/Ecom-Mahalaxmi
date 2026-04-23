@@ -182,66 +182,153 @@ function ShoppingHome() {
       </Helmet>
 
       {/* OFFER CAROUSEL */}
-      <OfferCarousel />
+      {/* <OfferCarousel /> */}
 
-      {/* HERO SECTION */}
-      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 py-8 lg:py-12 px-4 sm:px-6 lg:px-16">
-        <div className="flex flex-col lg:flex-row items-center justify-between max-w-7xl mx-auto">
-          <div className="text-center lg:text-left w-full lg:max-w-xl">
-            <h1 className="text-3xl lg:text-5xl font-extrabold mb-4 leading-tight text-gray-900">
-              {t("home.hero.title")}
+      {/* HERO SECTION - SHOP.CO Style */}
+      <div className="bg-[#F0F0F0] py-8 lg:py-16 px-4 sm:px-6 lg:px-16 relative overflow-hidden">
+        {/* Floating Star Icons */}
+        <div className="absolute top-20 right-20 w-8 h-8 bg-black transform rotate-45 hidden lg:block"></div>
+        <div className="absolute bottom-32 left-16 w-6 h-6 bg-black transform rotate-45 hidden lg:block"></div>
+        
+        <div className="flex flex-col lg:flex-row items-center justify-between max-w-7xl mx-auto relative z-10">
+          <div className="text-center lg:text-left w-full lg:max-w-2xl mb-8 lg:mb-0">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-black uppercase tracking-tight">
+              FIND CLOTHES<br />
+              THAT MATCHES<br />
+              YOUR STYLE
             </h1>
-            <p className="text-lg text-gray-700 font-medium mb-2">
-              {t("home.hero.subtitle")}
-            </p>
-            <p className="text-base text-gray-600 mb-6 leading-relaxed">
-              {t("home.hero.description")}
+            <p className="text-base sm:text-lg text-[#00000099] mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              Browse through our diverse range of meticulously crafted garments, designed to bring out your individuality and cater to your sense of style.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Button
-                onClick={() => {
-                  const productsSection =
-                    document.getElementById("featured-products-scroll");
-                  if (productsSection) {
-                    productsSection.scrollIntoView({ behavior: "smooth" });
-                  }
-                }}
-                className="bg-gradient-to-r from-gray-900 to-gray-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-3 text-sm sm:text-base rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 transition-all duration-300"
-              >
-                {t("home.hero.shopDeals")}
-              </Button>
+            <Button
+              onClick={() => {
+                const productsSection =
+                  document.getElementById("featured-products-scroll");
+                if (productsSection) {
+                  productsSection.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="bg-black text-white font-semibold px-8 py-3 text-base rounded-full hover:bg-gray-800 transition-all duration-300 mb-8 lg:mb-0"
+            >
+              Shop Now
+            </Button>
 
-              <Button
-                variant="outline"
-                onClick={() => {
-                  window.open(
-                    "https://www.instagram.com/bhushan_rajput_307",
-                    "_blank"
-                  );
-                }}
-                className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-semibold px-6 py-3 sm:px-8 sm:py-3 text-sm sm:text-base rounded-xl transition-all duration-300"
-              >
-                {t("home.hero.followInstagram")}
-              </Button>
+            {/* Statistics Counter - Three Column */}
+            <div className="flex flex-wrap justify-center lg:justify-start gap-6 lg:gap-8 mt-8 pt-8 border-t border-gray-300">
+              <div className="text-center lg:text-left">
+                <div className="text-3xl sm:text-4xl font-bold text-black mb-1">200+</div>
+                <div className="text-sm text-[#00000099]">International Brands</div>
+              </div>
+              <div className="text-center lg:text-left">
+                <div className="text-3xl sm:text-4xl font-bold text-black mb-1">2,000+</div>
+                <div className="text-sm text-[#00000099]">High-Quality Products</div>
+              </div>
+              <div className="text-center lg:text-left">
+                <div className="text-3xl sm:text-4xl font-bold text-black mb-1">3,000+</div>
+                <div className="text-sm text-[#00000099]">Happy Customers</div>
+              </div>
             </div>
           </div>
 
-          <div className="hidden lg:flex mt-8 lg:mt-0 justify-center">
-            <OptimizedImage
-              src="Iphone.png"
-              alt="Latest Mobiles - Shri Mahalaxmi Mobile premium smartphones"
-              className="w-64 h-88 xl:w-80 rounded-xl shadow-lg"
-              width={320}
-              height={400}
-              priority={true}
-              context="hero"
-              quality="high"
-              sizes="(min-width: 1280px) 320px, 256px"
-            />
+          <div className="hidden lg:flex mt-8 lg:mt-0 justify-center relative">
+            {/* Hero Image with Floating Stars */}
+            <div className="relative">
+              <OptimizedImage
+                src="Iphone.png"
+                alt="Fashion Models - SHOP.CO"
+                className="w-96 h-auto rounded-2xl shadow-lg"
+                width={384}
+                height={500}
+                priority={true}
+                context="hero"
+                quality="high"
+                sizes="(min-width: 1280px) 384px, 320px"
+              />
+              {/* Additional floating star */}
+              <div className="absolute -top-4 -right-4 w-6 h-6 bg-black transform rotate-45"></div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* BROWSE BY DRESS STYLE - SHOP.CO Style */}
+      <section className="py-8 lg:py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8 lg:mb-12 text-black uppercase">
+            Browse by Dress Style
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {/* Casual */}
+            <Card
+              onClick={() => handleNavigateToListingPage({ id: "casual" }, "dressStyle")}
+              className="cursor-pointer rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#F0F0F0] aspect-[4/5]"
+            >
+              <CardContent className="p-0 h-full">
+                <div className="relative h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                    <span className="text-6xl">👕</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-4">
+                    <h3 className="text-xl font-bold uppercase">Casual</h3>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Formal */}
+            <Card
+              onClick={() => handleNavigateToListingPage({ id: "formal" }, "dressStyle")}
+              className="cursor-pointer rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#F0F0F0] aspect-[4/5]"
+            >
+              <CardContent className="p-0 h-full">
+                <div className="relative h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
+                    <span className="text-6xl">👔</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-4">
+                    <h3 className="text-xl font-bold uppercase">Formal</h3>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Party */}
+            <Card
+              onClick={() => handleNavigateToListingPage({ id: "party" }, "dressStyle")}
+              className="cursor-pointer rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#F0F0F0] aspect-[4/5]"
+            >
+              <CardContent className="p-0 h-full">
+                <div className="relative h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-300 flex items-center justify-center">
+                    <span className="text-6xl">✨</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-4">
+                    <h3 className="text-xl font-bold uppercase">Party</h3>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Gym */}
+            <Card
+              onClick={() => handleNavigateToListingPage({ id: "gym" }, "dressStyle")}
+              className="cursor-pointer rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#F0F0F0] aspect-[4/5]"
+            >
+              <CardContent className="p-0 h-full">
+                <div className="relative h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center">
+                    <span className="text-6xl">💪</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-4">
+                    <h3 className="text-xl font-bold uppercase">Gym</h3>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
        {/* CATEGORY SECTION - Mobile Optimized */}
       <section className="py-6 sm:py-8 lg:py-12 bg-white">

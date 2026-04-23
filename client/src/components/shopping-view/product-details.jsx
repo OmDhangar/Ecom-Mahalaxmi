@@ -289,10 +289,33 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
         {/* Main Content Container - Scrollable on mobile */}
         <div className="flex flex-col h-full overflow-y-auto sm:h-auto ">
           <div className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-6 sm:p-6">
-            {/* Product Images Section */}
-            <div className="relative flex-shrink-0">
-              {/* Main Image */}
-              <div className="relative aspect-square w-full bg-gray-50 sm:aspect-square">
+            {/* Product Images Section - SHOP.CO Style with Vertical Thumbnails */}
+            <div className="relative flex-shrink-0 flex flex-row gap-4">
+              {/* Vertical Thumbnail Strip - Left Side (Desktop only) */}
+              {allProductImages.length > 1 && (
+                <div className="hidden sm:flex flex-col gap-2 overflow-y-auto max-h-[600px]">
+                  {allProductImages.map((imgSrc, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
+                        currentImageIndex === index 
+                          ? 'border-black scale-105' 
+                          : 'border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      <img 
+                        src={imgSrc} 
+                        alt={`Thumbnail ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Main Image Container */}
+              <div className="relative flex-1 aspect-square bg-gray-50 rounded-2xl overflow-hidden">
                 {allProductImages.length > 0 ? (
                   <img
                     src={allProductImages[currentImageIndex]}
@@ -331,27 +354,6 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 )}
               </div>
               
-              {/* Thumbnail Navigation - Only on Desktop */}
-              {allProductImages.length > 1 && (
-                <div className="hidden sm:flex gap-2 mt-4 overflow-x-auto pb-2">
-                  {allProductImages.map((imgSrc, index) => (
-                    <button
-                      key={index}
-                      onClick={() => goToImage(index)}
-                      className={`relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border-2 ${
-                        currentImageIndex === index ? 'border-blue-500' : 'border-gray-200'
-                      }`}
-                    >
-                      <img 
-                        src={imgSrc} 
-                        alt={`Thumbnail ${index + 1}`} 
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-              
               {/* Mobile Thumbnail Dots */}
               {allProductImages.length > 1 && (
                 <div className="flex justify-center gap-2 mt-3 pb-3 sm:hidden">
@@ -360,7 +362,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                       key={index}
                       onClick={() => goToImage(index)}
                       className={`w-2 h-2 rounded-full transition-colors ${
-                        currentImageIndex === index ? 'bg-blue-500' : 'bg-gray-300'
+                        currentImageIndex === index ? 'bg-black' : 'bg-gray-300'
                       }`}
                     />
                   ))}
@@ -380,12 +382,12 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 </div>
               </div>
               
-              {/* Product Title & Description */}
+              {/* Product Title & Description - SHOP.CO Style */}
               <div className="mb-6">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight mb-3 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black leading-tight mb-3 tracking-tight uppercase">
                   {productDetails?.title}
                 </h1>
-                <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-light">
+                <p className="text-base sm:text-lg text-[#00000099] leading-relaxed">
                   {productDetails?.description}
                 </p>
               </div>
@@ -449,9 +451,8 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
 
               {productDetails?.category === 'fashion' && productDetails.sizes && productDetails.sizes.length > 0 && (
                 <div className="mb-4 p-4 bg-white rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
-                    Available Sizes
+                  <h3 className="font-bold text-black mb-3 uppercase text-sm">
+                    Choose Size
                   </h3>
                   <div className="flex gap-2 flex-wrap">
                     {productDetails.sizes.map(sizeObj => (
@@ -459,12 +460,12 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                         key={sizeObj.size}
                         onClick={() => setSelectedSize(selectedSize === sizeObj.size ? "" : sizeObj.size)}
                         disabled={sizeObj.stock === 0}
-                        className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors relative ${
+                        className={`px-4 py-2 text-sm font-medium rounded-full border transition-all relative ${
                           selectedSize === sizeObj.size
-                            ? 'bg-gray-500 text-white border-gray-500'
+                            ? 'bg-black text-white border-black'
                             : sizeObj.stock === 0
                             ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-gray-300'
+                            : 'bg-white text-black border-gray-300 hover:border-black'
                         }`}
                       >
                         {sizeObj.size}
@@ -478,39 +479,34 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                   {/* Selected size display */}
                   {selectedSize && (
                     <div className="mt-2">
-                      <p className="text-sm text-green-600">Selected: {selectedSize}</p>
+                      <p className="text-sm text-black font-medium">Selected: {selectedSize}</p>
                     </div>
                   )}
                 </div>
               )}
 
 
-              {/* Price Section */}
+              {/* Price Section - SHOP.CO Style */}
               <div className="mb-4 sm:mb-6">
                 <div className="flex items-baseline gap-3">
                   {productDetails?.salePrice > 0 ? (
                     <>
-                      <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
-                        ₹{productDetails?.salePrice}
+                      <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-black">
+                        ${productDetails?.salePrice}
                       </span>
-                      <span className="text-base sm:text-lg text-gray-500 line-through">
-                        ₹{productDetails?.price}
+                      <span className="text-base sm:text-lg text-[#00000099] line-through">
+                        ${productDetails?.price}
                       </span>
-                      <Badge variant="destructive" className="text-xs">
-                        {Math.round(((productDetails?.price - productDetails?.salePrice) / productDetails?.price) * 100)}% OFF
+                      <Badge className="bg-[#FF3333] text-white text-xs font-bold px-2 py-1 rounded-full">
+                        -{Math.round(((productDetails?.price - productDetails?.salePrice) / productDetails?.price) * 100)}%
                       </Badge>
                     </>
                   ) : (
-                    <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                      ₹{productDetails?.price}
+                    <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-black">
+                      ${productDetails?.price}
                     </span>
                   )}
                 </div>
-                {productDetails?.salePrice > 0 && (
-                  <p className="text-sm text-green-600 mt-1">
-                    You save ₹{productDetails?.price - productDetails?.salePrice}
-                  </p>
-                )}
               </div>
 
               {/* Stock Status */}
@@ -663,69 +659,87 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             </div>
           </div>
 
-          {/* Similar Products Section */}
+          {/* You Might Also Like Section - SHOP.CO Style */}
           {similarProducts.length > 0 && (
-            <div className="border-t bg-gray-50 p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Similar Products</h2>
+            <div className="border-t bg-white p-4 sm:p-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-black mb-6 uppercase">
+                You Might Also Like
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {similarProducts.map((product) => (
-                  <Card 
-                    key={product._id} 
-                    className="cursor-pointer hover:shadow-md transition-shadow bg-white"
-                    onClick={() => handleSimilarProductClick(product)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="aspect-square bg-gray-100 rounded-md mb-3 overflow-hidden">
-                        <img 
-                          src={product.image} 
-                          alt={product.title}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        />
-                      </div>
-                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
-                        {product.title}
-                      </h3>
-                      <div className="flex items-center gap-1 mb-2">
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-3 h-3 ${
-                                i < Math.floor(product.averageReview || 0)
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
+                {similarProducts.map((product) => {
+                  const discount =
+                    product?.salePrice > 0
+                      ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+                      : 0;
+                  
+                  return (
+                    <Card 
+                      key={product._id} 
+                      className="cursor-pointer hover:shadow-lg transition-shadow bg-[#F0F0F0] rounded-2xl overflow-hidden"
+                      onClick={() => handleSimilarProductClick(product)}
+                    >
+                      <CardContent className="p-0">
+                        {/* Image */}
+                        <div className="relative aspect-square bg-white overflow-hidden">
+                          <img 
+                            src={product.image || product.mainImage} 
+                            alt={product.title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          />
+                          {discount > 0 && (
+                            <Badge className="absolute top-2 left-2 bg-[#FF3333] text-white text-xs font-bold px-2 py-1 rounded-full">
+                              -{discount}%
+                            </Badge>
+                          )}
                         </div>
-                        <span className="text-xs text-gray-500">
-                          ({product.averageReview?.toFixed(1) || '0.0'})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {product.salePrice > 0 ? (
-                          <>
-                            <span className="text-sm font-bold text-green-600">
-                              ₹{product.salePrice}
+                        
+                        {/* Product Info */}
+                        <div className="p-4">
+                          <h3 className="text-sm font-bold text-black line-clamp-2 mb-2 uppercase">
+                            {product.title}
+                          </h3>
+                          
+                          {/* Rating */}
+                          <div className="flex items-center gap-1 mb-2">
+                            <div className="flex">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-3 h-3 ${
+                                    i < Math.floor(product.averageReview || product.rating || 0)
+                                      ? 'text-yellow-400 fill-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-[#00000099]">
+                              {(product.averageReview || product.rating || 0).toFixed(1)}
                             </span>
-                            <span className="text-xs text-gray-500 line-through">
-                              ₹{product.price}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-sm font-bold text-gray-900">
-                            ₹{product.price}
-                          </span>
-                        )}
-                      </div>
-                      {product.category && (
-                        <Badge variant="outline" className="text-xs mt-2">
-                          {product.category}
-                        </Badge>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                          </div>
+                          
+                          {/* Price */}
+                          <div className="flex items-center gap-2">
+                            {product.salePrice > 0 ? (
+                              <>
+                                <span className="text-base font-bold text-black">
+                                  ${product.salePrice}
+                                </span>
+                                <span className="text-sm text-[#00000099] line-through">
+                                  ${product.price}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-base font-bold text-black">
+                                ${product.price}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           )}

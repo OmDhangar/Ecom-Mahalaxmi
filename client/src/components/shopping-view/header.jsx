@@ -1,4 +1,4 @@
-import { HousePlug, LogOut, Menu, ShoppingCart, UserCog, LogIn, UserPlus } from "lucide-react";
+import { HousePlug, LogOut, Menu, ShoppingCart, UserCog, LogIn, UserPlus, ChevronDown } from "lucide-react";
 import {
   Link,
   useLocation,
@@ -25,10 +25,39 @@ import { fetchCartItems } from "@/store/shop/cart-slice";
 import { Label } from "../ui/label";
 import LanguageSwitcher from "../common/LanguageSwitcher";
 
+// Mega Menu Categories for SHOP.CO
+const megaMenuCategories = [
+  {
+    title: "Men's clothes",
+    description: "In attractive and spectacular colors and designs",
+    id: "mens",
+    path: "/shop/listing?category=fashion&gender=mens"
+  },
+  {
+    title: "Women's clothes",
+    description: "Ladies, your style and tastes are important to us",
+    id: "womens",
+    path: "/shop/listing?category=fashion&gender=womens"
+  },
+  {
+    title: "Kids clothes",
+    description: "For all ages, with happy and beautiful colors",
+    id: "kids",
+    path: "/shop/listing?category=fashion&age=kids"
+  },
+  {
+    title: "Bags and Shoes",
+    description: "Suitable for men, women and all tastes and styles",
+    id: "bags-shoes",
+    path: "/shop/listing?category=accessories"
+  },
+];
+
 function MenuItems({ closeSheet }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showMegaMenu, setShowMegaMenu] = useState(false);
 
   function handleNavigate(getCurrentMenuItem) {
     sessionStorage.removeItem("filters");
@@ -46,20 +75,78 @@ function MenuItems({ closeSheet }) {
       : navigate(getCurrentMenuItem.path);
 
     if (closeSheet) closeSheet();
+    setShowMegaMenu(false);
   }
 
   return (
-    <nav className="flex flex-col mb-3 lg:mb-0 lg:items-center gap-6 lg:flex-row">
-      {shoppingViewHeaderMenuItems.map((menuItem) => (
-        <Label
-          onClick={() => handleNavigate(menuItem)}
-          className="text-sm font-medium cursor-pointer"
-          key={menuItem.id}
-        >
-          {menuItem.label}
-        </Label>
-      ))}
-    </nav>
+    <>
+      <nav className="flex flex-col mb-3 lg:mb-0 lg:items-center gap-6 lg:flex-row relative">
+        {shoppingViewHeaderMenuItems.map((menuItem) => (
+          <div
+            key={menuItem.id}
+            className="relative"
+            onMouseEnter={() => menuItem.label === "Shop" && setShowMegaMenu(true)}
+            onMouseLeave={() => setShowMegaMenu(false)}
+          >
+            <Label
+              onClick={() => {
+                if (menuItem.label !== "Shop") {
+                  handleNavigate(menuItem);
+                }
+              }}
+              className="text-sm font-medium cursor-pointer flex items-center gap-1"
+            >
+              {menuItem.label === "Products" ? "Shop" : menuItem.label}
+              {menuItem.label === "Products" && (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Label>
+            
+            {/* Mega Menu - Desktop Only */}
+            {(menuItem.label === "Products" || menuItem.id === "products") && showMegaMenu && (
+              <div className="hidden lg:block absolute top-full left-0 mt-2 w-[600px] bg-white rounded-lg shadow-xl border border-gray-200 p-6 z-50">
+                <div className="grid grid-cols-2 gap-6">
+                  {megaMenuCategories.map((category) => (
+                    <div
+                      key={category.id}
+                      onClick={() => {
+                        navigate(category.path);
+                        setShowMegaMenu(false);
+                        if (closeSheet) closeSheet();
+                      }}
+                      className="cursor-pointer p-4 rounded-lg hover:bg-[#F0F0F0] transition-colors"
+                    >
+                      <h3 className="font-bold text-black mb-2">{category.title}</h3>
+                      <p className="text-sm text-[#00000099]">{category.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </nav>
+      
+      {/* Mobile Mega Menu */}
+      {showMegaMenu && (
+        <div className="lg:hidden bg-white border-t border-gray-200 p-4 space-y-4">
+          {megaMenuCategories.map((category) => (
+            <div
+              key={category.id}
+              onClick={() => {
+                navigate(category.path);
+                setShowMegaMenu(false);
+                if (closeSheet) closeSheet();
+              }}
+              className="cursor-pointer p-4 rounded-lg hover:bg-[#F0F0F0] transition-colors border border-gray-200"
+            >
+              <h3 className="font-bold text-black mb-2">{category.title}</h3>
+              <p className="text-sm text-[#00000099]">{category.description}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
